@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Professional Lead MIS Dashboard</title>
+  <link
+    href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.0/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <link
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    rel="stylesheet"
+  />
+  <style>
+    body {
+      background-color: #f8f9fa;
+      color: #495057;
+      transition: background 0.25s, color 0.25s;
+    }
+    .container-fluid {
+      max-width: 1600px;
+    }
+    .dashboard-header {
+      padding-bottom: 10px;
+      border-bottom: 1px solid #dee2e6;
+      margin-bottom: 20px;
+    }
+    .filter-section {
+      background: #ffffff;
+      border: 1px solid #e0e6ed;
+      border-radius: 8px;
+      padding: 25px;
+      margin-bottom: 25px;
+    }
+    .filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      align-items: flex-end;
+    }
+    .filter-group label {
+      font-weight: 600;
+      margin-bottom: 8px;
+      font-size: 14px;
+      display: block;
+    }
+
+    /* Improved multi-select styling */
+    select[multiple] {
+      height: 130px;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #ced4da;
+      background-color: white;
+      font-size: 14px;
+      cursor: pointer;
+      user-select: auto;
+    }
+    select[multiple]:focus {
+      border-color: #80bdff;
+      outline: 0;
+      box-shadow: 0 0 0 0.2rem rgb(0 123 255 / 0.25);
+    }
+    select[multiple] option {
+      padding: 4px 10px;
+    }
+    .filter-group small.text-muted {
+      font-size: 11px;
+      color: #6c757d;
+      user-select: none;
+      margin-top: 2px;
+      display: block;
+    }
+
+    .summary-card-section {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 25px;
+      margin-bottom: 25px;
+    }
+    .summary-card {
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 20px;
+      border: 1px solid #e0e6ed;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      transition: all 0.2s ease-in-out;
+      cursor: default;
+    }
+    .summary-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+    .summary-card .icon {
+      font-size: 24px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .summary-card .icon.total {
+      background-color: #007bff;
+    }
+    .summary-card .icon.open {
+      background-color: #ffc107;
+    }
+    .summary-card .icon.converted {
+      background-color: #28a745;
+    }
+    .summary-card .icon.lost {
+      background-color: #dc3545;
+    }
+    .summary-card h5 {
+      font-size: 16px;
+      color: #6c757d;
+      margin-bottom: 5px;
+    }
+    .summary-card .count {
+      font-size: 28px;
+      font-weight: 700;
+    }
+    .dashboard-section {
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 25px;
+      margin-bottom: 25px;
+      border: 1px solid #e0e6ed;
+      height: 100%;
+    }
+    .dashboard-section h4 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+
+    /* --- By Lead Owner card grid styling --- */
+    .lead-owner-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(265px, 1fr));
+      gap: 20px;
+    }
+    .owner-card {
+      background: var(--card-bg, #fff);
+      border: 1.5px solid #e0e6ed;
+      border-radius: 10px;
+      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.035);
+      padding: 20px 18px 15px 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 130px;
+      transition: box-shadow 0.19s;
+      position: relative;
+      cursor: default;
+    }
+    .owner-card:hover {
+      box-shadow: 0 6px 18px rgba(60, 70, 110, 0.11);
+    }
+    .owner-avatar {
+      width: 46px;
+      height: 46px;
+      background: #007bff28;
+      color: #007bff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.3rem;
+      margin-bottom: 5px;
+      border: 1.5px solid #007bff44;
+      user-select: none;
+    }
+    .owner-name {
+      font-weight: 600;
+      color: #212529;
+      text-align: center;
+      font-size: 1rem;
+      margin-bottom: 7px;
+      word-break: break-word;
+      word-wrap: break-word;
+      user-select: text;
+    }
+    .owner-metrics {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .metric {
+      font-size: 1.06rem;
+      font-weight: 600;
+      user-select: none;
+      text-align: center;
+      cursor: default;
+    }
+    .metric small {
+      display: block;
+      color: #6c757d;
+      font-size: 0.76em;
+      font-weight: 400;
+      user-select: none;
+    }
+    .metric.total {
+      color: #007bff;
+    }
+    .metric.converted {
+      color: #28a745;
+    }
+    .metric.lost {
+      color: #dc3545;
+    }
+
+    .clickable-number {
+      color: #007bff;
+      text-decoration: underline;
+      cursor: pointer;
+      font-weight: bold;
+      user-select: text;
+    }
+    .clickable-number:hover,
+    .clickable-number:focus {
+      color: #0056b3;
+      outline: none;
+      text-decoration: none;
+    }
+    .lead-link {
+      color: #28a745;
+      text-decoration: underline;
+      cursor: pointer;
+      font-weight: bold;
+      user-select: text;
+    }
+    .lead-link:hover,
+    .lead-link:focus {
+      color: #1e7e34;
+      outline: none;
+      text-decoration: none;
+    }
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 1050;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-content-custom {
+      background: white;
+      border-radius: 8px;
+      width: 95%;
+      max-width: 1400px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .modal-header-custom {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid #dee2e6;
+      flex-shrink: 0;
+    }
+    .modal-body-custom {
+      padding: 1.5rem;
+      overflow-y: auto;
+      flex-grow: 1;
+    }
+    body.modal-open {
+      overflow: hidden;
+    }
+    .modal-filters-display {
+      padding: 10px 15px;
+      background-color: #e9ecef;
+      border-radius: 6px;
+      margin-bottom: 15px;
+      font-size: 14px;
+    }
+    .modal-filters-display .badge {
+      margin-right: 8px;
+    }
+    .details-table-container {
+      width: 100%;
+      overflow-x: auto;
+    }
+    .details-table {
+      width: 100%;
+      white-space: nowrap;
+    }
+    #chart-container {
+      max-width: 400px;
+      margin: 20px auto;
+      min-height: 250px;
+    }
+    .table thead th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+    }
+    .table thead th.sortable:after {
+      content: "";
+      float: right;
+      margin-left: 5px;
+      border-width: 5px;
+      border-style: solid;
+      border-color: #bbb transparent transparent transparent;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .table thead th.sortable.sorted-asc:after {
+      border-color: #007bff transparent transparent transparent;
+    }
+    .table thead th.sortable.sorted-desc:after {
+      border-color: transparent transparent #007bff transparent;
+      border-width: 0 5px 5px 5px;
+    }
+
+    /* Toast */
+    #custom-toast {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      min-width: 220px;
+      z-index: 2000;
+      background: #212529ee;
+      color: #fff;
+      border-radius: 5px;
+      padding: 15px 24px;
+      opacity: 0;
+      pointer-events: none;
+      font-size: 16px;
+      transition: opacity 0.35s;
+    }
+    #custom-toast.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* Dark mode */
+    body.dark-mode {
+      background: #191c1f !important;
+      color: #dee2e6 !important;
+    }
+    body.dark-mode .dashboard-section,
+    body.dark-mode .filter-section,
+    body.dark-mode .modal-content-custom {
+      background: #23272b !important;
+      color: #dee2e6 !important;
+      border-color: #343a40;
+    }
+    body.dark-mode .table thead th {
+      background: #24282c !important;
+      color: #d9e0e7;
+    }
+    body.dark-mode .modal-filters-display {
+      background: #23272b;
+    }
+    body.dark-mode .summary-card {
+      background: #202226;
+      border-color: #343a40;
+    }
+    body.dark-mode #custom-toast {
+      background: #111416ee;
+      color: #eee;
+    }
+    body.dark-mode .owner-card {
+      background: #24282b;
+      border-color: #343a40;
+    }
+    body.dark-mode .owner-name {
+      color: #d4dcf4;
+    }
+    body.dark-mode .owner-avatar {
+      background: #007bff33;
+      color: #64a3ff;
+    }
+
+    .toggle-switch {
+      display: flex;
+      align-items: center;
+    }
+    .toggle-switch label {
+      margin-left: 8px;
+      font-weight: 500;
+      user-select: none;
+      cursor: pointer;
+    }
+
+    /* Empty state */
+    .empty-state {
+      color: #aaa;
+      text-align: center;
+      padding: 30px 0;
+      font-size: 20px;
+      user-select: none;
+    }
+
+    /* Error state */
+    .error-state {
+      color: #dc3545;
+      text-align: center;
+      padding: 30px 0;
+      font-size: 18px;
+    }
+
+    /* Loading spinner */
+    .loading-spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #007bff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div id="custom-toast"></div>
+
+  <div class="container-fluid p-4">
+    <div
+      class="dashboard-header d-flex justify-content-between align-items-center"
+    >
+      <div>
+        <h3 class="font-weight-bold mb-0">Lead MIS Dashboard</h3>
+        <p class="text-muted mb-0">An analytical overview of all lead activities.</p>
+      </div>
+      <!-- Dark Mode Toggle -->
+      <div class="toggle-switch">
+        <input
+          type="checkbox"
+          id="theme-toggle"
+          style="width: 22px; height: 22px; vertical-align: middle"
+        />
+        <label for="theme-toggle"><i class="fa fa-moon"></i> Dark Mode</label>
+      </div>
+    </div>
+    <hr />
+
+    <!-- Filter Section -->
+    <div class="filter-section">
+      <form
+        id="filter-form"
+        onsubmit="event.preventDefault(); window.dashboard.loadDashboardData();"
+        autocomplete="off"
+      >
+        <h5 class="mb-3">🔍 Filter Options</h5>
+        <div class="filter-row">
+          <div class="filter-group">
+            <label for="from-date">From Date</label>
+            <input type="date" id="from-date" class="form-control" />
+          </div>
+          <div class="filter-group">
+            <label for="to-date">To Date</label>
+            <input type="date" id="to-date" class="form-control" />
+          </div>
+          <div class="filter-group" style="min-width: 170px">
+            <label for="status-filter">Status</label>
+            <select id="status-filter" class="form-control" multiple></select>
+            <small class="text-muted">Ctrl/Cmd + click for multi</small>
+          </div>
+          <div class="filter-group" style="min-width: 170px">
+            <label for="source-filter">Source</label>
+            <select id="source-filter" class="form-control" multiple></select>
+            <small class="text-muted">Ctrl/Cmd + click for multi</small>
+          </div>
+          <div class="filter-group" style="min-width: 170px">
+            <label for="owner-filter">Lead Owner</label>
+            <select id="owner-filter" class="form-control"></select>
+          </div>
+          <div class="filter-group" style="min-width: 170px">
+            <label for="industry-filter">Industry</label>
+            <select id="industry-filter" class="form-control"></select>
+          </div>
+          <div class="filter-group">
+            <button class="btn btn-primary btn-block" type="submit">
+              Apply Filters
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-3">
+          <input
+            type="text"
+            class="form-control"
+            id="global-search"
+            placeholder="🔎 Global Search (name, company, owner, etc)"
+            aria-label="Global search"
+          />
+        </div>
+      </form>
+    </div>
+
+    <div id="loading-container" class="alert alert-info" style="display: none">
+      <div class="loading-spinner mr-2"></div>
+      Loading dashboard data, please wait...
+    </div>
+
+    <div id="error-container" class="alert alert-danger" style="display: none">
+      <strong>Error:</strong> <span id="error-message"></span>
+      <button class="btn btn-sm btn-outline-danger ml-2" onclick="window.dashboard.loadDashboardData()">Retry</button>
+    </div>
+
+    <div id="dashboard-content" style="display: none">
+      <div id="overall-summary" class="summary-card-section"></div>
+      <div class="row">
+        <div class="col-lg-8">
+          <div class="dashboard-section">
+            <h4>📊 Performance Metrics</h4>
+            <div class="row">
+              <div class="col-md-6" id="status-summary-section"></div>
+              <div class="col-md-6" id="owner-summary-section"></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="dashboard-section">
+            <h4>📈 Lead Source Analysis</h4>
+            <div id="chart-container">
+              <canvas id="sourceChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for Detailed Records -->
+  <div
+    id="records-modal"
+    class="modal-overlay"
+    aria-modal="true"
+    role="dialog"
+  >
+    <div class="modal-content-custom">
+      <div
+        class="modal-header-custom d-flex justify-content-between align-items-center"
+      >
+        <h5 id="modal-title" class="modal-title mb-0"></h5>
+        <button
+          type="button"
+          class="close"
+          onclick="window.dashboard.closeModal()"
+          aria-label="Close"
+        >
+          &times;
+        </button>
+      </div>
+      <div class="modal-body-custom">
+        <div id="modal-filters-display" class="modal-filters-display"></div>
+        <input
+          type="text"
+          id="modal-search"
+          class="form-control mb-3"
+          placeholder="Type to search within these results..."
+          aria-label="Search results"
+        />
+        <div id="modal-table-container" class="details-table-container"></div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

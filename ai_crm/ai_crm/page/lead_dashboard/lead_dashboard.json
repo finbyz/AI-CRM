@@ -1,0 +1,27 @@
+{
+ "content": null,
+ "creation": "2025-08-07 17:24:46.525310",
+ "docstatus": 0,
+ "doctype": "Page",
+ "icon": "",
+ "idx": 0,
+ "modified": "2025-08-08 10:24:35.047645",
+ "modified_by": "Administrator",
+ "module": "Ai CRM",
+ "name": "lead-dashboard",
+ "owner": "Administrator",
+ "page_name": "lead-dashboard",
+ "roles": [
+  {
+   "role": "Administrator"
+  },
+  {
+   "role": "System Manager"
+  }
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "Lead Dashboard"
+}
