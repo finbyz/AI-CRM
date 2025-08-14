@@ -83,7 +83,8 @@ app_license = "mit"
 # ------------
 
 # before_install = "ai_crm.install.before_install"
-# after_install = "ai_crm.install.after_install"
+after_install = "ai_crm.install.after_install"
+before_uninstall = "ai_crm.install.before_uninstall"
 
 # Uninstallation
 # ------------
