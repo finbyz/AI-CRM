@@ -1,0 +1,78 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "BA-.####",
+ "creation": "2025-08-12 11:17:13.599700",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "allow_access",
+  "column_break_zqjp",
+  "full_name",
+  "column_break_tlyf",
+  "telegram_id"
+ ],
+ "fields": [
+  {
+   "default": "0",
+   "fieldname": "allow_access",
+   "fieldtype": "Check",
+   "in_filter": 1,
+   "in_list_view": 1,
+   "label": "Allow Access",
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_zqjp",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_tlyf",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "telegram_id",
+   "fieldtype": "Data",
+   "in_filter": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Telegram ID",
+   "search_index": 1
+  },
+  {
+   "fieldname": "full_name",
+   "fieldtype": "Data",
+   "in_filter": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Full Name"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-08-14 10:11:22.373467",
+ "modified_by": "Administrator",
+ "module": "Ai CRM",
+ "name": "Bot Access",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

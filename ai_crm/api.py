@@ -267,3 +267,30 @@ def create_address(address_data, contact_name):
     
     address_doc.insert(ignore_permissions=True)
     return address_doc
+
+
+@frappe.whitelist()
+def check_bot_access(chat_id: str, full_name: str):
+    access_records = frappe.get_all(
+        'Bot Access',
+        fields=['name'],
+        filters={'telegram_id': chat_id, 'allow_access': 1}
+    )
+    bot_access_docs = frappe.get_all(
+        'Bot Access',
+        fields=['name'],
+        filters={'telegram_id': chat_id}
+    )
+    
+    have_access = len(access_records) > 0
+    
+    if have_access:
+        return True
+    if bot_access_docs:
+        return False
+    bot_access = frappe.new_doc("Bot Access")
+    bot_access.telegram_id = chat_id
+    bot_access.full_name = full_name
+    bot_access.save()
+    return False
+
