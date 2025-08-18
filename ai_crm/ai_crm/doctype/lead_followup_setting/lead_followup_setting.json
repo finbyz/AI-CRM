@@ -1,0 +1,91 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-08-18 10:41:10.773643",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "is_enable",
+  "days_since_last_activity",
+  "lead_research_section",
+  "lead_research_prompt",
+  "perplexity_api_key",
+  "email_creation_section",
+  "email_creation_prompt",
+  "email_system_instruction"
+ ],
+ "fields": [
+  {
+   "fieldname": "lead_research_prompt",
+   "fieldtype": "Small Text",
+   "label": "Lead Research Prompt",
+   "reqd": 1
+  },
+  {
+   "fieldname": "email_creation_prompt",
+   "fieldtype": "Small Text",
+   "label": "Email Creation Prompt",
+   "reqd": 1
+  },
+  {
+   "default": "5",
+   "fieldname": "days_since_last_activity",
+   "fieldtype": "Int",
+   "label": "Days Since Last Activity"
+  },
+  {
+   "fieldname": "lead_research_section",
+   "fieldtype": "Section Break",
+   "label": "Lead Research"
+  },
+  {
+   "fieldname": "email_creation_section",
+   "fieldtype": "Section Break",
+   "label": "Email Creation"
+  },
+  {
+   "fieldname": "email_system_instruction",
+   "fieldtype": "Small Text",
+   "label": "System Instruction",
+   "reqd": 1
+  },
+  {
+   "fieldname": "perplexity_api_key",
+   "fieldtype": "Password",
+   "in_list_view": 1,
+   "label": "Perplexity API Key",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_enable",
+   "fieldtype": "Check",
+   "label": "Is Enable"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2025-08-18 11:40:23.761007",
+ "modified_by": "Administrator",
+ "module": "Ai CRM",
+ "name": "Lead Followup Setting",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

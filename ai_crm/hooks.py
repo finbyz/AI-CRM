@@ -149,23 +149,23 @@ before_uninstall = "ai_crm.install.before_uninstall"
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
-# 	"all": [
-# 		"ai_crm.tasks.all"
-# 	],
-# 	"daily": [
-# 		"ai_crm.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"ai_crm.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"ai_crm.tasks.weekly"
-# 	],
-# 	"monthly": [
-# 		"ai_crm.tasks.monthly"
-# 	],
-# }
+scheduler_events = {
+	# "all": [
+	# 	"ai_crm.tasks.all"
+	# ],
+	"daily": [
+		"ai_crm.tasks.daily.smart_followup.run_followup_job"
+	],
+	# "hourly": [
+	# 	"ai_crm.tasks.hourly"
+	# ],
+	# "weekly": [
+	# 	"ai_crm.tasks.weekly"
+	# ],
+	# "monthly": [
+	# 	"ai_crm.tasks.monthly"
+	# ],
+}
 
 # Testing
 # -------
