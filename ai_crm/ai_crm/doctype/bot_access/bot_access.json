@@ -51,7 +51,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-08-14 10:11:22.373467",
+ "modified": "2025-08-19 14:44:08.368713",
  "modified_by": "Administrator",
  "module": "Ai CRM",
  "name": "Bot Access",
@@ -67,6 +67,18 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AI Automation",
    "share": 1,
    "write": 1
   }
