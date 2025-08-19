@@ -67,6 +67,7 @@ def get_opportunity_followups(days_since_last_activity=5):
             l.lead_name AS customer_name,
             COALESCE(ct.email_id, l.email_id) AS email,
             l.company_name AS company,
+            l.custom_company_research AS customer_details,
             o.name AS opportunity_id,
             o.status AS opportunity_status,
             o.country,
@@ -74,7 +75,6 @@ def get_opportunity_followups(days_since_last_activity=5):
             o.state,
             comm.last_activity,
             ct.custom_person_research AS custom_person_research,
-            '' AS customer_details,
             ct.name AS contact_name
         FROM `tabLead` l
         INNER JOIN `tabOpportunity` o 
@@ -180,24 +180,7 @@ def get_party_activities(party_type, party_name):
 
 def draft_email(lead, activity_summary):
     setting = frappe.get_single("Lead Followup Setting")
-    
-    draft_prompt = setting.get("email_creation_prompt") or """
-    Lead Name: {lead_name}
-    Company: {company_name}
-    Title: {title}
-    Website: {website}
-    Country: {country}
-    Status: {status}
-    Email: {email}
-
-    Recent Activities:
-    {activity_summary}
-
-    {research_text}
-
-    Please draft a polite, professional, and personalized follow-up email 
-    that acknowledges the lead's context and encourages next steps.
-    """
+    draft_prompt = setting.get("email_creation_prompt")
     system_instruction = setting.email_system_instruction or "You are a helpful assistant drafting business follow-up emails."
     research_text = f"\nAdditional Research:\n{lead.get('custom_person_research')}" if lead.get("custom_person_research") else ""
 
@@ -209,6 +192,8 @@ def draft_email(lead, activity_summary):
         country=lead.get("country", ""),
         status=lead.get("status", ""),
         email=lead.get("email_id", ""),
+        custom_company_research=lead.get("custom_company_research"),
+        custom_person_research=lead.get("custom_person_research"),
         activity_summary=activity_summary or "No recent activities.",
         research_text=research_text
     )
