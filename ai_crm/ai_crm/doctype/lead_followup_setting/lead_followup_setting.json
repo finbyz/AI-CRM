@@ -7,23 +7,23 @@
  "field_order": [
   "is_enable",
   "days_since_last_activity",
+  "provider",
+  "llm",
+  "column_break_rskj",
+  "research_provider",
+  "research_llm",
   "lead_research_section",
-  "lead_research_prompt",
-  "perplexity_api_key",
+  "person_research_prompt",
+  "company_research_prompt",
   "email_creation_section",
   "email_creation_prompt",
   "email_system_instruction"
  ],
  "fields": [
   {
-   "fieldname": "lead_research_prompt",
-   "fieldtype": "Small Text",
-   "label": "Lead Research Prompt",
-   "reqd": 1
-  },
-  {
    "fieldname": "email_creation_prompt",
    "fieldtype": "Small Text",
+   "in_list_view": 1,
    "label": "Email Creation Prompt",
    "reqd": 1
   },
@@ -46,14 +46,8 @@
   {
    "fieldname": "email_system_instruction",
    "fieldtype": "Small Text",
-   "label": "System Instruction",
-   "reqd": 1
-  },
-  {
-   "fieldname": "perplexity_api_key",
-   "fieldtype": "Password",
    "in_list_view": 1,
-   "label": "Perplexity API Key",
+   "label": "Email System Instruction",
    "reqd": 1
   },
   {
@@ -61,13 +55,55 @@
    "fieldname": "is_enable",
    "fieldtype": "Check",
    "label": "Is Enable"
+  },
+  {
+   "fieldname": "provider",
+   "fieldtype": "Link",
+   "label": "Provider",
+   "options": "LLM Provider"
+  },
+  {
+   "fieldname": "llm",
+   "fieldtype": "Link",
+   "label": "LLM",
+   "options": "LLM"
+  },
+  {
+   "fieldname": "column_break_rskj",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "research_provider",
+   "fieldtype": "Link",
+   "label": "Research Provider",
+   "options": "LLM Provider"
+  },
+  {
+   "fieldname": "research_llm",
+   "fieldtype": "Link",
+   "label": "Research LLM",
+   "options": "LLM"
+  },
+  {
+   "fieldname": "company_research_prompt",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Company Research Prompt",
+   "reqd": 1
+  },
+  {
+   "fieldname": "person_research_prompt",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Person Research Prompt",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-08-18 11:40:23.761007",
+ "modified": "2025-08-19 11:49:07.830940",
  "modified_by": "Administrator",
  "module": "Ai CRM",
  "name": "Lead Followup Setting",

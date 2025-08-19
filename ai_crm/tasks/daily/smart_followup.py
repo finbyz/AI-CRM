@@ -1,57 +1,133 @@
 import frappe
-import otto.lib as otto
-import frappe
-from ai_crm.utils.perplexity import research_lead
+from ai_crm.utils.perplexity import research_company, research_person
+from langchain.prompts import ChatPromptTemplate
+from langchain.output_parsers import PydanticOutputParser
+from pydantic import BaseModel, Field
+from frappe.core.doctype.communication.email import make
 
-
-def format_section(items, fields):
-    """Helper to format dict list into readable string for LLM"""
-    if not items:
-        return "None"
-    lines = []
-    for i, item in enumerate(items, 1):
-        details = ", ".join([f"{f}: {item.get(f)}" for f in fields if f in item])
-        lines.append(f"{i}. {details}")
-    return "\n".join(lines)
-
+class EmailOutput(BaseModel):
+    subject: str = Field(description="Subject line of the email")
+    body: str = Field(description="Email body text")
 
 def run_followup_job():
-    """Background job to analyze lead activities and draft follow-up emails"""
+    """Background job to analyze opportunity-related activities and draft follow-up emails"""
     setting = frappe.get_single("Lead Followup Setting")
-    if not setting.is_enable: return
-    leads = get_leads_for_followup(setting.days_since_last_activity)
+    if not setting.is_enable:
+        return
 
-    for lead in leads:
-        if not lead.custom_additional_info:
-            research_summary = research_lead(lead.name)
-            lead.custom_additional_info = research_summary
+    followups = get_opportunity_followups(setting.days_since_last_activity) or []
+
+    for row in followups:
+        party = {
+            "party_type": row.get("party_type"),
+            "name": row.get("party_name"),
+            "lead_name": row.get("customer_name"),
+            "email_id": row.get("email"),
+            "company_name": row.get("company"),
+            "status": row.get("opportunity_status"),
+            "custom_person_research": row.get("custom_person_research"),
+            "customer_details": row.get("customer_details"),
+            "contact_name": row.get("contact_name"),
+            "country":row.get("country"),
+            "city":row.get("city"),
+            "state":row.get("state"),
+        }
+
+        if not party.get("custom_person_research"):
+            research_summary = research_person(party.get("party_type"),party.get("name"),party.get("contact_name"))
+            party["custom_person_research"] = research_summary
             
-        activities = get_lead_activities(lead.name)
+        if not party.get("customer_details"):
+            research_summary = research_company(
+                party.get("party_type"),
+                party.get("name"),
+                country=party.get("country"),
+                city=party.get("city"),
+                state=party.get("state")
+            )
+            party["customer_details"] = research_summary
+
+        activities = get_party_activities(party.get("party_type"), party.get("name"))
 
         activity_summary = "\n".join(
             [f"- {a.get('type')}: {a.get('subject')} on {a.get('date')}" for a in activities]
         )
 
-        email_draft = draft_email(lead, activity_summary)
+        email_draft = draft_email(party, activity_summary)
         # Save draft in Communication or custom doctype
-        save_email_draft(lead, email_draft)
+        send_email_draft(party, email_draft)
 
-
-def get_leads_for_followup(days_since_last_activity):
-    """Fetch leads that have no communication in last 3 days"""
-    return frappe.db.sql("""
-        SELECT l.name, l.lead_name, l.email_id, l.company_name, l.status, l.custom_additional_info
+    
+def get_opportunity_followups(days_since_last_activity=5):
+    """Fetch parties with active Opportunity and no recent communication within the given days"""
+    lead_opportunity  = frappe.db.sql("""
+        SELECT DISTINCT
+            l.name AS party_name,
+            "Lead" as party_type,
+            l.lead_name AS customer_name,
+            COALESCE(ct.email_id, l.email_id) AS email,
+            l.company_name AS company,
+            o.name AS opportunity_id,
+            o.status AS opportunity_status,
+            o.country,
+            o.city,
+            o.state,
+            comm.last_activity,
+            ct.custom_person_research AS custom_person_research,
+            '' AS customer_details,
+            ct.name AS contact_name
         FROM `tabLead` l
+        INNER JOIN `tabOpportunity` o 
+            ON o.opportunity_from = 'Lead' AND o.party_name = l.name
+        LEFT JOIN `tabContact` ct
+            ON ct.name = o.contact_person
         LEFT JOIN (
-            SELECT reference_name, MAX(communication_date) as last_activity
+            SELECT reference_name, MAX(communication_date) AS last_activity
             FROM `tabCommunication`
             WHERE reference_doctype = 'Lead'
             GROUP BY reference_name
-        ) c ON c.reference_name = l.name
-        WHERE l.status NOT IN ('Converted', 'Do Not Contact', 'Opportunity')
-          AND (c.last_activity IS NULL OR c.last_activity < DATE_SUB(CURDATE(), INTERVAL %s DAY))
+        ) comm ON comm.reference_name = l.name
+        WHERE o.status IN ('Open','Quotation','Replied')
+            AND (comm.last_activity IS NULL OR comm.last_activity < DATE_SUB(CURDATE(), INTERVAL %s DAY))
+            AND l.status NOT IN ('Converted', 'Do Not Contact')
         LIMIT 50
-    """,(days_since_last_activity,), as_dict=True)
+        """, (days_since_last_activity,), as_dict=True)
+        
+    customers_opportunity = frappe.db.sql("""
+        SELECT DISTINCT
+            c.name AS party_name,
+            "Customer" as party_type,
+            c.customer_name AS customer_name,
+            COALESCE(ct.email_id, c.email_id) AS email,
+            c.customer_group AS company,
+            o.name AS opportunity_id,
+            o.status AS opportunity_status,
+            o.country,
+            o.city,
+            o.state,
+            comm.last_activity,
+            ct.custom_person_research AS custom_person_research,
+            c.customer_details AS customer_details,
+            ct.name AS contact_name
+        FROM `tabCustomer` c
+        INNER JOIN `tabOpportunity` o 
+            ON o.opportunity_from = 'Customer' AND o.party_name = c.name
+        LEFT JOIN `tabContact` ct
+            ON ct.name = o.contact_person
+        LEFT JOIN (
+            SELECT reference_name, MAX(communication_date) AS last_activity
+            FROM `tabCommunication`
+            WHERE reference_doctype = 'Customer'
+            GROUP BY reference_name
+        ) comm ON comm.reference_name = c.name
+        WHERE o.status IN ('Open','Quotation','Replied')
+            AND (comm.last_activity IS NULL OR comm.last_activity < DATE_SUB(CURDATE(), INTERVAL %s DAY))
+        LIMIT 50
+    """, (days_since_last_activity,), as_dict=True)
+    result = [*customers_opportunity,*lead_opportunity]
+    return result
+
+
 
 
 def get_lead_activities(lead_name):
@@ -78,8 +154,31 @@ def get_lead_activities(lead_name):
 
     return activities
 
+def get_party_activities(party_type, party_name):
+    """Fetch recent activities for a given party type (Lead/Customer) and name"""
+    activities = []
+
+    comms = frappe.get_all(
+        "Communication",
+        filters={"reference_doctype": party_type, "reference_name": party_name},
+        fields=["subject", "content", "communication_date as date", "'Email' as type"],
+        order_by="communication_date desc",
+        limit=5,
+    )
+    activities.extend(comms)
+
+    notes = frappe.get_all(
+        "CRM Note",
+        filters={"parent": party_name},
+        fields=["note as subject", "creation as date", "'Note' as type"],
+        order_by="creation desc",
+        limit=5,
+    )
+    activities.extend(notes)
+
+    return activities
+
 def draft_email(lead, activity_summary):
-    """Use otto + research context to generate a follow-up email draft"""
     setting = frappe.get_single("Lead Followup Setting")
     
     draft_prompt = setting.get("email_creation_prompt") or """
@@ -99,17 +198,8 @@ def draft_email(lead, activity_summary):
     Please draft a polite, professional, and personalized follow-up email 
     that acknowledges the lead's context and encourages next steps.
     """
-    email_system_instruction = setting.email_system_instruction or "You are a helpful assistant drafting business follow-up emails."
-    email_system_instruction += """Always return the output strictly as a JSON object in the following format:
-
-    {
-        "subject": "<a clear, concise subject line>",
-        "body": "<a well-formatted, polite, and professional email body with paragraphs. Do not include markdown or escape characters.>"
-    }
-
-    Do not include any text outside the JSON object.
-    """
-    research_text = f"\nAdditional Research:\n{lead.get('custom_additional_info')}" if lead.get("custom_additional_info") else ""
+    system_instruction = setting.email_system_instruction or "You are a helpful assistant drafting business follow-up emails."
+    research_text = f"\nAdditional Research:\n{lead.get('custom_person_research')}" if lead.get("custom_person_research") else ""
 
     query = draft_prompt.format(
         lead_name=lead.get("lead_name", ""),
@@ -122,39 +212,42 @@ def draft_email(lead, activity_summary):
         activity_summary=activity_summary or "No recent activities.",
         research_text=research_text
     )
-    response = otto.quick_query(
-        model=otto.get_model(provider="OpenAI",size="Small"),
-        instruction=email_system_instruction,
-        query=query,
-        stream=False,
-    )
-    if response:
-        response = frappe.parse_json(response[0].get('text'))
-        if response.get("subject") and response.get('body'):
-            return {
-                "subject":response.get("subject"),
-                "body":response.get("body")
-            }
+    
+    llm_doc = frappe.get_doc("LLM",setting.get('llm'))
+    llm = llm_doc.llm
+    output_parser = PydanticOutputParser(pydantic_object=EmailOutput)
+
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", "{system_instruction}\n\n{format_instructions}"),
+        ("human", "{query}\n")
+    ])
+
+    chain = prompt | llm | output_parser
+
+    result = chain.invoke({
+        "system_instruction": system_instruction,
+        "query": query,
+        "format_instructions": output_parser.get_format_instructions(),
+    })
+    if result:    
+        return {
+            "subject": result.subject,
+            "body": result.body
+        }
     return None
 
-
-def save_email_draft(lead, email_draft):
+def send_email_draft(party, email_draft):
     """Save draft in Communication as Draft type"""
     if not email_draft:
         return
-
-    comm = frappe.get_doc({
-        "doctype": "Communication",
-        "communication_type": "Communication",
-        "communication_medium": "Email",
-        "subject": email_draft.get('subject'),
-        "content": email_draft.get('body'),
-        "status": "Draft",
-        "sent_or_received": "Sent",
-        "recipients": lead.get("email_id"),
-        "reference_doctype": "Lead",
-        "reference_name": lead.get("name"),
-    })
-    comm.insert(ignore_permissions=True)
-    frappe.db.commit()
-
+    try:
+        make(
+            recipients=party.get("email_id"),
+            subject=email_draft.get('subject'),
+            content=email_draft.get('body'),
+            doctype=party.get("party_type", "Lead"),
+            name=party.get("name"),
+            send_email=True
+        )
+    except frappe.OutgoingEmailError as e:
+        frappe.log_error('Lead Auto Followup error',e)

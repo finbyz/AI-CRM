@@ -243,3 +243,14 @@ scheduler_events = {
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
 
+fixtures = [
+    "LLM",
+    "LLM Provider",
+    "Lead Followup Setting",
+    {
+        "doctype": "Custom Field",
+        "filters": [
+            ["module", "=", "Ai CRM"]
+        ]
+    }
+]
