@@ -1,0 +1,173 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:",
+ "creation": "2025-08-18 12:34:13.493779",
+ "default_view": "List",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "audio_file",
+  "duration_formatted",
+  "file_url",
+  "recorded_at",
+  "recording_status",
+  "file_size",
+  "column_break_rond",
+  "duration_seconds",
+  "transcription_data",
+  "section_break_gjex",
+  "audio_player",
+  "transcription_html",
+  "ai_feedback_tab",
+  "assemblyai_output",
+  "transcript_view",
+  "openai_says_tab",
+  "ai_feedback_json",
+  "ai_feedback_display"
+ ],
+ "fields": [
+  {
+   "fieldname": "audio_file",
+   "fieldtype": "Data",
+   "label": "Audio File"
+  },
+  {
+   "fieldname": "duration_formatted",
+   "fieldtype": "Data",
+   "label": "duration formatted"
+  },
+  {
+   "fieldname": "file_url",
+   "fieldtype": "Data",
+   "label": "File URL"
+  },
+  {
+   "fieldname": "recorded_at",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "recorded at "
+  },
+  {
+   "fieldname": "recording_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "recording status",
+   "options": "Recording\nProcessing\nCompleted\nError"
+  },
+  {
+   "fieldname": "file_size",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "file size "
+  },
+  {
+   "fieldname": "column_break_rond",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "duration_seconds",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "duration seconds"
+  },
+  {
+   "default": "\"Hi, I'm (your name). We solve tech problems by implementing Frappe \u2014 a game-changing software solution for your business. Can we schedule a quick call?\"",
+   "fieldname": "transcription_data",
+   "fieldtype": "Long Text",
+   "label": "transcription_data"
+  },
+  {
+   "fieldname": "section_break_gjex",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "audio_player",
+   "fieldtype": "HTML",
+   "label": "audio player",
+   "options": "<div class=\"audio-player-wrapper\" style=\"margin-top: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 6px; background-color: #f9f9f9;\">\n    <p style=\"margin-bottom: 5px;\"><strong>\ud83c\udfa7 Listen to Recording</strong></p>\n    <audio controls style=\"width: 100%;\">\n        <source src=\"{{ file_url }}\" type=\"audio/webm\">\n        <source src=\"{{ file_url }}\" type=\"audio/mp4\">\n        Your browser does not support the audio element.\n    </audio>\n    <p class=\"text-muted\" style=\"margin-top: 5px;\">\u23f1\ufe0f Duration: {{ duration }} | \ud83d\udcc1 Size: {{ file_size }}</p>\n</div>\n"
+  },
+  {
+   "fieldname": "transcription_html",
+   "fieldtype": "HTML"
+  },
+  {
+   "fieldname": "ai_feedback_tab",
+   "fieldtype": "Tab Break",
+   "label": "Assembly"
+  },
+  {
+   "fieldname": "assemblyai_output",
+   "fieldtype": "Long Text",
+   "hidden": 1,
+   "label": "assemblyai_output"
+  },
+  {
+   "fieldname": "transcript_view",
+   "fieldtype": "HTML"
+  },
+  {
+   "fieldname": "openai_says_tab",
+   "fieldtype": "Tab Break",
+   "label": "Openai says"
+  },
+  {
+   "fieldname": "ai_feedback_json",
+   "fieldtype": "Long Text",
+   "hidden": 1,
+   "label": "Openai_json"
+  },
+  {
+   "fieldname": "ai_feedback_display",
+   "fieldtype": "HTML"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Naming Series",
+   "options": "VR-.YY.MM.DD.-"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-08-20 12:30:19.025749",
+ "modified_by": "Administrator",
+ "module": "Ai CRM",
+ "name": "Voice Recording",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "select": 1,
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AI Automation",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
