@@ -7,9 +7,10 @@
  "field_order": [
   "is_enable",
   "days_since_last_activity",
+  "email_account",
+  "column_break_rskj",
   "provider",
   "llm",
-  "column_break_rskj",
   "research_provider",
   "research_llm",
   "lead_research_section",
@@ -97,13 +98,20 @@
    "in_list_view": 1,
    "label": "Person Research Prompt",
    "reqd": 1
+  },
+  {
+   "fieldname": "email_account",
+   "fieldtype": "Link",
+   "label": "Email Account",
+   "options": "Email Account",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-08-19 11:49:07.830940",
+ "modified": "2025-08-27 14:51:36.076664",
  "modified_by": "Administrator",
  "module": "Ai CRM",
  "name": "Lead Followup Setting",

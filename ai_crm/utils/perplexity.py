@@ -104,14 +104,14 @@ def research_person(party_type:str,party_name:str,contact_name:str) -> str:
     chain = prompt | llm | output_parser
     
     # run chain
-    result = chain.invoke({
+    result : PersonResearch = chain.invoke({
         "system_instruction": "You are a B2B sales research assistant.\n\n{format_instructions}",
         "query": query,
         "format_instructions": output_parser.get_format_instructions(),
     })
 
     contact.custom_person_research = result.research_summary
-    contact.custom_linkedin_profile = result.linkedin_profile
+    contact.custom_linkedin_profile = result.linkedin_profile if result.linkedin_profile.startswith("http") else None
     contact.save()
     
     return result

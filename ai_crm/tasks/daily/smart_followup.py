@@ -55,7 +55,7 @@ def run_followup_job():
 
         email_draft = draft_email(party, activity_summary)
         # Save draft in Communication or custom doctype
-        send_email_draft(party, email_draft)
+        send_email_draft(party, email_draft,setting.email_account)
 
     
 def get_opportunity_followups(days_since_last_activity=5):
@@ -182,6 +182,7 @@ def draft_email(lead, activity_summary):
     setting = frappe.get_single("Lead Followup Setting")
     draft_prompt = setting.get("email_creation_prompt")
     system_instruction = setting.email_system_instruction or "You are a helpful assistant drafting business follow-up emails."
+    system_instruction += "\n\nBody type should be html. Do not include signature in the email body."
     research_text = f"\nAdditional Research:\n{lead.get('custom_person_research')}" if lead.get("custom_person_research") else ""
 
     query = draft_prompt.format(
@@ -197,7 +198,7 @@ def draft_email(lead, activity_summary):
         activity_summary=activity_summary or "No recent activities.",
         research_text=research_text
     )
-    
+    signature = frappe.get_value("Email Account", setting.email_account , "signature")
     llm_doc = frappe.get_doc("LLM",setting.get('llm'))
     llm = llm_doc.llm
     output_parser = PydanticOutputParser(pydantic_object=EmailOutput)
@@ -214,25 +215,30 @@ def draft_email(lead, activity_summary):
         "query": query,
         "format_instructions": output_parser.get_format_instructions(),
     })
-    if result:    
+    if result:
         return {
             "subject": result.subject,
-            "body": result.body
+            "body": f"{result.body} <br><br> {signature if signature else ''}"
         }
     return None
 
-def send_email_draft(party, email_draft):
+def send_email_draft(party, email_draft,email_account=None):
     """Save draft in Communication as Draft type"""
     if not email_draft:
         return
     try:
+        if email_account:
+            sender = frappe.get_value("Email Account", email_account , "email_id")
+        else:
+            sender = frappe.get_value("Email Account", {"default_outgoing": 1}, "email_id")
         make(
             recipients=party.get("email_id"),
             subject=email_draft.get('subject'),
             content=email_draft.get('body'),
             doctype=party.get("party_type", "Lead"),
             name=party.get("name"),
-            send_email=True
+            send_email=True,
+            sender=sender,
         )
     except frappe.OutgoingEmailError as e:
         frappe.log_error('Lead Auto Followup error',e)
