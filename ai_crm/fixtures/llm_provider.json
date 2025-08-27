@@ -13,7 +13,7 @@
   "disabled": 0,
   "docstatus": 0,
   "doctype": "LLM Provider",
-  "modified": "2025-08-18 15:44:37.410183",
+  "modified": "2025-08-27 14:55:15.287976",
   "name": "OpenAI",
   "provider": "OpenAI"
  },
@@ -31,7 +31,7 @@
   "disabled": 0,
   "docstatus": 0,
   "doctype": "LLM Provider",
-  "modified": "2025-08-18 16:02:31.842581",
+  "modified": "2025-08-26 13:06:29.400426",
   "name": "Perplexity",
   "provider": "Perplexity"
  }
