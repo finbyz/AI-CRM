@@ -26,7 +26,7 @@
    "fieldtype": "Small Text",
    "in_list_view": 1,
    "label": "Email Creation Prompt",
-   "reqd": 1
+   "mandatory_depends_on": "is_enable"
   },
   {
    "default": "5",
@@ -49,7 +49,7 @@
    "fieldtype": "Small Text",
    "in_list_view": 1,
    "label": "Email System Instruction",
-   "reqd": 1
+   "mandatory_depends_on": "is_enable"
   },
   {
    "default": "0",
@@ -61,12 +61,14 @@
    "fieldname": "provider",
    "fieldtype": "Link",
    "label": "Provider",
+   "mandatory_depends_on": "is_enable",
    "options": "LLM Provider"
   },
   {
    "fieldname": "llm",
    "fieldtype": "Link",
    "label": "LLM",
+   "mandatory_depends_on": "is_enable",
    "options": "LLM"
   },
   {
@@ -77,6 +79,7 @@
    "fieldname": "research_provider",
    "fieldtype": "Link",
    "label": "Research Provider",
+   "mandatory_depends_on": "is_enable",
    "options": "LLM Provider"
   },
   {
@@ -90,28 +93,28 @@
    "fieldtype": "Small Text",
    "in_list_view": 1,
    "label": "Company Research Prompt",
-   "reqd": 1
+   "mandatory_depends_on": "is_enable"
   },
   {
    "fieldname": "person_research_prompt",
    "fieldtype": "Small Text",
    "in_list_view": 1,
    "label": "Person Research Prompt",
-   "reqd": 1
+   "mandatory_depends_on": "is_enable"
   },
   {
    "fieldname": "email_account",
    "fieldtype": "Link",
    "label": "Email Account",
-   "options": "Email Account",
-   "reqd": 1
+   "mandatory_depends_on": "is_enable",
+   "options": "Email Account"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-08-27 14:51:36.076664",
+ "modified": "2025-08-28 10:57:01.209316",
  "modified_by": "Administrator",
  "module": "Ai CRM",
  "name": "Lead Followup Setting",

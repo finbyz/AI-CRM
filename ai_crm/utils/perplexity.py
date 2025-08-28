@@ -56,7 +56,7 @@ def research_company(party_type: str,party_name: str,**kwargs) -> str:
     ])
 
     if party_type == "Lead":
-        doc.custom_company_research = result
+        doc.company_research = result
     elif party_type == "Customer":
         doc.customer_details = result
     doc.save()
@@ -110,8 +110,8 @@ def research_person(party_type:str,party_name:str,contact_name:str) -> str:
         "format_instructions": output_parser.get_format_instructions(),
     })
 
-    contact.custom_person_research = result.research_summary
-    contact.custom_linkedin_profile = result.linkedin_profile if result.linkedin_profile.startswith("http") else None
+    contact.person_research = result.research_summary
+    contact.linkedin_profile = result.linkedin_profile if result.linkedin_profile.startswith("http") else None
     contact.save()
     
     return result

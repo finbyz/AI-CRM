@@ -25,7 +25,7 @@ def run_followup_job():
             "email_id": row.get("email"),
             "company_name": row.get("company"),
             "status": row.get("opportunity_status"),
-            "custom_person_research": row.get("custom_person_research"),
+            "person_research": row.get("person_research"),
             "customer_details": row.get("customer_details"),
             "contact_name": row.get("contact_name"),
             "country":row.get("country"),
@@ -33,9 +33,9 @@ def run_followup_job():
             "state":row.get("state"),
         }
 
-        if not party.get("custom_person_research"):
+        if not party.get("person_research"):
             research_summary = research_person(party.get("party_type"),party.get("name"),party.get("contact_name"))
-            party["custom_person_research"] = research_summary
+            party["person_research"] = research_summary
             
         if not party.get("customer_details"):
             research_summary = research_company(
@@ -67,14 +67,14 @@ def get_opportunity_followups(days_since_last_activity=5):
             l.lead_name AS customer_name,
             COALESCE(ct.email_id, l.email_id) AS email,
             l.company_name AS company,
-            l.custom_company_research AS customer_details,
+            l.company_research AS customer_details,
             o.name AS opportunity_id,
             o.status AS opportunity_status,
             o.country,
             o.city,
             o.state,
             comm.last_activity,
-            ct.custom_person_research AS custom_person_research,
+            ct.person_research AS person_research,
             ct.name AS contact_name
         FROM `tabLead` l
         INNER JOIN `tabOpportunity` o 
@@ -106,7 +106,7 @@ def get_opportunity_followups(days_since_last_activity=5):
             o.city,
             o.state,
             comm.last_activity,
-            ct.custom_person_research AS custom_person_research,
+            ct.person_research AS person_research,
             c.customer_details AS customer_details,
             ct.name AS contact_name
         FROM `tabCustomer` c
@@ -183,7 +183,7 @@ def draft_email(lead, activity_summary):
     draft_prompt = setting.get("email_creation_prompt")
     system_instruction = setting.email_system_instruction or "You are a helpful assistant drafting business follow-up emails."
     system_instruction += "\n\nBody type should be html. Do not include signature in the email body."
-    research_text = f"\nAdditional Research:\n{lead.get('custom_person_research')}" if lead.get("custom_person_research") else ""
+    research_text = f"\nAdditional Research:\n{lead.get('person_research')}" if lead.get("person_research") else ""
 
     query = draft_prompt.format(
         lead_name=lead.get("lead_name", ""),
@@ -193,8 +193,8 @@ def draft_email(lead, activity_summary):
         country=lead.get("country", ""),
         status=lead.get("status", ""),
         email=lead.get("email_id", ""),
-        custom_company_research=lead.get("custom_company_research"),
-        custom_person_research=lead.get("custom_person_research"),
+        company_research=lead.get("company_research"),
+        person_research=lead.get("person_research"),
         activity_summary=activity_summary or "No recent activities.",
         research_text=research_text
     )
