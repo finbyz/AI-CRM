@@ -1,13 +1,7 @@
 import frappe
 from ai_crm.utils.perplexity import research_company, research_person
-from langchain.prompts import ChatPromptTemplate
-from langchain.output_parsers import PydanticOutputParser
-from pydantic import BaseModel, Field
 from frappe.core.doctype.communication.email import make
 
-class EmailOutput(BaseModel):
-    subject: str = Field(description="Subject line of the email")
-    body: str = Field(description="Email body text")
 
 def run_followup_job():
     """Background job to analyze opportunity-related activities and draft follow-up emails"""
@@ -180,41 +174,23 @@ def get_party_activities(party_type, party_name):
 
 def draft_email(lead, activity_summary):
     setting = frappe.get_single("Lead Followup Setting")
-    draft_prompt = setting.get("email_creation_prompt")
-    system_instruction = setting.email_system_instruction or "You are a helpful assistant drafting business follow-up emails."
-    system_instruction += "\n\nBody type should be html. Do not include signature in the email body."
     research_text = f"\nAdditional Research:\n{lead.get('person_research')}" if lead.get("person_research") else ""
-
-    query = draft_prompt.format(
-        lead_name=lead.get("lead_name", ""),
-        company_name=lead.get("company_name", ""),
-        title=lead.get("title", ""),
-        website=lead.get("website", ""),
-        country=lead.get("country", ""),
-        status=lead.get("status", ""),
-        email=lead.get("email_id", ""),
-        company_research=lead.get("company_research"),
-        person_research=lead.get("person_research"),
-        activity_summary=activity_summary or "No recent activities.",
-        research_text=research_text
-    )
+    email_agent = frappe.get_doc("AI Agent", setting.email_agent)
+    input_vars = {
+        "lead_name":lead.get("lead_name", ""),
+        "company_name":lead.get("company_name", ""),
+        "title":lead.get("title", ""),
+        "website":lead.get("website", ""),
+        "country":lead.get("country", ""),
+        "status":lead.get("status", ""),
+        "email":lead.get("email_id", ""),
+        "company_research":lead.get("company_research"),
+        "person_research":lead.get("person_research"),
+        "activity_summary":activity_summary or "No recent activities.",
+        "research_text":research_text
+    }
+    result = email_agent.invoke(**input_vars)
     signature = frappe.get_value("Email Account", setting.email_account , "signature")
-    llm_doc = frappe.get_doc("LLM",setting.get('llm'))
-    llm = llm_doc.llm
-    output_parser = PydanticOutputParser(pydantic_object=EmailOutput)
-
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", "{system_instruction}\n\n{format_instructions}"),
-        ("human", "{query}\n")
-    ])
-
-    chain = prompt | llm | output_parser
-
-    result = chain.invoke({
-        "system_instruction": system_instruction,
-        "query": query,
-        "format_instructions": output_parser.get_format_instructions(),
-    })
     if result:
         return {
             "subject": result.subject,

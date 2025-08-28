@@ -1,0 +1,131 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:title",
+ "creation": "2025-08-28 11:55:04.264886",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "llm_provider",
+  "llm",
+  "column_break_mfob",
+  "agent_type",
+  "cache_name",
+  "collection_name",
+  "output_schema",
+  "chat_messages_section",
+  "messages"
+ ],
+ "fields": [
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Title",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "llm_provider",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "LLM Provider",
+   "options": "LLM Provider",
+   "reqd": 1
+  },
+  {
+   "depends_on": "llm_provider",
+   "fieldname": "llm",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "LLM",
+   "options": "LLM",
+   "reqd": 1
+  },
+  {
+   "fieldname": "chat_messages_section",
+   "fieldtype": "Section Break",
+   "label": "Chat Messages"
+  },
+  {
+   "fieldname": "agent_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Agent Type",
+   "options": "\nRAG Agent\nCache Agent\nSearch Agent\nChat Agent\nMemory Agent"
+  },
+  {
+   "fieldname": "column_break_mfob",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "cache_name",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Cache Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "collection_name",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Collection Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "messages",
+   "fieldtype": "Table",
+   "label": "Messages",
+   "options": "Chat Message"
+  },
+  {
+   "fieldname": "output_schema",
+   "fieldtype": "JSON",
+   "label": "Structured Output"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-08-28 16:02:28.836434",
+ "modified_by": "Administrator",
+ "module": "AI",
+ "name": "AI Agent",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AI Automation",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

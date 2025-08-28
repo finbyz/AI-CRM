@@ -1,13 +1,5 @@
 import frappe
-from langchain.schema import StrOutputParser
-from langchain.prompts import ChatPromptTemplate
-from langchain.output_parsers import PydanticOutputParser
 from pydantic import BaseModel,Field
-
-class PersonResearch(BaseModel):
-    linkedin_profile: str = Field("LinkedIn profile url")
-    research_summary: str = Field("Research summary about Person")
-
 
 def research_company(party_type: str,party_name: str,**kwargs) -> str:
     """Research about a lead or customer using internal data or fallback to Perplexity."""
@@ -37,23 +29,9 @@ def research_company(party_type: str,party_name: str,**kwargs) -> str:
         
     # get prompt template from settings
     setting = frappe.get_single("Lead Followup Setting")
-    research_prompt = setting.company_research_prompt
-    query = research_prompt.format(**lead_info)
-    
-    # get LLM + provider
-    llm_doc = frappe.get_doc("LLM", setting.get('research_llm'))
-    
-    llm = llm_doc.llm
-    
-    # parsing setup
-    output_parser = StrOutputParser()
-    chain = llm | output_parser
-    
-    # run chain
-    result = chain.invoke([
-        {"role": "system", "content": "You are a B2B sales research assistant."},
-        {"role": "user", "content": query}
-    ])
+    company_research_agent = frappe.get_doc("AI Agent",setting.company_research_agent)
+
+    result = company_research_agent.invoke(**lead_info)
 
     if party_type == "Lead":
         doc.company_research = result
@@ -87,29 +65,9 @@ def research_person(party_type:str,party_name:str,contact_name:str) -> str:
     })
     
     setting = frappe.get_single("Lead Followup Setting")
-    research_prompt = setting.person_research_prompt
-    query = research_prompt.format(**lead_info)
+    person_research_agent = frappe.get_doc("AI Agent",setting.person_research_agent)
+    result = person_research_agent.invoke(**lead_info)
     
-    # get LLM + provider
-    llm_doc = frappe.get_doc("LLM", setting.get('research_llm'))
-    
-    llm = llm_doc.llm
-    
-    # parsing setup
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", "{system_instruction}\n\n{format_instructions}"),
-        ("human", "{query}\n")
-    ])
-    output_parser = PydanticOutputParser(pydantic_object=PersonResearch)
-    chain = prompt | llm | output_parser
-    
-    # run chain
-    result : PersonResearch = chain.invoke({
-        "system_instruction": "You are a B2B sales research assistant.\n\n{format_instructions}",
-        "query": query,
-        "format_instructions": output_parser.get_format_instructions(),
-    })
-
     contact.person_research = result.research_summary
     contact.linkedin_profile = result.linkedin_profile if result.linkedin_profile.startswith("http") else None
     contact.save()

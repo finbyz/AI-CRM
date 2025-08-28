@@ -9,47 +9,16 @@
   "days_since_last_activity",
   "email_account",
   "column_break_rskj",
-  "provider",
-  "llm",
-  "research_provider",
-  "research_llm",
-  "lead_research_section",
-  "person_research_prompt",
-  "company_research_prompt",
-  "email_creation_section",
-  "email_creation_prompt",
-  "email_system_instruction"
+  "email_agent",
+  "person_research_agent",
+  "company_research_agent"
  ],
  "fields": [
-  {
-   "fieldname": "email_creation_prompt",
-   "fieldtype": "Small Text",
-   "in_list_view": 1,
-   "label": "Email Creation Prompt",
-   "mandatory_depends_on": "is_enable"
-  },
   {
    "default": "5",
    "fieldname": "days_since_last_activity",
    "fieldtype": "Int",
    "label": "Days Since Last Activity"
-  },
-  {
-   "fieldname": "lead_research_section",
-   "fieldtype": "Section Break",
-   "label": "Lead Research"
-  },
-  {
-   "fieldname": "email_creation_section",
-   "fieldtype": "Section Break",
-   "label": "Email Creation"
-  },
-  {
-   "fieldname": "email_system_instruction",
-   "fieldtype": "Small Text",
-   "in_list_view": 1,
-   "label": "Email System Instruction",
-   "mandatory_depends_on": "is_enable"
   },
   {
    "default": "0",
@@ -58,49 +27,8 @@
    "label": "Is Enable"
   },
   {
-   "fieldname": "provider",
-   "fieldtype": "Link",
-   "label": "Provider",
-   "mandatory_depends_on": "is_enable",
-   "options": "LLM Provider"
-  },
-  {
-   "fieldname": "llm",
-   "fieldtype": "Link",
-   "label": "LLM",
-   "mandatory_depends_on": "is_enable",
-   "options": "LLM"
-  },
-  {
    "fieldname": "column_break_rskj",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "research_provider",
-   "fieldtype": "Link",
-   "label": "Research Provider",
-   "mandatory_depends_on": "is_enable",
-   "options": "LLM Provider"
-  },
-  {
-   "fieldname": "research_llm",
-   "fieldtype": "Link",
-   "label": "Research LLM",
-   "options": "LLM"
-  },
-  {
-   "fieldname": "company_research_prompt",
-   "fieldtype": "Small Text",
-   "in_list_view": 1,
-   "label": "Company Research Prompt",
-   "mandatory_depends_on": "is_enable"
-  },
-  {
-   "fieldname": "person_research_prompt",
-   "fieldtype": "Small Text",
-   "in_list_view": 1,
-   "label": "Person Research Prompt",
-   "mandatory_depends_on": "is_enable"
   },
   {
    "fieldname": "email_account",
@@ -108,13 +36,34 @@
    "label": "Email Account",
    "mandatory_depends_on": "is_enable",
    "options": "Email Account"
+  },
+  {
+   "fieldname": "email_agent",
+   "fieldtype": "Link",
+   "label": "Email Agent",
+   "mandatory_depends_on": "is_enable",
+   "options": "AI Agent"
+  },
+  {
+   "fieldname": "company_research_agent",
+   "fieldtype": "Link",
+   "label": "Company Research Agent",
+   "mandatory_depends_on": "is_enable",
+   "options": "AI Agent"
+  },
+  {
+   "fieldname": "person_research_agent",
+   "fieldtype": "Link",
+   "label": "Person Research Agent",
+   "mandatory_depends_on": "is_enable",
+   "options": "AI Agent"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-08-28 10:57:01.209316",
+ "modified": "2025-08-28 18:30:05.160283",
  "modified_by": "Administrator",
  "module": "Ai CRM",
  "name": "Lead Followup Setting",
