@@ -9,10 +9,9 @@
   "title",
   "llm_provider",
   "llm",
+  "gemini_cache",
   "column_break_mfob",
   "agent_type",
-  "cache_name",
-  "collection_name",
   "output_schema",
   "chat_messages_section",
   "messages"
@@ -28,23 +27,24 @@
    "unique": 1
   },
   {
+   "depends_on": "eval:doc.agent_type != 'Gemini Cache Agent';",
    "fieldname": "llm_provider",
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "LLM Provider",
-   "options": "LLM Provider",
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.agent_type != 'Gemini Cache Agent';",
+   "options": "LLM Provider"
   },
   {
-   "depends_on": "llm_provider",
+   "depends_on": "eval:doc.llm_provider && doc.agent_type != 'Gemini Cache Agent'",
    "fieldname": "llm",
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "LLM",
-   "options": "LLM",
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.agent_type != 'Gemini Cache Agent';",
+   "options": "LLM"
   },
   {
    "fieldname": "chat_messages_section",
@@ -57,25 +57,11 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Agent Type",
-   "options": "\nRAG Agent\nCache Agent\nSearch Agent\nChat Agent\nMemory Agent"
+   "options": "\nKnowledge Base Agent\nGemini Cache Agent\nSearch Agent"
   },
   {
    "fieldname": "column_break_mfob",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "cache_name",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "Cache Name",
-   "read_only": 1
-  },
-  {
-   "fieldname": "collection_name",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "Collection Name",
-   "read_only": 1
   },
   {
    "fieldname": "messages",
@@ -87,12 +73,19 @@
    "fieldname": "output_schema",
    "fieldtype": "JSON",
    "label": "Structured Output"
+  },
+  {
+   "depends_on": "eval: doc.agent_type=='Gemini Cache Agent';",
+   "fieldname": "gemini_cache",
+   "fieldtype": "Link",
+   "label": "Gemini Cache",
+   "options": "Gemini Cache"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-08-28 16:02:28.836434",
+ "modified": "2025-08-29 18:12:13.254955",
  "modified_by": "Administrator",
  "module": "AI",
  "name": "AI Agent",

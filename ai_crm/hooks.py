@@ -1,8 +1,8 @@
 app_name = "ai_crm"
 app_title = "Ai CRM"
-app_publisher = "sandeep"
+app_publisher = "Finbyz Tech Pvt Ltd"
 app_description = "this is ai powered crm system"
-app_email = "sandeepambala31@gmail.com"
+app_email = "info@finbyz.tech"
 app_license = "mit"
 
 # Apps

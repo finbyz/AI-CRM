@@ -8,8 +8,26 @@ from langchain.prompts import ChatPromptTemplate
 from json_schema_to_pydantic import create_model
 
 
-
 class AIAgent(Document):
+    
+    def validate(self):
+        if self.agent_type == "Gemini Cache Agent":
+            if any(map(lambda x:x.type == 'system', self.messages)):
+                frappe.throw("You can not set system message for Gemini Cache Agent")
+        if not self.output_schema:
+            self.output_schema = None
+
+    @property
+    def chat_messages(self):
+        messages = []
+        for msg in self.messages:
+            messages.append((msg.type, msg.content))
+        if self.output_schema:
+            message_type = 'system' if self.agent_type != "Gemini Cache Agent" else "human"
+            messages.append((message_type, "{format_instructions}"))
+        return messages
+    
+    
     def invoke(self, query=None,**kwargs):
         """
         Invoke the AI agent with optional structured output schema
@@ -18,13 +36,17 @@ class AIAgent(Document):
             query (str): The user query
             kwargs (str, optional): Additional context
         """
-        llm_doc = frappe.get_doc("LLM",self.llm)
-        llm: ChatLiteLLM = llm_doc.llm
-        messages = []
-        for msg in self.messages:
-            messages.append((msg.type, msg.content))
-        if query: 
+        if self.agent_type == "Gemini Cache Agent":
+            cache_doc = frappe.get_doc("Gemini Cache",self.gemini_cache)
+            llm: ChatLiteLLM = cache_doc._llm
+        else:
+            llm_doc = frappe.get_doc("LLM",self.llm)
+            llm: ChatLiteLLM = llm_doc.llm
+        
+        messages = self.chat_messages
+        if query:
             messages.append(("human", "{query}"))
+
         prompt = ChatPromptTemplate.from_messages([
             *messages,
         ])
