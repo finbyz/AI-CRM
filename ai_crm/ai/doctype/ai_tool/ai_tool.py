@@ -21,8 +21,21 @@ class AITool(Document):
         boilerplate = f'''# Auto-generated LangChain tool for: {self.name}
 # Module: {self.module}
 
-def {safe_name}_tool(input):
-    """{self.description}"""
+from typing import Any
+from langchain.tools import tool
+
+@tool("{self.name}", return_direct=False)
+def {frappe.scrub(self.name)}_tool(input: Any) -> Any:
+    """
+    {self.description}
+
+    Args:
+        input (Any): Input to the tool
+
+    Returns:
+        Any: Tool output
+    """
+    # TODO: Implement your logic here
     return input
 
 '''

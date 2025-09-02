@@ -7,7 +7,6 @@
  "engine": "InnoDB",
  "field_order": [
   "description",
-  "tool_config",
   "column_break_cpcx",
   "from_package",
   "tool_function",
@@ -34,11 +33,6 @@
    "mandatory_depends_on": "from_package"
   },
   {
-   "fieldname": "tool_config",
-   "fieldtype": "JSON",
-   "label": "Tool Config"
-  },
-  {
    "fieldname": "column_break_cpcx",
    "fieldtype": "Column Break"
   },
@@ -61,7 +55,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-02 16:01:05.120720",
+ "modified": "2025-09-02 21:15:04.130584",
  "modified_by": "Administrator",
  "module": "AI",
  "name": "AI Tool",
