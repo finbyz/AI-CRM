@@ -6,6 +6,7 @@ from langchain_core.output_parsers import PydanticOutputParser
 from langchain.schema import StrOutputParser
 from langchain.prompts import ChatPromptTemplate
 from json_schema_to_pydantic import create_model
+from langchain.agents import initialize_agent, AgentType
 
 
 class AIAgent(Document):
@@ -27,6 +28,49 @@ class AIAgent(Document):
             messages.append((message_type, "{format_instructions}"))
         return messages
     
+    def get_tools(self):
+        """
+        Return a list of LangChain Tool objects for all tools linked to this agent.
+        Assumes self.tools is a child table or MultiSelect linking to AIAgentTool DocType.
+        """
+        tools_list = []
+        if self.tools:
+            for ai_agent_tool in self.tools:
+                tool = frappe.get_doc("AI Tool",ai_agent_tool.tool)
+                tools_list.append(tool.get_tool())
+        return tools_list
+
+    @property
+    def agent(self):
+        """
+        Initialize and return a LangChain agent using the tools linked to this agent.
+        """
+        tools = self.get_tools()
+        llm = self.get_llm()
+        agent = initialize_agent(
+            tools,
+            llm,
+            agent=self._resolve_agent_type()
+        )
+        return agent
+
+    def _resolve_agent_type(self) -> AgentType:
+        desired = self.lc_agent_type
+        if not desired:
+            return AgentType.ZERO_SHOT_REACT_DESCRIPTION
+        for at in AgentType:
+            if desired.upper() == at.name.upper() or desired.lower() == at.value.lower():
+                return at
+        return AgentType.ZERO_SHOT_REACT_DESCRIPTION
+    
+    def get_llm(self) -> ChatLiteLLM:
+        if self.agent_type == "Gemini Cache Agent":
+            cache_doc = frappe.get_doc("Gemini Cache",self.gemini_cache)
+            llm = cache_doc._llm
+        else:
+            llm_doc = frappe.get_doc("LLM",self.llm)
+            llm = llm_doc.llm
+        return llm
     
     def invoke(self, query=None,**kwargs):
         """
@@ -36,12 +80,8 @@ class AIAgent(Document):
             query (str): The user query
             kwargs (str, optional): Additional context
         """
-        if self.agent_type == "Gemini Cache Agent":
-            cache_doc = frappe.get_doc("Gemini Cache",self.gemini_cache)
-            llm: ChatLiteLLM = cache_doc._llm
-        else:
-            llm_doc = frappe.get_doc("LLM",self.llm)
-            llm: ChatLiteLLM = llm_doc.llm
+        
+        llm = self.get_llm()
         
         messages = self.chat_messages
         if query:
