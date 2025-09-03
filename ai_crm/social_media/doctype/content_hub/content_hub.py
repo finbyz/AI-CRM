@@ -9,8 +9,8 @@ class ContentHub(Document):
         idea_agent = social_media.idea_agent
 
         ai_input_data = {
-            "title": doc.title,
-            "target_audience": doc.target_audience,
+            "title": self.title,
+            "target_audience": self.target_audience,
             "social_media": "LinkedIn"
         }
         result = idea_agent.invoke(**ai_input_data)
@@ -39,7 +39,7 @@ class ContentHub(Document):
             "content_hub_name": self.name,
         }
 
-        result = ai_agent.invoke(**ai_input_data)
+        result = post_agent.invoke(**ai_input_data)
         post_content = result.post_content
         
         if not post_content:
