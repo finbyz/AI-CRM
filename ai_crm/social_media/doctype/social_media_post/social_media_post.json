@@ -1,0 +1,107 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format: SM-POST-{#####}",
+ "creation": "2025-08-25 13:42:24.950382",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "status",
+  "platform",
+  "reference_content_hub",
+  "image_attachment",
+  "linkedin_account",
+  "column_break_nnmu",
+  "content",
+  "preview_tab",
+  "preview_html"
+ ],
+ "fields": [
+  {
+   "fieldname": "column_break_nnmu",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Draft\nGenerated\nScheduled\nPosted\nFailed"
+  },
+  {
+   "fieldname": "preview_tab",
+   "fieldtype": "Tab Break",
+   "label": "Preview"
+  },
+  {
+   "fieldname": "preview_html",
+   "fieldtype": "HTML"
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title"
+  },
+  {
+   "fieldname": "content",
+   "fieldtype": "Long Text",
+   "label": "content",
+   "options": "AI Agent"
+  },
+  {
+   "fieldname": "image_attachment",
+   "fieldtype": "Attach Image",
+   "label": "Image"
+  },
+  {
+   "fieldname": "platform",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Social Media Platform"
+  },
+  {
+   "fieldname": "reference_content_hub",
+   "fieldtype": "Link",
+   "label": "Content Hub",
+   "options": "Content Hub"
+  },
+  {
+   "fieldname": "linkedin_account",
+   "fieldtype": "Link",
+   "label": "LinkedIn Account",
+   "options": "LinkedIn Integration"
+  }
+ ],
+ "grid_page_length": 50,
+ "image_field": "image_attachment",
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-09-03 13:38:21.441328",
+ "modified_by": "Administrator",
+ "module": "Social Media",
+ "name": "Social Media Post",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

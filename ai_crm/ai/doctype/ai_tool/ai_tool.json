@@ -21,12 +21,14 @@
   },
   {
    "default": "langchain_community.tools",
+   "depends_on": "eval:!doc.is_custom",
    "fieldname": "from_package",
    "fieldtype": "Select",
    "label": "From Package",
    "options": "\nlangchain_community.tools"
   },
   {
+   "depends_on": "eval:!doc.is_custom",
    "fieldname": "tool_function",
    "fieldtype": "Data",
    "label": "Tool Function",
@@ -55,7 +57,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-02 21:15:04.130584",
+ "modified": "2025-09-02 21:21:54.719203",
  "modified_by": "Administrator",
  "module": "AI",
  "name": "AI Tool",

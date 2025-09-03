@@ -1,0 +1,91 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format: CONT-HUB-{#####}",
+ "creation": "2025-08-29 12:14:00.553770",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "target_audience",
+  "column_break_akfh",
+  "social_media",
+  "ai_agent",
+  "section_break_tbde",
+  "ideas_child_table"
+ ],
+ "fields": [
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Title"
+  },
+  {
+   "fieldname": "target_audience",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Target Audience"
+  },
+  {
+   "fieldname": "social_media",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Social Media",
+   "options": "Social Media Platform"
+  },
+  {
+   "fetch_from": "social_media.ai_agent",
+   "fieldname": "ai_agent",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "in_list_view": 1,
+   "label": "AI Agent",
+   "options": "AI Agent",
+   "read_only": 1
+  },
+  {
+   "fieldname": "ideas_child_table",
+   "fieldtype": "Table",
+   "label": "Ideas",
+   "options": "ContentHubIdea"
+  },
+  {
+   "fieldname": "column_break_akfh",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_tbde",
+   "fieldtype": "Section Break"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-08-30 08:12:31.384792",
+ "modified_by": "Administrator",
+ "module": "Social Media",
+ "name": "Content Hub",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

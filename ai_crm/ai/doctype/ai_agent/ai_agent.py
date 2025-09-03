@@ -107,11 +107,5 @@ class AIAgent(Document):
             "query": query,
             **kwargs
         }
-        
-        try:
-            response = chain.invoke(input_vars)
-            return response
-        except Exception as e:
-            frappe.log_error(f"Query: {query}\nError: {str(e)}", "AIAgent Invoke Error")
-            return {"error": f"Error invoking AI agent: {str(e)}"}
-
+        response = chain.invoke(input_vars)
+        return response
