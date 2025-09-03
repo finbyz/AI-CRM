@@ -13,6 +13,8 @@ class LinkedInIntegration(Document):
 @frappe.whitelist(allow_guest=True)
 def callback(code=None, state=None, error=None,*args, **kwargs):
     """Handle LinkedIn OAuth callback"""
+    ACCESS_TOKEN_ENDPOINT = "https://www.linkedin.com/oauth/v2/accessToken"
+    USER_INFO_ENDPOINT = "https://api.linkedin.com/v2/userinfo"
     try:
         integrations = frappe.get_list("LinkedIn Integration",filters={"state":state},pluck='name')
         if not len(integrations):
@@ -22,7 +24,6 @@ def callback(code=None, state=None, error=None,*args, **kwargs):
         client_secret = integration.get_password("client_secret")
         redirect_uri = integration.redirect_uri
 
-        token_url = "https://www.linkedin.com/oauth/v2/accessToken"
         payload = {
             "grant_type": "authorization_code",
             "code": code,
@@ -31,7 +32,7 @@ def callback(code=None, state=None, error=None,*args, **kwargs):
             "client_secret": client_secret,
         }
 
-        res = requests.post(token_url, data=payload, headers={"Content-Type": "application/x-www-form-urlencoded"})
+        res = requests.post(ACCESS_TOKEN_ENDPOINT, data=payload, headers={"Content-Type": "application/x-www-form-urlencoded"})
         res.raise_for_status()
         token_data = res.json()
         frappe.log_error("response data",str(token_data))
@@ -44,7 +45,7 @@ def callback(code=None, state=None, error=None,*args, **kwargs):
         headers = {
             'Authorization': f'Bearer {integration.access_token}',
         }
-        user_info_response = requests.request("GET", "https://api.linkedin.com/v2/userinfo", headers=headers, data={})
+        user_info_response = requests.request("GET", USER_INFO_ENDPOINT, headers=headers, data={})
         user_info = user_info_response.json()
         integration.full_name = user_info.get("name")
         integration.email = user_info.get("email")
