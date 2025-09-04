@@ -90,7 +90,7 @@ class SocialMediaPost(Document):
 	@frappe.whitelist()
 	def revise_post(self,instruction:str):
 		content_hub_setting = frappe.get_single("Content Hub Setting")
-		revise_agent = content_hub_setting.revise_post_agent
+		revise_agent = content_hub_setting.revise_agent
 		ai_input_data = {
 			"title": self.title,
 			"social_media": self.platform,
