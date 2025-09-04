@@ -10,7 +10,6 @@
   "target_audience",
   "platform",
   "column_break_akfh",
-  "ai_agent",
   "credential_type",
   "credential",
   "section_break_tbde",
@@ -29,16 +28,6 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Target Audience"
-  },
-  {
-   "fetch_from": "social_media.ai_agent",
-   "fieldname": "ai_agent",
-   "fieldtype": "Link",
-   "hidden": 1,
-   "in_list_view": 1,
-   "label": "AI Agent",
-   "options": "AI Agent",
-   "read_only": 1
   },
   {
    "fieldname": "ideas_child_table",
@@ -77,7 +66,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-04 09:31:52.649597",
+ "modified": "2025-09-04 09:50:25.776903",
  "modified_by": "Administrator",
  "module": "Social Media",
  "name": "Content Hub",
