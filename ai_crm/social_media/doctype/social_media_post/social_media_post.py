@@ -102,6 +102,32 @@ class SocialMediaPost(Document):
 		self.save()
 		self.reload()
 		return {"status": "success"}
+
+	def _upload_linkedin_image(self, author_urn,access_token) -> str:
+		"""
+		Upload a Frappe File to LinkedIn and return the image URN.
+		"""
+		register_url = "https://api.linkedin.com/v2/images?action=initializeUpload"
+		headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+		register_payload = {"initializeUploadRequest": {"owner": author_urn}}
+		reg_res = requests.post(register_url, headers=headers, json=register_payload)
+		reg_res.raise_for_status()
+		reg_data = reg_res.json()["value"]
+
+		upload_url = reg_data["uploadUrl"]
+		image_urn = reg_data["image"]
+
+		file_doc = frappe.get_doc("File", {"file_url":self.image_attachment})
+		file_path = file_doc.get_full_path()
+		mime_type = frappe.utils.file_manager.mimetypes.guess_type(file_path)[0] or "application/octet-stream"
+		with open(file_path, "rb") as f:
+			file_content = f.read()
+
+		upload_headers = {"Authorization": f"Bearer {access_token}", "Content-Type": mime_type}
+		up_res = requests.post(upload_url, headers=upload_headers, data=file_content)
+		up_res.raise_for_status()
+
+		return image_urn
 	
 	@frappe.whitelist()
 	def post_to_linkedin(self):
@@ -131,11 +157,17 @@ class SocialMediaPost(Document):
 		return response
 
 	def _prepare_linkedin_post_data(self, linkedin_doc):
-		"""Prepare the post data according to LinkedIn Posts API schema"""
+		"""Prepare the post data according to LinkedIn Posts API schema.
+		If an image is attached, you must first register & upload it to LinkedIn,
+		then pass the returned URN (image_urn) here.
+		"""
+		
+		# Pick correct author URN
 		if linkedin_doc.organization_support:
-			author_urn = f"urn:li:person:{linkedin_doc.organization_id}"
+			author_urn = f"urn:li:organization:{linkedin_doc.organization_id}"
 		else:
 			author_urn = f"urn:li:person:{linkedin_doc.person_id}"
+		
 		post_data = {
 			"author": author_urn,
 			"commentary": self.content,
@@ -143,23 +175,21 @@ class SocialMediaPost(Document):
 			"distribution": {
 				"feedDistribution": "MAIN_FEED",
 				"targetEntities": [],
-				"thirdPartyDistributionChannels": []
+				"thirdPartyDistributionChannels": [],
 			},
 			"lifecycleState": "PUBLISHED",
-			"isReshareDisabledByAuthor": False
+			"isReshareDisabledByAuthor": False,
 		}
-		
-		# Add image content if available
 		if self.image_attachment:
-			image_url = self._get_image_url()
-			if image_url:
-				post_data["content"] = {
-					"media": {
-						"id": image_url  # This would need to be uploaded via LinkedIn Assets API first
-					}
+			image_urn =  self._upload_linkedin_image(author_urn,linkedin_doc.access_token)
+			post_data["content"] = {
+				"media": {
+				"title": "Optional title",
+				"id": image_urn
 				}
-		
+			}		
 		return post_data
+
 
 	def _get_image_url(self):
 		"""Get the full URL for the attached image"""
