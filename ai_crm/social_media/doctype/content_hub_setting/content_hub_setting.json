@@ -7,7 +7,7 @@
  "field_order": [
   "idea_generator_agent",
   "post_generator_agent",
-  "revise_generator_agent"
+  "revise_post_agent"
  ],
  "fields": [
   {
@@ -23,9 +23,9 @@
    "options": "AI Agent"
   },
   {
-   "fieldname": "revise_generator_agent",
+   "fieldname": "revise_post_agent",
    "fieldtype": "Link",
-   "label": "Revise Generator Agent",
+   "label": "Revise Post Agent",
    "options": "AI Agent"
   }
  ],
@@ -33,7 +33,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-09-04 09:24:29.522584",
+ "modified": "2025-09-04 12:13:22.355738",
  "modified_by": "Administrator",
  "module": "Social Media",
  "name": "Content Hub Setting",
