@@ -11,7 +11,6 @@
   "status",
   "content_hub",
   "image_attachment",
-  "linkedin_account",
   "column_break_nnmu",
   "content",
   "preview_tab",
@@ -63,12 +62,6 @@
    "label": "Platform"
   },
   {
-   "fieldname": "linkedin_account",
-   "fieldtype": "Link",
-   "label": "LinkedIn Account",
-   "options": "LinkedIn Integration"
-  },
-  {
    "fieldname": "content_hub",
    "fieldtype": "Link",
    "label": "Content Hub",
@@ -79,7 +72,7 @@
  "image_field": "image_attachment",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-04 09:33:20.578468",
+ "modified": "2025-09-04 11:56:26.918468",
  "modified_by": "Administrator",
  "module": "Social Media",
  "name": "Social Media Post",

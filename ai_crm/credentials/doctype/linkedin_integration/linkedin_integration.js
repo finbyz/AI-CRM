@@ -9,8 +9,12 @@ frappe.ui.form.on('LinkedIn Integration', {
             const clientId = frm.doc.client_id;
             const redirectUri = encodeURIComponent(frm.doc.redirect_uri);
             const state = frm.doc.state
-            const scope = encodeURIComponent('openid profile email w_member_social');
-
+            let scopes = "w_member_social " + (
+                frm.doc.organization_support
+                    ? "w_organization_social"
+                    : "profile email openid"
+                );
+            const scope = encodeURIComponent(scopes);
             const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}&state=${state}`;
 
             // Open LinkedIn OAuth in a new popup window

@@ -35,7 +35,6 @@ def callback(code=None, state=None, error=None,*args, **kwargs):
         res = requests.post(ACCESS_TOKEN_ENDPOINT, data=payload, headers={"Content-Type": "application/x-www-form-urlencoded"})
         res.raise_for_status()
         token_data = res.json()
-        frappe.log_error("response data",str(token_data))
         now = datetime.now()
         expiry_time = now + timedelta(seconds=token_data.get("expires_in"))
 
