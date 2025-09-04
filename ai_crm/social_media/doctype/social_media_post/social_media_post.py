@@ -64,8 +64,7 @@ class SocialMediaPost(Document):
 			
 			if not self.content:
 				frappe.throw(_("Content is required for posting"))
-			
-			# Route to platform-specific posting method
+
 			if self.platform.lower() == "linkedin":
 				return self.post_to_linkedin()
 			elif self.platform.lower() == "twitter":
@@ -107,14 +106,14 @@ class SocialMediaPost(Document):
 	@frappe.whitelist()
 	def post_to_linkedin(self):
 		"""Post content to LinkedIn using the Posts API"""
-		if not self.linkedin_account:
-			frappe.throw(_("LinkedIn Account is required"))
+		# if not self.linkedin_account:
+		# 	frappe.throw(_("LinkedIn Account is required"))
 		
 		if not self.content:
 			frappe.throw(_("Content is required for posting"))
-		
-		linkedin_doc = frappe.get_doc("LinkedIn Integration", self.linkedin_account)
-		
+		content_hub = frappe.get_doc("Content Hub",self.content_hub)
+		linkedin_doc = frappe.get_doc(content_hub.credential_type,content_hub.credential)
+
 		if not linkedin_doc.access_token:
 			frappe.throw(_("LinkedIn access token not found. Please reconnect your LinkedIn account."))
 		

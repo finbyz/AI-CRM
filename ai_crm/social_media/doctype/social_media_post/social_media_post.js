@@ -190,19 +190,9 @@ frappe.ui.form.on('Social Media Post', {
 });
 
 function post_to_social_media(frm) {
-	// Validate required fields
-	if (!frm.doc.platform) {
-		frappe.msgprint(__('Please select a social media platform'));
-		return;
-	}
 
 	if (!frm.doc.content) {
 		frappe.msgprint(__('Please enter content for the post'));
-		return;
-	}
-
-	if (frm.doc.platform === 'LinkedIn' && !frm.doc.linkedin_account) {
-		frappe.msgprint(__('Please select a LinkedIn account for LinkedIn posts'));
 		return;
 	}
 

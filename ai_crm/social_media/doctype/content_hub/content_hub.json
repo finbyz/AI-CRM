@@ -8,9 +8,11 @@
  "field_order": [
   "title",
   "target_audience",
+  "platform",
   "column_break_akfh",
-  "social_media",
   "ai_agent",
+  "credential_type",
+  "credential",
   "section_break_tbde",
   "ideas_child_table"
  ],
@@ -27,14 +29,6 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Target Audience"
-  },
-  {
-   "fieldname": "social_media",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Social Media",
-   "options": "Social Media Platform"
   },
   {
    "fetch_from": "social_media.ai_agent",
@@ -59,12 +53,31 @@
   {
    "fieldname": "section_break_tbde",
    "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "platform",
+   "fieldtype": "Select",
+   "label": "Platform",
+   "options": "LinkedIn\nReddit\nX (Twitter)"
+  },
+  {
+   "fieldname": "credential_type",
+   "fieldtype": "Link",
+   "label": "Credential Type",
+   "link_filters": "[[\"DocType\",\"name\",\"in\",[\"LinkedIn Integration\"]]]",
+   "options": "DocType"
+  },
+  {
+   "fieldname": "credential",
+   "fieldtype": "Dynamic Link",
+   "label": "Credential",
+   "options": "credential_type"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-08-30 08:12:31.384792",
+ "modified": "2025-09-04 09:31:52.649597",
  "modified_by": "Administrator",
  "module": "Social Media",
  "name": "Content Hub",

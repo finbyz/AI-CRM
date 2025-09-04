@@ -5,13 +5,13 @@ class ContentHub(Document):
 
     @frappe.whitelist()
     def generate_linkedin_ideas(self):
-        social_media = frappe.get_doc("Social Media Platform", self.social_media)
-        idea_agent = social_media.idea_agent
+        content_hub_setting = frappe.get_single("Content Hub Setting")
+        idea_agent = content_hub_setting.idea_agent
 
         ai_input_data = {
             "title": self.title,
             "target_audience": self.target_audience,
-            "social_media": "LinkedIn"
+            "social_media": self.platform
         }
         result = idea_agent.invoke(**ai_input_data)
         ideas = result.ideas
@@ -27,8 +27,8 @@ class ContentHub(Document):
 
     @frappe.whitelist()
     def generate_post_from_idea(self, idea_title: str, idea_description: str):
-        social_media = frappe.get_doc("Social Media Platform", self.social_media)
-        post_agent = social_media.post_agent
+        content_hub_setting = frappe.get_single("Content Hub Setting")
+        post_agent = content_hub_setting.post_agent
 
         ai_input_data = {
             "title": self.title,
@@ -48,8 +48,8 @@ class ContentHub(Document):
         new_post = frappe.new_doc("Social Media Post")
         new_post.title = self.title
         new_post.status = "Draft"
-        new_post.platform = social_media.name
-        new_post.reference_content_hub = self.name
+        new_post.platform = self.platform
+        new_post.content_hub = self.name
         new_post.reference_content_idea = idea_title
         new_post.content = post_content
         new_post.insert()

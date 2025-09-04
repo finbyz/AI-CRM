@@ -7,9 +7,9 @@
  "engine": "InnoDB",
  "field_order": [
   "title",
-  "status",
   "platform",
-  "reference_content_hub",
+  "status",
+  "content_hub",
   "image_attachment",
   "linkedin_account",
   "column_break_nnmu",
@@ -60,27 +60,26 @@
    "fieldname": "platform",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Social Media Platform"
-  },
-  {
-   "fieldname": "reference_content_hub",
-   "fieldtype": "Link",
-   "label": "Content Hub",
-   "options": "Content Hub"
+   "label": "Platform"
   },
   {
    "fieldname": "linkedin_account",
    "fieldtype": "Link",
    "label": "LinkedIn Account",
    "options": "LinkedIn Integration"
+  },
+  {
+   "fieldname": "content_hub",
+   "fieldtype": "Link",
+   "label": "Content Hub",
+   "options": "Content Hub"
   }
  ],
  "grid_page_length": 50,
  "image_field": "image_attachment",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-03 13:38:21.441328",
+ "modified": "2025-09-04 09:33:20.578468",
  "modified_by": "Administrator",
  "module": "Social Media",
  "name": "Social Media Post",
