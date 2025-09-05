@@ -11,12 +11,17 @@ frappe.ui.form.on('Social Media Post', {
 		if (frm.doc.platform && frm.doc.content && frm.doc.status !== 'Posted') {
 			frm.add_custom_button(__('Post to Social Media'), function() {
 				post_to_social_media(frm);
-			}, __('Actions'));
+			});
 		}
 		if (frm.doc.platform && frm.doc.content && frm.doc.status === 'Draft') {
 			frm.add_custom_button(__('Revise Post'), function() {
 				revise_post(frm);
 			}, __('Actions'));
+		}
+		if (frm.doc.platform && frm.doc.content && frm.doc.status !== "Posted") {
+			frm.add_custom_button(__('Generate Image'), function() {
+				generate_image(frm);
+			});
 		}
 
 		// Add Update button if post is already posted and has post ID
@@ -328,6 +333,48 @@ function delete_social_media_post(frm) {
 			});
 		}
 	);
+}
+
+function generate_image(frm){
+	frappe.prompt([
+		{
+			fieldname: 'instruction',
+			label: __('Instruction'),
+			fieldtype: 'Small Text',
+			reqd: false,
+			description: __('Describe how you want to revise this post')
+		}
+	], (values) => {
+		frappe.show_alert({
+			message: __('Generating image for your post...'),
+			indicator: 'blue'
+		});
+
+		frm.call({ method: 'generate_image', doc: frm.doc, args: { instruction: values.instruction }, freeze: true, freeze_message: __('Generating image for your post...') })
+			.then(r => {
+				if (r.message && r.message.status === 'success') {
+					frappe.msgprint({
+						title: __('Success'),
+						message: __('Image for your post generated successfully.'),
+						indicator: 'green'
+					});
+					frm.reload_doc();
+				} else {
+					frappe.msgprint({
+						title: __('Error'),
+						message: (r.message && (r.message.message || r.message.error)) || __('Failed to image generation'),
+						indicator: 'red'
+					});
+				}
+			})
+			.catch(err => {
+				frappe.msgprint({
+					title: __('Error'),
+					message: __('An error occurred while revising: {0}', [err.message || err]),
+					indicator: 'red'
+				});
+			});
+	});
 }
 
 function revise_post(frm){

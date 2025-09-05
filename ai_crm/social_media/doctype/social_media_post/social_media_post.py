@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe.utils.file_manager import save_file
 import requests
 import json
 from frappe.model.document import Document
@@ -393,3 +394,44 @@ class SocialMediaPost(Document):
 				"status": "error",
 				"message": str(e)
 			}
+
+	@frappe.whitelist()
+	def generate_image(self,instruction=''):
+		setting = frappe.get_single("Content Hub Setting")
+		if not self.image_generation_prompt:
+			meta_prompt = setting.image_generation_meta_prompt
+			helper_agent = frappe.get_doc("AI Agent", setting.helper_agent)
+			generation_prompt = f"{meta_prompt}\n\nPost Content:\n{self.content}\n{instruction}"
+			image_generation_prompt = helper_agent.invoke(query=generation_prompt)
+		else:
+			image_generation_prompt = self.image_generation_prompt
+
+		frappe.log_error("prompt",image_generation_prompt)
+
+		agent = setting.image_agent
+		try:
+			image_response = agent.invoke(query=image_generation_prompt[:900],size=setting.image_size)
+		except Exception as e:
+			frappe.log_error("Image genration failed",frappe.get_traceback())
+			return {
+				"status":"error",
+				"error": e
+			}
+		url = image_response.data[0].url
+		response = requests.get(url, stream=True)
+		response.raise_for_status()
+
+		image_bytes = response.content
+		file_name = f"{frappe.scrub(self.title)}_{self.platform.lower()}.png"
+		file_doc = frappe.new_doc("File")
+		file_doc.content = image_bytes
+		file_doc.file_name = file_name
+		file_doc.is_private = True
+		file_doc.save()
+		self.image_attachment = file_doc.file_url
+		self.image_generation_prompt = image_generation_prompt
+		self.save()
+		self.reload()
+		return {
+			"status":"success"
+		}

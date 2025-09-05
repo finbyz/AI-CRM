@@ -13,6 +13,7 @@
   "image_attachment",
   "column_break_nnmu",
   "content",
+  "image_generation_prompt",
   "preview_tab",
   "preview_html"
  ],
@@ -66,13 +67,18 @@
    "fieldtype": "Link",
    "label": "Content Hub",
    "options": "Content Hub"
+  },
+  {
+   "fieldname": "image_generation_prompt",
+   "fieldtype": "Small Text",
+   "label": "Image Generation Prompt"
   }
  ],
  "grid_page_length": 50,
  "image_field": "image_attachment",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-04 11:56:26.918468",
+ "modified": "2025-09-05 10:39:35.069473",
  "modified_by": "Administrator",
  "module": "Social Media",
  "name": "Social Media Post",

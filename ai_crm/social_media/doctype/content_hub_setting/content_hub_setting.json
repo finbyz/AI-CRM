@@ -7,7 +7,12 @@
  "field_order": [
   "idea_generator_agent",
   "post_generator_agent",
-  "revise_post_agent"
+  "revise_post_agent",
+  "image_generation_agent",
+  "helper_agent",
+  "column_break_vgaa",
+  "image_size",
+  "image_generation_meta_prompt"
  ],
  "fields": [
   {
@@ -27,13 +32,41 @@
    "fieldtype": "Link",
    "label": "Revise Post Agent",
    "options": "AI Agent"
+  },
+  {
+   "fieldname": "image_generation_agent",
+   "fieldtype": "Link",
+   "label": "Image Generation Agent",
+   "options": "AI Agent"
+  },
+  {
+   "fieldname": "column_break_vgaa",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "image_generation_meta_prompt",
+   "fieldtype": "Small Text",
+   "label": "Image Generation Meta Prompt"
+  },
+  {
+   "fieldname": "helper_agent",
+   "fieldtype": "Link",
+   "label": "Helper Agent",
+   "options": "AI Agent"
+  },
+  {
+   "default": "1536x1024",
+   "fieldname": "image_size",
+   "fieldtype": "Select",
+   "label": "Image Size",
+   "options": "\n256x256\n512x512\n1024x1024\n1024x1536\n1024x1792\n1536x1024\n1792x1024"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-09-04 12:13:22.355738",
+ "modified": "2025-09-04 21:24:02.819579",
  "modified_by": "Administrator",
  "module": "Social Media",
  "name": "Content Hub Setting",

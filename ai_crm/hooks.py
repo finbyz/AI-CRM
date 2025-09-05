@@ -245,8 +245,9 @@ scheduler_events = {
 
 fixtures = [
     "LLM",
-    "LLM Provider",
     "Lead Followup Setting",
+    "Content Hub Setting",
+    "AI Agent",
     {
         "doctype": "Role",
         "filters": {"name": ["in", ["AI Automation"]]}

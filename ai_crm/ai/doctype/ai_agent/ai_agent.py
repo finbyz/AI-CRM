@@ -90,6 +90,15 @@ class AIAgent(Document):
         prompt = ChatPromptTemplate.from_messages([
             *messages,
         ])
+        
+        if self.agent_type == "Image Generation Agent":
+            input_vars = {
+                "query": query,
+                **kwargs
+            }
+            image_generation_prompt = prompt.invoke(input_vars)
+            return llm.invoke(image_generation_prompt)
+        
         dynamic_model = None
         if self.output_schema:
             dynamic_model = create_model(schema=json.loads(self.output_schema))

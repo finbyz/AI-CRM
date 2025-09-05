@@ -1,19 +1,14 @@
 [
  {
-  "company_research_prompt": "Research about the company \"{company}\" (website: {website}), \nand the party \"{full_name}\" from {country}, {state} {city} {territory}.\nProvide sales-relevant insights, recent news, and potential opportunities.",
+  "company_research_agent": null,
   "days_since_last_activity": 4,
   "docstatus": 0,
   "doctype": "Lead Followup Setting",
   "email_account": "Jobs",
-  "email_creation_prompt": "Lead Name: {lead_name}\nCompany: {company_name}\nTitle: {title}\nWebsite: {website}\nCountry: {country}\nStatus: {status}\nEmail: {email}\n\nRecent Activities:\n{activity_summary}\n\n{research_text}\n\nPlease draft a polite, professional, and personalized follow-up email \nthat acknowledges the lead's context and encourages next steps.",
-  "email_system_instruction": "You are a helpful assistant drafting business follow-up emails.",
+  "email_agent": null,
   "is_enable": 0,
-  "llm": "openai/gpt-4.1-mini",
   "modified": "2025-08-28 10:57:31.286520",
   "name": "Lead Followup Setting",
-  "person_research_prompt": "Research about the person \"{full_name}\" from {country} {city} {territory} working at {company}.\nProvide sales-relevant insights, recent news, and potential opportunities and linkedin profile url.",
-  "provider": "OpenAI",
-  "research_llm": "perplexity/sonar",
-  "research_provider": "Perplexity"
+  "person_research_agent": null
  }
 ]

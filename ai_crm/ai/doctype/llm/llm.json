@@ -13,6 +13,7 @@
   "properties_section",
   "is_reasoning",
   "supports_vision",
+  "supports_image_generation",
   "column_break_jpjj",
   "size"
  ],
@@ -81,12 +82,19 @@
    "fieldname": "supports_vision",
    "fieldtype": "Check",
    "label": "Supports Vision"
+  },
+  {
+   "default": "0",
+   "description": "Whether the model can generate images provided as input",
+   "fieldname": "supports_image_generation",
+   "fieldtype": "Check",
+   "label": "Supports image Generation"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-08-28 15:33:46.866251",
+ "modified": "2025-09-04 16:43:09.080238",
  "modified_by": "Administrator",
  "module": "AI",
  "name": "LLM",

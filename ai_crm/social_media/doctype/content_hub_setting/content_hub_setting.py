@@ -20,3 +20,8 @@ class ContentHubSetting(Document):
 	def revise_agent(self):
 		ai_agent = frappe.get_doc("AI Agent", self.revise_post_agent)
 		return ai_agent
+
+	@property
+	def image_agent(self):
+		ai_agent = frappe.get_doc("AI Agent", self.image_generation_agent)
+		return ai_agent
