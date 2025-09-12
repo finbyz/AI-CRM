@@ -38,6 +38,10 @@ class AIAgent(Document):
             for ai_agent_tool in self.tools:
                 tool = frappe.get_doc("AI Tool",ai_agent_tool.tool)
                 tools_list.append(tool.get_tool())
+        if self.agent_type == "Knowledge Base Agent":
+            kb = frappe.get_doc("Knowledge Base",self.knowledge_base)
+            vs = kb.get_vector_store()
+            tools_list.append(vs.as_tool())
         return tools_list
 
     @property
@@ -50,7 +54,8 @@ class AIAgent(Document):
         agent = initialize_agent(
             tools,
             llm,
-            agent=self._resolve_agent_type()
+            agent=self._resolve_agent_type(),
+            handle_parsing_errors=True
         )
         return agent
 
@@ -118,3 +123,67 @@ class AIAgent(Document):
         }
         response = chain.invoke(input_vars)
         return response
+    
+    def test_agent(self, query, variables=None):
+        """
+        Test the AI agent with a custom query and optional variables
+        
+        Args:
+            query (str): The test query
+            variables (dict, optional): Additional variables for the prompt
+            
+        Returns:
+            dict: Test result with response and metadata
+        """
+        try:
+            if variables is None:
+                variables = {}
+            
+            # Invoke the agent with the test query and variables
+            response = self.invoke(query=query, **variables)
+            
+            return {
+                "success": True,
+                "response": response,
+                "query": query,
+                "variables": variables,
+                "agent_type": self.agent_type,
+                "llm": self.llm if self.agent_type != "Gemini Cache Agent" else self.gemini_cache
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "query": query,
+                "variables": variables,
+                "agent_type": self.agent_type,
+                "llm": self.llm if self.agent_type != "Gemini Cache Agent" else self.gemini_cache
+            }
+
+
+@frappe.whitelist()
+def test_agent(docname, query, variables=None):
+    """
+    Server-side method to test an AI Agent
+    
+    Args:
+        docname (str): Name of the AI Agent document
+        query (str): Test query
+        variables (dict, optional): Additional variables for the prompt
+        
+    Returns:
+        dict: Test result
+    """
+    try:
+        if variables and isinstance(variables, str):
+            variables = json.loads(variables)
+        
+        doc = frappe.get_doc("AI Agent", docname)
+        return doc.test_agent(query, variables)
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "query": query,
+            "variables": variables
+        }

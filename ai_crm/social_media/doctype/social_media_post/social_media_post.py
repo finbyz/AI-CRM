@@ -2,11 +2,9 @@
 # For license information, please see license.txt
 
 import frappe
-from frappe.utils.file_manager import save_file
 import requests
-import json
 from frappe.model.document import Document
-from frappe.utils import get_url, cstr
+from frappe.utils import get_url
 from frappe import _
 
 

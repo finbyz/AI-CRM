@@ -1,7 +1,10 @@
 import frappe
 import json
 from frappe import _
-
+from frappe.utils import get_timestamp,now
+import requests
+from PIL import Image
+from io import BytesIO
 
 def get_customer_or_lead_by_email(email):
     contact = frappe.get_all(
@@ -294,3 +297,68 @@ def check_bot_access(chat_id: str, full_name: str):
     bot_access.save()
     return False
 
+
+@frappe.whitelist(methods=['POST'])
+def merge_images_vertical(image_urls: list[str]) -> str:
+    """
+    Merge multiple images vertically and store as a Frappe File.
+    
+    :param image_urls: List of image URLs to download & merge
+    :return: File URL of merged image in Frappe
+    """
+    images = []
+
+    # Download images
+    for url in image_urls:
+        res = requests.get(url, stream=True)
+        res.raise_for_status()
+        img = Image.open(BytesIO(res.content)).convert("RGB")
+        images.append(img)
+
+    if not images:
+        frappe.throw("No images to merge")
+
+    # Calculate merged image size (vertical merge)
+    width = max(img.width for img in images)
+    height = sum(img.height for img in images)
+
+    merged = Image.new("RGB", (width, height), (255, 255, 255))
+
+    y_offset = 0
+    for img in images:
+        merged.paste(img, (0, y_offset))
+        y_offset += img.height
+
+    out_buffer = BytesIO()
+    merged.save(out_buffer, format="PNG")
+    out_buffer.seek(0)
+
+    # Create Frappe File
+    file_doc = frappe.get_doc({
+        "doctype": "File",
+        "file_name": f"{now()}_merged_image.png",
+        "is_private": 0,
+        "content": out_buffer.getvalue(),
+    })
+    file_doc.save(ignore_permissions=True)
+    frappe.enqueue(
+        "ai_crm.api.delete_merged_file",
+        file_name=file_doc.name,
+        enqueue_after_commit=True,
+        job_name=f"delete_file_{file_doc.name}",
+        timeout=60,
+        is_async=True,
+        delay=600
+    )
+
+    return f"{frappe.conf.host_name}{file_doc.file_url}"
+
+
+def delete_merged_file(file_name: str):
+    """Delete a File document by name."""
+    try:
+        frappe.delete_doc("File", file_name, ignore_permissions=True)
+        frappe.db.commit()
+        frappe.logger().info(f"Deleted temporary file: {file_name}")
+    except Exception as e:
+        frappe.log_error(f"Failed to delete file {file_name}: {str(e)}")

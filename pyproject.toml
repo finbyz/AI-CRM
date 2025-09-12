@@ -14,7 +14,11 @@ dependencies = [
     "langchain-litellm~=0.2.2",
     "langchain-google-genai~=2.1.8",
     "google-genai~=1.32.0",
-    "json-schema-to-pydantic~=0.4.1"
+    "json-schema-to-pydantic~=0.4.1",
+    "langchain-chroma~=0.2.6",
+    "langchain-pinecone~=0.2.12",
+    "langchain-qdrant~=0.2.1",
+    "langchain-postgres~=0.0.15"
 ]
 
 [build-system]

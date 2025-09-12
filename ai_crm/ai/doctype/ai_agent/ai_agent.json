@@ -10,6 +10,7 @@
   "llm_provider",
   "llm",
   "gemini_cache",
+  "knowledge_base",
   "tools",
   "column_break_mfob",
   "agent_type",
@@ -97,12 +98,19 @@
    "fieldtype": "Table MultiSelect",
    "label": "Tools",
    "options": "AI Agent Tool"
+  },
+  {
+   "depends_on": "eval: doc.agent_type=='Knowledge Base Agent';",
+   "fieldname": "knowledge_base",
+   "fieldtype": "Link",
+   "label": "Knowledge Base",
+   "options": "Knowledge Base"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-04 17:07:20.696063",
+ "modified": "2025-09-12 12:46:08.579126",
  "modified_by": "Administrator",
  "module": "AI",
  "name": "AI Agent",
