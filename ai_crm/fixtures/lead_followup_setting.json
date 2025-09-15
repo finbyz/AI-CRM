@@ -1,14 +1,14 @@
 [
  {
-  "company_research_agent": null,
+  "company_research_agent": "Company Research",
   "days_since_last_activity": 4,
   "docstatus": 0,
   "doctype": "Lead Followup Setting",
   "email_account": "Jobs",
-  "email_agent": null,
+  "email_agent": "Lead Follow up",
   "is_enable": 0,
-  "modified": "2025-08-28 10:57:31.286520",
+  "modified": "2025-09-15 15:52:03.907338",
   "name": "Lead Followup Setting",
-  "person_research_agent": null
+  "person_research_agent": "Person Research"
  }
 ]

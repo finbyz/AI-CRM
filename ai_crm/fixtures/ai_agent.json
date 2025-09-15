@@ -3,10 +3,15 @@
   "agent_type": "Chat Agent",
   "docstatus": 0,
   "doctype": "AI Agent",
+  "enable_memory": 0,
   "gemini_cache": null,
+  "knowledge_base": null,
   "lc_agent_type": null,
   "llm": "perplexity/sonar",
   "llm_provider": "Perplexity",
+  "max_iterations": 0,
+  "max_tokens": 0,
+  "memory_type": null,
   "messages": [
    {
     "content": "You are a B2B sales research assistant. {format_instructions}",
@@ -26,17 +31,24 @@
   "modified": "2025-09-04 16:47:05.613713",
   "name": "Person Research",
   "output_schema": "{\r\n  \"properties\": {\r\n    \"linkedin_profile\": {\r\n      \"default\": \"LinkedIn profile url\",\r\n      \"title\": \"Linkedin Profile\",\r\n      \"type\": \"string\"\r\n    },\r\n    \"research_summary\": {\r\n      \"default\": \"Research summary about Person\",\r\n      \"title\": \"Research Summary\",\r\n      \"type\": \"string\"\r\n    }\r\n  },\r\n  \"title\": \"PersonResearch\",\r\n  \"type\": \"object\"\r\n}",
+  "temperature": 0.0,
   "title": "Person Research",
-  "tools": []
+  "tools": [],
+  "verbose_mode": 0
  },
  {
   "agent_type": "Chat Agent",
   "docstatus": 0,
   "doctype": "AI Agent",
+  "enable_memory": 0,
   "gemini_cache": null,
+  "knowledge_base": null,
   "lc_agent_type": null,
   "llm": "perplexity/sonar",
   "llm_provider": "Perplexity",
+  "max_iterations": 0,
+  "max_tokens": 0,
+  "memory_type": null,
   "messages": [
    {
     "content": "You are a B2B sales research assistant.",
@@ -56,40 +68,24 @@
   "modified": "2025-09-04 16:47:11.894779",
   "name": "Company Research",
   "output_schema": null,
+  "temperature": 0.0,
   "title": "Company Research",
-  "tools": []
- },
- {
-  "agent_type": "Gemini Cache Agent",
-  "docstatus": 0,
-  "doctype": "AI Agent",
-  "gemini_cache": "PDF Cache",
-  "lc_agent_type": null,
-  "llm": null,
-  "llm_provider": null,
-  "messages": [
-   {
-    "content": "always response based on context that I have provided",
-    "parent": "Gemini Cache agent",
-    "parentfield": "messages",
-    "parenttype": "AI Agent",
-    "type": "human"
-   }
-  ],
-  "modified": "2025-08-30 13:50:38.074894",
-  "name": "Gemini Cache agent",
-  "output_schema": "{\r\n  \"$schema\": \"http://json-schema.org/draft-07/schema#\",\r\n  \"title\": \"VideoSegments\",\r\n  \"properties\": {\r\n    \"segments\": {\r\n      \"type\": \"array\",\r\n      \"items\": {\r\n        \"type\": \"object\",\r\n        \"title\": \"segment\",\r\n        \"properties\": {\r\n          \"start_point\": {\r\n            \"type\": \"number\",\r\n            \"description\": \"start point of video segment in second\"\r\n          },\r\n          \"end_point\": {\r\n            \"type\": \"number\",\r\n            \"description\": \"end point of video segment in second\"\r\n          },\r\n          \"explanation\": {\r\n            \"type\": \"string\",\r\n            \"description\": \"A detailed explanation of the idea\"\r\n          }\r\n        },\r\n        \"required\": [\"start_point\",\"end_point\" ,\"explanation\"],\r\n        \"additionalProperties\": false\r\n      }\r\n    }\r\n  }\r\n}",
-  "title": "Gemini Cache agent",
-  "tools": []
+  "tools": [],
+  "verbose_mode": 0
  },
  {
   "agent_type": "Chat Agent",
   "docstatus": 0,
   "doctype": "AI Agent",
+  "enable_memory": 0,
   "gemini_cache": null,
+  "knowledge_base": null,
   "lc_agent_type": "",
   "llm": "openai/gpt-4.1-mini",
   "llm_provider": "OpenAI",
+  "max_iterations": 0,
+  "max_tokens": 0,
+  "memory_type": null,
   "messages": [
    {
     "content": "You are a social media content editor.  \nRevise and optimize a given social media post to make it clearer, more engaging, and better suited for the specified platform and audience.  ",
@@ -109,32 +105,46 @@
   "modified": "2025-09-04 16:46:40.230884",
   "name": "Social Media Post Reviser",
   "output_schema": "{\r\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\r\n  \"title\": \"SocialMediaPostContent\",\r\n  \"type\": \"object\",\r\n  \"properties\": {\r\n    \"content\": {\r\n      \"type\": \"string\",\r\n      \"description\": \"Generated social media post content\"\r\n    }\r\n  },\r\n  \"required\": [\"content\"],\r\n  \"additionalProperties\": false\r\n}\r\n",
+  "temperature": 0.0,
   "title": "Social Media Post Reviser",
-  "tools": []
+  "tools": [],
+  "verbose_mode": 0
  },
  {
   "agent_type": "Chat Agent",
   "docstatus": 0,
   "doctype": "AI Agent",
+  "enable_memory": 0,
   "gemini_cache": null,
+  "knowledge_base": null,
   "lc_agent_type": "",
   "llm": "openai/gpt-4.1-mini",
   "llm_provider": "OpenAI",
+  "max_iterations": 0,
+  "max_tokens": 0,
+  "memory_type": null,
   "messages": [],
   "modified": "2025-09-04 20:51:27.188606",
   "name": "Chat Agent",
   "output_schema": null,
+  "temperature": 0.0,
   "title": "Chat Agent",
-  "tools": []
+  "tools": [],
+  "verbose_mode": 0
  },
  {
   "agent_type": "Chat Agent",
   "docstatus": 0,
   "doctype": "AI Agent",
+  "enable_memory": 0,
   "gemini_cache": null,
+  "knowledge_base": null,
   "lc_agent_type": null,
   "llm": "openai/gpt-4.1-mini",
   "llm_provider": "OpenAI",
+  "max_iterations": 0,
+  "max_tokens": 0,
+  "memory_type": null,
   "messages": [
    {
     "content": "You are a helpful assistant drafting business follow-up emails.\nBody type should be html. Do not include signature in the email body. {format_instructions}",
@@ -154,32 +164,46 @@
   "modified": "2025-09-04 16:47:19.751319",
   "name": "Lead Follow up",
   "output_schema": "{\r\n  \"properties\": {\r\n    \"subject\": {\r\n      \"description\": \"Subject line of the email\",\r\n      \"title\": \"Subject\",\r\n      \"type\": \"string\"\r\n    },\r\n    \"body\": {\r\n      \"description\": \"Email body text\",\r\n      \"title\": \"Body\",\r\n      \"type\": \"string\"\r\n    }\r\n  },\r\n  \"required\": [\r\n    \"subject\",\r\n    \"body\"\r\n  ],\r\n  \"title\": \"EmailOutput\",\r\n  \"type\": \"object\"\r\n}",
+  "temperature": 0.0,
   "title": "Lead Follow up",
-  "tools": []
+  "tools": [],
+  "verbose_mode": 0
  },
  {
   "agent_type": "Image Generation Agent",
   "docstatus": 0,
   "doctype": "AI Agent",
+  "enable_memory": 0,
   "gemini_cache": null,
+  "knowledge_base": null,
   "lc_agent_type": "",
-  "llm": "gpt-image-1",
-  "llm_provider": "OpenAI",
+  "llm": "gemini/imagen-4.0-generate-001",
+  "llm_provider": "Google",
+  "max_iterations": 0,
+  "max_tokens": 0,
+  "memory_type": null,
   "messages": [],
-  "modified": "2025-09-05 10:57:16.941984",
+  "modified": "2025-09-15 15:06:36.101338",
   "name": "Social Media Image Generation Agent",
   "output_schema": null,
+  "temperature": 0.0,
   "title": "Social Media Image Generation Agent",
-  "tools": []
+  "tools": [],
+  "verbose_mode": 0
  },
  {
   "agent_type": "Chat Agent",
   "docstatus": 0,
   "doctype": "AI Agent",
+  "enable_memory": 0,
   "gemini_cache": null,
+  "knowledge_base": null,
   "lc_agent_type": null,
   "llm": "openai/gpt-4.1-mini",
   "llm_provider": "OpenAI",
+  "max_iterations": 0,
+  "max_tokens": 0,
+  "memory_type": null,
   "messages": [
    {
     "content": "You are a social media content strategist.\nGenerate a high-quality social media post based on the inputs.\nRules:\n- Return JSON object only.\n- The output must have a \"content\" field with a maximally engaging post text.\n- The post should be tailored for the specified social media platform and target audience.\n- Use the idea_title and idea_description as the core content.\n{format_instructions}",
@@ -199,17 +223,24 @@
   "modified": "2025-09-04 16:46:33.924867",
   "name": "Social Media Post Generator",
   "output_schema": "{\r\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\r\n  \"title\": \"SocialMediaPostContent\",\r\n  \"type\": \"object\",\r\n  \"properties\": {\r\n    \"post_content\": {\r\n      \"type\": \"string\",\r\n      \"description\": \"Generated social media post content\"\r\n    }\r\n  },\r\n  \"required\": [\"content\"],\r\n  \"additionalProperties\": false\r\n}\r\n",
+  "temperature": 0.0,
   "title": "Social Media Post Generator",
-  "tools": []
+  "tools": [],
+  "verbose_mode": 0
  },
  {
   "agent_type": "Chat Agent",
   "docstatus": 0,
   "doctype": "AI Agent",
+  "enable_memory": 0,
   "gemini_cache": null,
+  "knowledge_base": null,
   "lc_agent_type": null,
   "llm": "openai/gpt-4.1-mini",
   "llm_provider": "OpenAI",
+  "max_iterations": 0,
+  "max_tokens": 0,
+  "memory_type": null,
   "messages": [
    {
     "content": "You are a social media content strategist. \nGenerate 5 unique LinkedIn post ideas based on the inputs below.\nRules:\n- Only return a JSON array.\n- Each idea must have \"idea_title\" (max 10 words) and \"description\" (1–2 sentences).\n- Do not hardcode titles.\n{format_instructions}",
@@ -229,7 +260,46 @@
   "modified": "2025-09-04 16:46:45.991072",
   "name": "LinkedIn Content Agent",
   "output_schema": "{\r\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\r\n  \"title\": \"IdeasList\",\r\n  \"type\": \"object\",\r\n  \"properties\": {\r\n    \"ideas\": {\r\n      \"type\": \"array\",\r\n      \"items\": {\r\n        \"type\": \"object\",\r\n        \"title\": \"Idea\",\r\n        \"properties\": {\r\n          \"idea_title\": {\r\n            \"type\": \"string\",\r\n            \"description\": \"The title of the idea\"\r\n          },\r\n          \"description\": {\r\n            \"type\": \"string\",\r\n            \"description\": \"A detailed explanation of the idea\"\r\n          }\r\n        },\r\n        \"required\": [\"idea_title\", \"description\"],\r\n        \"additionalProperties\": false\r\n      }\r\n    }\r\n  },\r\n  \"required\": [\"ideas\"],\r\n  \"additionalProperties\": false\r\n}\r\n",
+  "temperature": 0.0,
   "title": "LinkedIn Content Agent",
-  "tools": []
+  "tools": [],
+  "verbose_mode": 0
+ },
+ {
+  "agent_type": "LangGraph Agent",
+  "docstatus": 0,
+  "doctype": "AI Agent",
+  "enable_memory": 0,
+  "gemini_cache": null,
+  "knowledge_base": null,
+  "lc_agent_type": null,
+  "llm": "openai/gpt-4.1-mini",
+  "llm_provider": "OpenAI",
+  "max_iterations": 0,
+  "max_tokens": 0,
+  "memory_type": null,
+  "messages": [
+   {
+    "content": "You are a social media content strategist. \nGenerate 5 unique LinkedIn post ideas based on the inputs below.\nRules:\n- Only return a JSON array.\n- Each idea must have \"idea_title\" (max 10 words) and \"description\" (1–2 sentences).\n- Do not hardcode titles.\n{format_instructions}",
+    "parent": "Idea Generation Agent",
+    "parentfield": "messages",
+    "parenttype": "AI Agent",
+    "type": "system"
+   },
+   {
+    "content": "Title: {title}\nTarget Audience: {target_audience}\nSocial Media: {social_media}\n",
+    "parent": "Idea Generation Agent",
+    "parentfield": "messages",
+    "parenttype": "AI Agent",
+    "type": "human"
+   }
+  ],
+  "modified": "2025-09-15 13:32:42.148483",
+  "name": "Idea Generation Agent",
+  "output_schema": "{\r\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\r\n  \"title\": \"IdeasList\",\r\n  \"type\": \"object\",\r\n  \"properties\": {\r\n    \"ideas\": {\r\n      \"type\": \"array\",\r\n      \"items\": {\r\n        \"type\": \"object\",\r\n        \"title\": \"Idea\",\r\n        \"properties\": {\r\n          \"idea_title\": {\r\n            \"type\": \"string\",\r\n            \"description\": \"The title of the idea\"\r\n          },\r\n          \"post_content\": {\r\n            \"type\": \"string\",\r\n            \"description\": \"A detailed explanation of the idea\"\r\n          }\r\n        },\r\n        \"required\": [\"idea_title\", \"post_content\"],\r\n        \"additionalProperties\": false\r\n      }\r\n    }\r\n  },\r\n  \"required\": [\"ideas\"],\r\n  \"additionalProperties\": false\r\n}",
+  "temperature": 0.0,
+  "title": "Idea Generation Agent",
+  "tools": [],
+  "verbose_mode": 0
  }
 ]
