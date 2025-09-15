@@ -5,7 +5,6 @@ from langchain_chroma import Chroma
 from langchain.agents import Tool
 import frappe
 from pathlib import Path
-import os
 
 
 
