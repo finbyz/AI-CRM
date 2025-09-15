@@ -36,10 +36,10 @@ def available_vector_stores() -> List[str]:
     return list(_VECTOR_STORE_REGISTRY.keys())
 
 
-def create_vector_store(store_name: str, kb_name: str,description:str, embeddings: Any, api_key: str = None, **kwargs) -> BaseVectorStore:
+def create_vector_store(store_name: str, kb_name: str, description: str, embeddings: Any, api_key: str = None, **kwargs) -> BaseVectorStore:
     """
     Factory function to create a vector store adapter by name.
     """
     adapter_cls = get_adapter(store_name)
     # instantiate
-    return adapter_cls(kb_name=kb_name,description = description, embeddings=embeddings, api_key=api_key, **kwargs)
+    return adapter_cls(kb_name=kb_name, description=description, embeddings=embeddings, api_key=api_key, **kwargs)

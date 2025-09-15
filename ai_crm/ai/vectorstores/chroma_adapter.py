@@ -5,6 +5,7 @@ from langchain_chroma import Chroma
 from langchain.agents import Tool
 import frappe
 from pathlib import Path
+import os
 
 
 
@@ -13,6 +14,7 @@ from pathlib import Path
 class ChromaAdapter(BaseVectorStore):
     def __init__(self, kb_name: str,description:str, embeddings, api_key: str = None, persist_directory: str = None, **kwargs):
         super().__init__(kb_name, description, embeddings, api_key, **kwargs)
+
         site_path = Path(frappe.get_site_path())
         private_folder = site_path / "private"
         pd = persist_directory or (private_folder / "chroma_db")

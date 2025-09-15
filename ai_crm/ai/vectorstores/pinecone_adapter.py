@@ -4,13 +4,23 @@ from langchain_pinecone import PineconeVectorStore
 from typing import List,Dict
 from langchain_core.tools import create_retriever_tool
 from langchain.agents import Tool
+import frappe
+import os
 
 
 
 @register_vector_store("pinecone")
 class PineconeAdapter(BaseVectorStore):
-    def __init__(self, kb_name: str, embeddings, api_key: str = None, **kwargs):
-        super().__init__(kb_name, embeddings, api_key, **kwargs)
+    def __init__(self, kb_name: str, description: str, embeddings, api_key: str = None, **kwargs):
+        super().__init__(kb_name, description, embeddings, api_key, **kwargs)
+        # Read settings inside adapter
+        try:
+            s = frappe.get_single("Pinecone Settings")
+            pinecone_api_key = s.get_password("api_key")
+            if pinecone_api_key:
+                os.environ["PINECONE_API_KEY"] = pinecone_api_key
+        except Exception:
+            pass
         self.vs = PineconeVectorStore(index_name=kb_name, embedding=embeddings)
 
     def upsert(self, texts, metadatas:List[Dict], ids:List[str]):

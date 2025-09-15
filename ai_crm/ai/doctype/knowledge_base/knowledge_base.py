@@ -33,9 +33,9 @@ class KnowledgeBase(Document):
         return create_vector_store(
             store_name=store_name,
             kb_name=self.name,
-            description = self.description or "",
+            description=self.description or "",
             embeddings=emb,
-            api_key=api_key
+            api_key=api_key,
         )
 
     @whitelist()

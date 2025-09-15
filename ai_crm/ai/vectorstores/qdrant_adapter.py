@@ -4,15 +4,22 @@ from langchain_qdrant import QdrantVectorStore
 from qdrant_client import QdrantClient
 from langchain.agents import Tool
 from langchain_core.tools import create_retriever_tool
+import frappe
 
 
 
 
 @register_vector_store("qdrant")
 class QdrantAdapter(BaseVectorStore):
-    def __init__(self, kb_name: str, embeddings, api_key: str = None, url: str = None, **kwargs):
-        super().__init__(kb_name, embeddings, api_key, **kwargs)
-        url = url or "http://localhost:6333"
+    def __init__(self, kb_name: str, description: str, embeddings, api_key: str = None, url: str = None, **kwargs):
+        super().__init__(kb_name, description, embeddings, api_key, **kwargs)
+        # Read settings inside adapter
+        try:
+            s = frappe.get_single("Qdrant Settings")
+            url = (s.url or url or "http://localhost:6333")
+            api_key = s.get_password("api_key") or api_key
+        except Exception:
+            url = url or "http://localhost:6333"
         self.client = QdrantClient(url=url, api_key=api_key)
         self.vs = QdrantVectorStore(client=self.client, collection_name=kb_name, embedding=embeddings)
 
