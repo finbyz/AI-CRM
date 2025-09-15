@@ -1,6 +1,5 @@
 import json
 from typing import Union
-from ai_crm.ai.memory.base import FrappeChatMemory
 import frappe
 from frappe.model.document import Document
 from langchain_litellm.chat_models import ChatLiteLLM
@@ -13,7 +12,9 @@ from langchain.agents import AgentType, initialize_agent
 from langchain.memory import ConversationBufferMemory,VectorStoreRetrieverMemory,ConversationSummaryMemory,ConversationBufferWindowMemory
 import warnings
 
-
+import os
+os.environ['LANGSMITH_API_KEY'] = "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"
+os.environ['LANGSMITH_TRACING']  = 'true'
 
 class AgentService():
     """
@@ -85,8 +86,7 @@ class AgentService():
             for ai_agent_tool in self.agent_doc.tools:
                 tool = frappe.get_doc("AI Tool", ai_agent_tool.tool)
                 tools_list.append(tool.get_tool())
-
-        if self.agent_doc.agent_type == "Knowledge Base Agent":
+        if self.agent_doc.knowledge_base:
             kb = frappe.get_doc("Knowledge Base", self.agent_doc.knowledge_base)
             vs = kb.get_vector_store()
             tools_list.append(vs.as_tool())
@@ -106,16 +106,10 @@ class AgentService():
         model = self.get_llm()
         memory = self.get_memory()
 
-        if self.agent_doc.agent_type == "LangGraph Agent":
+        if self.agent_doc.agent_type == "React Agent":
             return self._create_langgraph_agent(tools, model, memory)
-        elif self.agent_doc.agent_type == "ReAct Agent":
-            return self._create_react_agent(tools, model, memory)
         elif self.agent_doc.agent_type == "Conversational Agent":
             return self._create_conversational_agent(tools, model, memory)
-        elif self.agent_doc.agent_type == "Structured Agent":
-            return self._create_structured_agent(tools, model, memory)
-        elif self.agent_doc.agent_type == "Knowledge Base Agent":
-            return self._create_knowledge_base_agent(tools, model, memory)
         else:
             return self._create_langgraph_agent(tools, model, memory)
     
@@ -140,31 +134,6 @@ class AgentService():
         self._agent_instance = agent
         return agent
     
-    def _create_react_agent(self, tools, model, memory):
-        """Create a ReAct-based agent with memory support"""
-        agent_type = AgentType.ZERO_SHOT_REACT_DESCRIPTION
-        if self.agent_doc.lc_agent_type:
-            agent_type = getattr(AgentType, self.agent_doc.lc_agent_type, AgentType.ZERO_SHOT_REACT_DESCRIPTION)
-        
-        # For ReAct agents, we need to use CHAT_ZERO_SHOT_REACT_DESCRIPTION for memory support
-        if memory:
-            agent_type = AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION
-        
-        # Suppress deprecation warnings for this specific call
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            agent = initialize_agent(
-                tools=tools,
-                llm=model,
-                agent=agent_type,
-                memory=memory,
-                verbose=self.agent_doc.verbose_mode,
-                max_iterations=self.agent_doc.max_iterations or 25,
-                early_stopping_method="generate"
-            )
-        self._agent_instance = agent
-        return agent
-    
     def _create_conversational_agent(self, tools, model, memory):
         """Create a conversational agent with enhanced memory"""
         if not memory:
@@ -186,21 +155,7 @@ class AgentService():
             )
         self._agent_instance = agent
         return agent
-    
-    def _create_structured_agent(self, tools, model, memory):
-        """Create a structured agent for complex tool interactions"""
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            agent = initialize_agent(
-                tools=tools,
-                llm=model,
-                agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION,
-                memory=memory,
-                verbose=self.agent_doc.verbose_mode,
-                max_iterations=self.agent_doc.max_iterations or 5
-            )
-        self._agent_instance = agent
-        return agent
+
     
     def _create_knowledge_base_agent(self, tools, model, memory):
         """Create a knowledge base agent with vector store tools"""
@@ -299,7 +254,7 @@ class AgentService():
             
             # Invoke the agent
             response = agent.invoke(input_data)
-            
+            print(response)
             # Auto-save to memory
             if memory and query and response:
                 memory.save_context(
