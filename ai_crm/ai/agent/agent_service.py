@@ -34,6 +34,7 @@ class AgentService():
         """
         self._agent_instance = None
         self._memory = None
+        self._is_basic_chain = False
         try:
             # Accept both name and Document
             if isinstance(agent, str):
@@ -41,7 +42,7 @@ class AgentService():
             else:
                 self.agent_doc = agent
         except Exception as e:
-            frappe.log_error(f"Failed to initialize AgentService: {e}")
+            frappe.log_error(f"Failed to initialize AgentService", e)
             raise
         
 
@@ -51,9 +52,16 @@ class AgentService():
         messages = []
         for msg in self.agent_doc.messages:
             messages.append((msg.type, msg.content))
+
         if self.agent_doc.output_schema:
-            message_type = 'system' if self.agent_doc.agent_type != "Gemini Cache Agent" else "human"
-            messages.append((message_type, "{format_instructions}"))
+            for i, (mtype, content) in enumerate(messages):
+                if mtype == "system":
+                    messages[i] = (mtype, content + "\n\n{format_instructions}")
+                    break
+            else:
+                message_type = 'system' if self.agent_doc.agent_type != "Gemini Cache Agent" else "human"
+                messages.insert(0, (message_type, "{format_instructions}"))
+
         return messages
     
     def get_memory(self):
@@ -104,14 +112,15 @@ class AgentService():
             return self._agent_instance
         tools = self.get_tools()
         model = self.get_llm()
-        memory = self.get_memory()
 
         if self.agent_doc.agent_type == "React Agent":
+            memory = self.get_memory()
             return self._create_langgraph_agent(tools, model, memory)
         elif self.agent_doc.agent_type == "Conversational Agent":
+            memory = self.get_memory()
             return self._create_conversational_agent(tools, model, memory)
         else:
-            return self._create_langgraph_agent(tools, model, memory)
+            return self._create_basic_chain(model)
     
     def _create_langgraph_agent(self, tools, model, memory):
         """Create a LangGraph-based agent"""
@@ -156,22 +165,31 @@ class AgentService():
         self._agent_instance = agent
         return agent
 
-    
-    def _create_knowledge_base_agent(self, tools, model, memory):
-        """Create a knowledge base agent with vector store tools"""
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            agent = initialize_agent(
-                tools=tools,
-                llm=model,
-                memory=memory,
-                verbose=self.agent_doc.verbose_mode,
-                max_iterations=self.agent_doc.max_iterations or 5,
-                early_stopping_method="generate",
-                handle_parsing_errors=True
-            )
-        self._agent_instance = agent
-        return agent
+    def _create_basic_chain(self, model):
+        """Create a simple LangChain chain as a safe fallback when agent type is not defined."""
+        dynamic_model = None
+        if self.agent_doc.output_schema:
+            dynamic_model = create_model(schema=json.loads(self.agent_doc.output_schema))
+
+        messages = self.chat_messages
+        # Ensure the chain consumes the dynamic query input
+        messages.append(("human", "{query}"))
+        prompt = ChatPromptTemplate.from_messages([
+            *messages,
+        ])
+
+        format_instructions = ''
+        if dynamic_model:
+            output_parser = PydanticOutputParser(pydantic_object=dynamic_model)
+            format_instructions = output_parser.get_format_instructions()
+        else:
+            output_parser = StrOutputParser()
+
+        chain = prompt | model | output_parser
+        self._agent_instance = chain
+        self._is_basic_chain = True
+        return chain
+
 
     def get_llm(self) -> ChatLiteLLM:
         """Get the LLM instance for this agent."""
@@ -184,7 +202,7 @@ class AgentService():
                 llm = llm_doc.llm
             return llm
         except Exception as e:
-            frappe.log_error(f"Failed to get LLM for agent {self.agent_doc.name}: {e}")
+            frappe.log_error(f"Failed to get LLM for agent {self.agent_doc.name}", e)
             raise
 
     def get_vector_retriever(self):
@@ -196,7 +214,7 @@ class AgentService():
             else:
                 frappe.throw("Knowledge base is required for vector memory")
         except Exception as e:
-            frappe.log_error(f"Failed to get vector retriever: {e}")
+            frappe.log_error(f"Failed to get vector retriever", e)
             raise
     
     def invoke(self, query=None, **kwargs):
@@ -210,9 +228,11 @@ class AgentService():
         try:
             if self.agent_doc.agent_type == "Image Generation Agent":
                 return self._invoke_image_generation(query, **kwargs)
-            elif self.agent_doc.agent_type in ["ReAct Agent", "Conversational Agent", "Structured Agent", "Knowledge Base Agent"]:
+            elif self.agent_doc.agent_type in ["ReAct Agent", "Conversational Agent"]:
                 return self._invoke_with_agent_executor(query, **kwargs)
             else:
+                if getattr(self, "_is_basic_chain", False):
+                    return self._invoke_basic_chain(query, **kwargs)
                 return self._invoke_langgraph_agent(query, **kwargs)
         except Exception as e:
             frappe.log_error(title=f"Error invoking agent {self.agent_doc.name}", message=e)
@@ -265,7 +285,7 @@ class AgentService():
             return response
             
         except Exception as e:
-            frappe.log_error(f"Error in _invoke_with_agent_executor: {e}")
+            frappe.log_error(f"Error in _invoke_with_agent_executor", e)
             raise
     
     def _invoke_langgraph_agent(self, query, **kwargs):
@@ -326,6 +346,30 @@ class AgentService():
             return response
             
         except Exception as e:
-            frappe.log_error(f"Error in _invoke_langgraph_agent: {e}")
+            frappe.log_error(f"Error in _invoke_langgraph_agent", e)
+            raise
+
+    def _invoke_basic_chain(self, query, **kwargs):
+        """Invoke the cached basic chain fallback and handle memory save."""
+        try:
+            chain = self.agent
+
+            format_instructions = ''
+            if self.agent_doc.output_schema:
+                dynamic_model = create_model(schema=json.loads(self.agent_doc.output_schema))
+                output_parser = PydanticOutputParser(pydantic_object=dynamic_model)
+                format_instructions = output_parser.get_format_instructions()
+
+            input_vars = {
+                "format_instructions": format_instructions,
+                "query": query,
+                **kwargs
+            }
+
+            response = chain.invoke(input_vars)
+
+            return response
+        except Exception as e:
+            frappe.log_error(f"Error in _invoke_basic_chain", e)
             raise
     
