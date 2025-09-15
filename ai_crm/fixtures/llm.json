@@ -411,20 +411,6 @@
   "enabled": 1,
   "is_embedding_model": 0,
   "is_reasoning": 0,
-  "modified": "2025-08-04 10:54:42.150322",
-  "name": "openai/gpt-4.1-mini",
-  "provider": "OpenAI",
-  "size": "Small",
-  "supports_image_generation": 0,
-  "supports_vision": 1,
-  "title": "OpenAI GPT-4.1 mini"
- },
- {
-  "docstatus": 0,
-  "doctype": "LLM",
-  "enabled": 1,
-  "is_embedding_model": 0,
-  "is_reasoning": 0,
   "modified": "2025-09-04 17:58:50.361464",
   "name": "dall-e-2",
   "provider": "OpenAI",
@@ -446,5 +432,19 @@
   "supports_image_generation": 0,
   "supports_vision": 0,
   "title": "Gemini-1.5 Flash 002"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "LLM",
+  "enabled": 1,
+  "is_embedding_model": 0,
+  "is_reasoning": 0,
+  "modified": "2025-08-04 10:54:42.150322",
+  "name": "openai/gpt-4.1-mini",
+  "provider": "OpenAI",
+  "size": "Small",
+  "supports_image_generation": 0,
+  "supports_vision": 1,
+  "title": "OpenAI GPT-4.1 mini"
  }
 ]

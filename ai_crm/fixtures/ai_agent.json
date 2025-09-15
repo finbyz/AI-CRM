@@ -1,6 +1,7 @@
 [
  {
-  "agent_type": "Chat Agent",
+  "agent_type": "",
+  "custom_lead": null,
   "docstatus": 0,
   "doctype": "AI Agent",
   "enable_memory": 0,
@@ -28,7 +29,7 @@
     "type": "human"
    }
   ],
-  "modified": "2025-09-04 16:47:05.613713",
+  "modified": "2025-09-15 19:23:10.261290",
   "name": "Person Research",
   "output_schema": "{\r\n  \"properties\": {\r\n    \"linkedin_profile\": {\r\n      \"default\": \"LinkedIn profile url\",\r\n      \"title\": \"Linkedin Profile\",\r\n      \"type\": \"string\"\r\n    },\r\n    \"research_summary\": {\r\n      \"default\": \"Research summary about Person\",\r\n      \"title\": \"Research Summary\",\r\n      \"type\": \"string\"\r\n    }\r\n  },\r\n  \"title\": \"PersonResearch\",\r\n  \"type\": \"object\"\r\n}",
   "temperature": 0.0,
@@ -38,43 +39,7 @@
  },
  {
   "agent_type": "Chat Agent",
-  "docstatus": 0,
-  "doctype": "AI Agent",
-  "enable_memory": 0,
-  "gemini_cache": null,
-  "knowledge_base": null,
-  "lc_agent_type": null,
-  "llm": "perplexity/sonar",
-  "llm_provider": "Perplexity",
-  "max_iterations": 0,
-  "max_tokens": 0,
-  "memory_type": null,
-  "messages": [
-   {
-    "content": "You are a B2B sales research assistant.",
-    "parent": "Company Research",
-    "parentfield": "messages",
-    "parenttype": "AI Agent",
-    "type": "system"
-   },
-   {
-    "content": "Research about the company \"{company}\" (website: {website}), \nand the party \"{full_name}\" from {country}, {state} {city} {territory}.\nProvide sales-relevant insights, recent news, and potential opportunities.",
-    "parent": "Company Research",
-    "parentfield": "messages",
-    "parenttype": "AI Agent",
-    "type": "human"
-   }
-  ],
-  "modified": "2025-09-04 16:47:11.894779",
-  "name": "Company Research",
-  "output_schema": null,
-  "temperature": 0.0,
-  "title": "Company Research",
-  "tools": [],
-  "verbose_mode": 0
- },
- {
-  "agent_type": "Chat Agent",
+  "custom_lead": null,
   "docstatus": 0,
   "doctype": "AI Agent",
   "enable_memory": 0,
@@ -112,6 +77,7 @@
  },
  {
   "agent_type": "Chat Agent",
+  "custom_lead": null,
   "docstatus": 0,
   "doctype": "AI Agent",
   "enable_memory": 0,
@@ -133,44 +99,8 @@
   "verbose_mode": 0
  },
  {
-  "agent_type": "Chat Agent",
-  "docstatus": 0,
-  "doctype": "AI Agent",
-  "enable_memory": 0,
-  "gemini_cache": null,
-  "knowledge_base": null,
-  "lc_agent_type": null,
-  "llm": "openai/gpt-4.1-mini",
-  "llm_provider": "OpenAI",
-  "max_iterations": 0,
-  "max_tokens": 0,
-  "memory_type": null,
-  "messages": [
-   {
-    "content": "You are a helpful assistant drafting business follow-up emails.\nBody type should be html. Do not include signature in the email body. {format_instructions}",
-    "parent": "Lead Follow up",
-    "parentfield": "messages",
-    "parenttype": "AI Agent",
-    "type": "system"
-   },
-   {
-    "content": "Lead Name: {lead_name}\nCompany: {company_name}\nTitle: {title}\nWebsite: {website}\nCountry: {country}\nStatus: {status}\nEmail: {email}\n\nRecent Activities:\n{activity_summary}\n\n{research_text}\n\nPlease draft a polite, professional, and personalized follow-up email \nthat acknowledges the lead's context and encourages next steps.",
-    "parent": "Lead Follow up",
-    "parentfield": "messages",
-    "parenttype": "AI Agent",
-    "type": "human"
-   }
-  ],
-  "modified": "2025-09-04 16:47:19.751319",
-  "name": "Lead Follow up",
-  "output_schema": "{\r\n  \"properties\": {\r\n    \"subject\": {\r\n      \"description\": \"Subject line of the email\",\r\n      \"title\": \"Subject\",\r\n      \"type\": \"string\"\r\n    },\r\n    \"body\": {\r\n      \"description\": \"Email body text\",\r\n      \"title\": \"Body\",\r\n      \"type\": \"string\"\r\n    }\r\n  },\r\n  \"required\": [\r\n    \"subject\",\r\n    \"body\"\r\n  ],\r\n  \"title\": \"EmailOutput\",\r\n  \"type\": \"object\"\r\n}",
-  "temperature": 0.0,
-  "title": "Lead Follow up",
-  "tools": [],
-  "verbose_mode": 0
- },
- {
   "agent_type": "Image Generation Agent",
+  "custom_lead": null,
   "docstatus": 0,
   "doctype": "AI Agent",
   "enable_memory": 0,
@@ -193,6 +123,7 @@
  },
  {
   "agent_type": "Chat Agent",
+  "custom_lead": null,
   "docstatus": 0,
   "doctype": "AI Agent",
   "enable_memory": 0,
@@ -229,7 +160,8 @@
   "verbose_mode": 0
  },
  {
-  "agent_type": "Chat Agent",
+  "agent_type": "",
+  "custom_lead": null,
   "docstatus": 0,
   "doctype": "AI Agent",
   "enable_memory": 0,
@@ -240,7 +172,7 @@
   "llm_provider": "OpenAI",
   "max_iterations": 0,
   "max_tokens": 0,
-  "memory_type": null,
+  "memory_type": "Buffer Memory",
   "messages": [
    {
     "content": "You are a social media content strategist. \nGenerate 5 unique LinkedIn post ideas based on the inputs below.\nRules:\n- Only return a JSON array.\n- Each idea must have \"idea_title\" (max 10 words) and \"description\" (1–2 sentences).\n- Do not hardcode titles.\n{format_instructions}",
@@ -257,7 +189,7 @@
     "type": "human"
    }
   ],
-  "modified": "2025-09-04 16:46:45.991072",
+  "modified": "2025-09-15 19:08:11.977753",
   "name": "LinkedIn Content Agent",
   "output_schema": "{\r\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\r\n  \"title\": \"IdeasList\",\r\n  \"type\": \"object\",\r\n  \"properties\": {\r\n    \"ideas\": {\r\n      \"type\": \"array\",\r\n      \"items\": {\r\n        \"type\": \"object\",\r\n        \"title\": \"Idea\",\r\n        \"properties\": {\r\n          \"idea_title\": {\r\n            \"type\": \"string\",\r\n            \"description\": \"The title of the idea\"\r\n          },\r\n          \"description\": {\r\n            \"type\": \"string\",\r\n            \"description\": \"A detailed explanation of the idea\"\r\n          }\r\n        },\r\n        \"required\": [\"idea_title\", \"description\"],\r\n        \"additionalProperties\": false\r\n      }\r\n    }\r\n  },\r\n  \"required\": [\"ideas\"],\r\n  \"additionalProperties\": false\r\n}\r\n",
   "temperature": 0.0,
@@ -267,6 +199,7 @@
  },
  {
   "agent_type": "LangGraph Agent",
+  "custom_lead": null,
   "docstatus": 0,
   "doctype": "AI Agent",
   "enable_memory": 0,
@@ -299,6 +232,82 @@
   "output_schema": "{\r\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\r\n  \"title\": \"IdeasList\",\r\n  \"type\": \"object\",\r\n  \"properties\": {\r\n    \"ideas\": {\r\n      \"type\": \"array\",\r\n      \"items\": {\r\n        \"type\": \"object\",\r\n        \"title\": \"Idea\",\r\n        \"properties\": {\r\n          \"idea_title\": {\r\n            \"type\": \"string\",\r\n            \"description\": \"The title of the idea\"\r\n          },\r\n          \"post_content\": {\r\n            \"type\": \"string\",\r\n            \"description\": \"A detailed explanation of the idea\"\r\n          }\r\n        },\r\n        \"required\": [\"idea_title\", \"post_content\"],\r\n        \"additionalProperties\": false\r\n      }\r\n    }\r\n  },\r\n  \"required\": [\"ideas\"],\r\n  \"additionalProperties\": false\r\n}",
   "temperature": 0.0,
   "title": "Idea Generation Agent",
+  "tools": [],
+  "verbose_mode": 0
+ },
+ {
+  "agent_type": "",
+  "custom_lead": null,
+  "docstatus": 0,
+  "doctype": "AI Agent",
+  "enable_memory": 0,
+  "gemini_cache": null,
+  "knowledge_base": null,
+  "lc_agent_type": null,
+  "llm": "perplexity/sonar",
+  "llm_provider": "Perplexity",
+  "max_iterations": 0,
+  "max_tokens": 0,
+  "memory_type": null,
+  "messages": [
+   {
+    "content": "You are a B2B sales research assistant.",
+    "parent": "Company Research",
+    "parentfield": "messages",
+    "parenttype": "AI Agent",
+    "type": "system"
+   },
+   {
+    "content": "Research about the company \"{company}\" (website: {website}), \nand the party \"{full_name}\" from {country}, {state} {city} {territory}.\nProvide sales-relevant insights, recent news, and potential opportunities.",
+    "parent": "Company Research",
+    "parentfield": "messages",
+    "parenttype": "AI Agent",
+    "type": "human"
+   }
+  ],
+  "modified": "2025-09-15 19:00:31.914455",
+  "name": "Company Research",
+  "output_schema": null,
+  "temperature": 0.0,
+  "title": "Company Research",
+  "tools": [],
+  "verbose_mode": 0
+ },
+ {
+  "agent_type": "LangGraph Agent",
+  "custom_lead": null,
+  "docstatus": 0,
+  "doctype": "AI Agent",
+  "enable_memory": 0,
+  "gemini_cache": null,
+  "knowledge_base": "finbyz_tech",
+  "lc_agent_type": null,
+  "llm": "openai/gpt-4.1-mini",
+  "llm_provider": "OpenAI",
+  "max_iterations": 0,
+  "max_tokens": 0,
+  "memory_type": null,
+  "messages": [
+   {
+    "content": "You are a helpful assistant drafting business follow-up emails for Finbyz Tech.\nBody type should be html. Do not include signature in the email body. {format_instructions}.\nTo get more details about finbyz tech and find relative information you can utilize knowledge base.\nalso include contact details of finbyz tech",
+    "parent": "Lead Follow up",
+    "parentfield": "messages",
+    "parenttype": "AI Agent",
+    "type": "system"
+   },
+   {
+    "content": "Lead Name: {lead_name}\nCompany: {company_name}\nTitle: {title}\nWebsite: {website}\nCountry: {country}\nStatus: {status}\nEmail: {email}\n\nRecent Activities:\n{activity_summary}\n\n{research_text}\n\nPlease draft a polite, professional, and personalized follow-up email \nthat acknowledges the lead's context and encourages next steps.",
+    "parent": "Lead Follow up",
+    "parentfield": "messages",
+    "parenttype": "AI Agent",
+    "type": "human"
+   }
+  ],
+  "modified": "2025-09-15 18:15:59.542576",
+  "name": "Lead Follow up",
+  "output_schema": "{\r\n  \"properties\": {\r\n    \"subject\": {\r\n      \"description\": \"Subject line of the email\",\r\n      \"title\": \"Subject\",\r\n      \"type\": \"string\"\r\n    },\r\n    \"body\": {\r\n      \"description\": \"Email body text\",\r\n      \"title\": \"Body\",\r\n      \"type\": \"string\"\r\n    }\r\n  },\r\n  \"required\": [\r\n    \"subject\",\r\n    \"body\"\r\n  ],\r\n  \"title\": \"EmailOutput\",\r\n  \"type\": \"object\"\r\n}",
+  "temperature": 0.0,
+  "title": "Lead Follow up",
   "tools": [],
   "verbose_mode": 0
  }
