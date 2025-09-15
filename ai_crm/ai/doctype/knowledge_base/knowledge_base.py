@@ -33,7 +33,7 @@ class KnowledgeBase(Document):
         return create_vector_store(
             store_name=store_name,
             kb_name=self.name,
-            description = self.description,
+            description = self.description or "",
             embeddings=emb,
             api_key=api_key
         )
@@ -47,6 +47,7 @@ class KnowledgeBase(Document):
 
         items = []
         for row in self.documents or []:
+            if row.is_process: continue
             if row.text_content:
                 items.append({
                     "id": f"{self.name}-{row.name}",
@@ -57,7 +58,8 @@ class KnowledgeBase(Document):
                         "file": row.file,
                     },
                 })
-
+                row.is_process = True
+        self.save()
         return store.upsert(
             texts=[it["text"] for it in items],
             metadatas=[it["metadata"] for it in items],
@@ -122,7 +124,4 @@ def _get_embeddings(kb: KnowledgeBase):
     api_key = _get_provider_api_key(kb)
     model_name = llm_doc.name
 
-    try:
-        return create_embedding(provider_name, model=model_name, api_key=api_key)
-    except Exception:
-        return None
+    return create_embedding(provider_name, model=model_name, api_key=api_key)

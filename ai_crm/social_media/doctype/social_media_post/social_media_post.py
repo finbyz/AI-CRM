@@ -1,6 +1,7 @@
 # Copyright (c) 2025, sandeep and contributors
 # For license information, please see license.txt
 
+from ai_crm.ai.agent.agent_service import AgentService
 import frappe
 import requests
 from frappe.model.document import Document
@@ -13,14 +14,14 @@ class SocialMediaPost(Document):
 	# 	"""Validate the social media post before saving"""
 	# 	if self.platform == "LinkedIn" and not self.linkedin_account:
 	# 		frappe.throw(_("LinkedIn Account is required for LinkedIn posts"))
-		
+
 	# 	if self.platform == "LinkedIn" and self.status == "Posted":
 	# 		self.validate_linkedin_content()
-		
+
 	# 	# Add validation for other platforms as needed
 	# 	if self.platform == "Twitter" and self.status == "Posted":
 	# 		self.validate_twitter_content()
-		
+
 	# 	if self.platform == "Facebook" and self.status == "Posted":
 	# 		self.validate_facebook_content()
 
@@ -28,7 +29,7 @@ class SocialMediaPost(Document):
 		"""Validate LinkedIn specific content requirements"""
 		if not self.content:
 			frappe.throw(_("Content is required for LinkedIn posts"))
-		
+
 		# LinkedIn has a character limit for posts
 		if len(self.content) > 3000:
 			frappe.throw(_("LinkedIn post content cannot exceed 3000 characters"))
@@ -37,7 +38,7 @@ class SocialMediaPost(Document):
 		"""Validate Twitter specific content requirements"""
 		if not self.content:
 			frappe.throw(_("Content is required for Twitter posts"))
-		
+
 		# Twitter has a character limit for posts
 		if len(self.content) > 280:
 			frappe.throw(_("Twitter post content cannot exceed 280 characters"))
@@ -46,41 +47,39 @@ class SocialMediaPost(Document):
 		"""Validate Facebook specific content requirements"""
 		if not self.content:
 			frappe.throw(_("Content is required for Facebook posts"))
-		
+
 		# Facebook has a character limit for posts
 		if len(self.content) > 63206:
 			frappe.throw(_("Facebook post content cannot exceed 63,206 characters"))
 
 	@frappe.whitelist()
 	def post(self):
-		"""
-		Generic method to post content to the selected social media platform.
-		This method automatically routes to the appropriate platform-specific posting method.
-		"""
 		try:
 			if not self.platform:
 				frappe.throw(_("Social Media Platform is required"))
-			
+
 			if not self.content:
 				frappe.throw(_("Content is required for posting"))
 
-			if self.platform.lower() == "linkedin":
+			platform_lower = self.platform.lower()
+
+			if platform_lower == "linkedin":
 				return self.post_to_linkedin()
-			elif self.platform.lower() == "twitter":
+			elif platform_lower in ["twitter", "x", "x (twitter)"]:
 				return self.post_to_twitter()
-			elif self.platform.lower() == "facebook":
+			elif platform_lower == "facebook":
 				return self.post_to_facebook()
-			elif self.platform.lower() == "instagram":
+			elif platform_lower == "instagram":
 				return self.post_to_instagram()
 			else:
 				frappe.throw(_("Unsupported social media platform: {0}").format(self.platform))
-				
+
 		except Exception as e:
 			frappe.log_error(frappe.get_traceback(), "Social Media Post Error")
 			self.status = "Failed"
 			self.save(ignore_permissions=True)
 			frappe.db.commit()
-			
+
 			return {
 				"status": "error",
 				"message": str(e)
@@ -127,13 +126,13 @@ class SocialMediaPost(Document):
 		up_res.raise_for_status()
 
 		return image_urn
-	
+
 	@frappe.whitelist()
 	def post_to_linkedin(self):
 		"""Post content to LinkedIn using the Posts API"""
 		# if not self.linkedin_account:
 		# 	frappe.throw(_("LinkedIn Account is required"))
-		
+
 		if not self.content:
 			frappe.throw(_("Content is required for posting"))
 		content_hub = frappe.get_doc("Content Hub",self.content_hub)
@@ -141,12 +140,12 @@ class SocialMediaPost(Document):
 
 		if not linkedin_doc.access_token:
 			frappe.throw(_("LinkedIn access token not found. Please reconnect your LinkedIn account."))
-		
+
 		if linkedin_doc.connection_status != "Connected":
 			frappe.throw(_("LinkedIn account is not connected. Please reconnect your account."))
 
 		post_data = self._prepare_linkedin_post_data(linkedin_doc)
-		
+
 		response = self._make_linkedin_api_request(post_data, linkedin_doc.access_token)
 		if response.get('status') == 'success':
 			self.status = "Posted"
@@ -160,13 +159,13 @@ class SocialMediaPost(Document):
 		If an image is attached, you must first register & upload it to LinkedIn,
 		then pass the returned URN (image_urn) here.
 		"""
-		
+
 		# Pick correct author URN
 		if linkedin_doc.organization_support:
 			author_urn = f"urn:li:organization:{linkedin_doc.organization_id}"
 		else:
 			author_urn = f"urn:li:person:{linkedin_doc.person_id}"
-		
+
 		post_data = {
 			"author": author_urn,
 			"commentary": self.content,
@@ -186,7 +185,7 @@ class SocialMediaPost(Document):
 				"title": "Optional title",
 				"id": image_urn
 				}
-			}		
+			}
 		return post_data
 
 
@@ -197,18 +196,17 @@ class SocialMediaPost(Document):
 		return None
 
 
-
 	def _make_linkedin_api_request(self, post_data, access_token):
 		"""Make the actual API request to LinkedIn Posts API"""
 		url = "https://api.linkedin.com/rest/posts"
-		
+
 		headers = {
 			"Authorization": f"Bearer {access_token}",
 			"Content-Type": "application/json",
 			"LinkedIn-Version": "202408",  # Using latest version as per documentation
 			"X-Restli-Protocol-Version": "2.0.0"
 		}
-		
+
 		response = requests.post(url, headers=headers, json=post_data, timeout=60)
 		if response.status_code == 201:
 			post_id = response.headers.get('x-restli-id')
@@ -230,21 +228,22 @@ class SocialMediaPost(Document):
 	def update_linkedin_post(self, post_id=None):
 		"""Update an existing LinkedIn post"""
 		try:
-			if not self.linkedin_account:
-				frappe.throw(_("LinkedIn Account is required"))
-			
+			# if not self.linkedin_account: # Assuming this is not needed if content_hub handles credentials
+			# 	frappe.throw(_("LinkedIn Account is required"))
+
 			# Use post_id parameter or stored post ID
 			if not post_id:
 				post_id = self.social_media_post_id
-			
+
 			if not post_id:
 				frappe.throw(_("Post ID is required for updating"))
-			
-			linkedin_doc = frappe.get_doc("LinkedIn Integration", self.linkedin_account)
-			
+
+			content_hub = frappe.get_doc("Content Hub",self.content_hub)
+			linkedin_doc = frappe.get_doc(content_hub.credential_type,content_hub.credential)
+
 			if not linkedin_doc.access_token:
 				frappe.throw(_("LinkedIn access token not found"))
-			
+
 			# Prepare update data
 			update_data = {
 				"patch": {
@@ -253,7 +252,7 @@ class SocialMediaPost(Document):
 					}
 				}
 			}
-			
+
 			# Make API request
 			url = f"https://api.linkedin.com/rest/posts/{post_id}"
 			headers = {
@@ -263,9 +262,9 @@ class SocialMediaPost(Document):
 				"X-Restli-Protocol-Version": "2.0.0",
 				"X-RestLi-Method": "PARTIAL_UPDATE"
 			}
-			
+
 			response = requests.post(url, headers=headers, json=update_data, timeout=30)
-			
+
 			if response.status_code == 204:
 				return {
 					"status": "success",
@@ -278,7 +277,7 @@ class SocialMediaPost(Document):
 					"status": "error",
 					"message": error_message
 				}
-				
+
 		except Exception as e:
 			frappe.log_error(frappe.get_traceback(), "LinkedIn Update Error")
 			return {
@@ -290,21 +289,22 @@ class SocialMediaPost(Document):
 	def delete_linkedin_post(self, post_id=None):
 		"""Delete a LinkedIn post"""
 		try:
-			if not self.linkedin_account:
-				frappe.throw(_("LinkedIn Account is required"))
-			
+			# if not self.linkedin_account: # Assuming this is not needed if content_hub handles credentials
+			# 	frappe.throw(_("LinkedIn Account is required"))
+
 			# Use post_id parameter or stored post ID
 			if not post_id:
 				post_id = self.social_media_post_id
-			
+
 			if not post_id:
 				frappe.throw(_("Post ID is required for deletion"))
-			
-			linkedin_doc = frappe.get_doc("LinkedIn Integration", self.linkedin_account)
-			
+
+			content_hub = frappe.get_doc("Content Hub",self.content_hub)
+			linkedin_doc = frappe.get_doc(content_hub.credential_type,content_hub.credential)
+
 			if not linkedin_doc.access_token:
 				frappe.throw(_("LinkedIn access token not found"))
-			
+
 			# Make API request
 			url = f"https://api.linkedin.com/rest/posts/{post_id}"
 			headers = {
@@ -313,9 +313,9 @@ class SocialMediaPost(Document):
 				"X-Restli-Protocol-Version": "2.0.0",
 				"X-RestLi-Method": "DELETE"
 			}
-			
+
 			response = requests.delete(url, headers=headers, timeout=30)
-			
+
 			if response.status_code == 204:
 				return {
 					"status": "success",
@@ -328,7 +328,7 @@ class SocialMediaPost(Document):
 					"status": "error",
 					"message": error_message
 				}
-				
+
 		except Exception as e:
 			frappe.log_error(frappe.get_traceback(), "LinkedIn Delete Error")
 			return {
@@ -338,23 +338,65 @@ class SocialMediaPost(Document):
 
 	@frappe.whitelist()
 	def post_to_twitter(self):
-		"""Post content to Twitter"""
+		"""Post content to Twitter using the TwitterIntegration credential."""
+		if not self.content:
+			frappe.throw(_("Content is required for posting"))
+
+		content_hub = frappe.get_doc("Content Hub", self.content_hub)
+		twitter_doc = frappe.get_doc(content_hub.credential_type, content_hub.credential)
+
+		if not twitter_doc.access_token or not twitter_doc.access_token_secret:
+			frappe.throw(_("Twitter access token not found. Please reconnect your Twitter account."))
+
+		if twitter_doc.connection_status != "Connected":
+			frappe.throw(_("Twitter account is not connected. Please reconnect your account."))
+
 		try:
-			# TODO: Implement Twitter API integration
-			# This is a placeholder for future Twitter implementation
-			frappe.throw(_("Twitter posting is not yet implemented. Please use LinkedIn for now."))
+			url = "https://api.twitter.com/2/tweets"
 			
+			# For OAuth 1.0a with JSON payload, we don't include the JSON data in signature
+			# Only query parameters and form parameters are included in OAuth signature
+			headers = twitter_doc._get_oauth_headers("POST", url, {})
+			headers["Content-Type"] = "application/json"
+			
+			payload = {"text": self.content}
+
+			response = requests.post(url, headers=headers, json=payload, timeout=30)
+
+			if response.status_code == 201:
+				tweet_data = response.json().get("data", {})
+				tweet_id = tweet_data.get("id")
+				tweet_link = f"https://twitter.com/{twitter_doc.username}/status/{tweet_id}"
+				self.status = "Posted"
+				self.social_media_post_id = tweet_id
+				self.post_link = tweet_link
+				self.save()
+				return {
+					"status": "success",
+					"tweet_id": tweet_id,
+					"tweet_link": tweet_link,
+					"message": _("Tweet posted successfully")
+				}
+			else:
+				error_message = f"Twitter API Error: {response.status_code} - {response.text}"
+				frappe.log_error(error_message, "Twitter Post API")
+				self.status = "Failed"
+				self.save()
+				return {
+					"status": "error",
+					"error": error_message
+				}
+
 		except Exception as e:
 			frappe.log_error(frappe.get_traceback(), "Twitter Post Error")
 			self.status = "Failed"
 			self.save(ignore_permissions=True)
 			frappe.db.commit()
-			
+
 			return {
 				"status": "error",
 				"message": str(e)
 			}
-
 	@frappe.whitelist()
 	def post_to_facebook(self):
 		"""Post content to Facebook"""
@@ -362,13 +404,13 @@ class SocialMediaPost(Document):
 			# TODO: Implement Facebook API integration
 			# This is a placeholder for future Facebook implementation
 			frappe.throw(_("Facebook posting is not yet implemented. Please use LinkedIn for now."))
-			
+
 		except Exception as e:
 			frappe.log_error(frappe.get_traceback(), "Facebook Post Error")
 			self.status = "Failed"
 			self.save(ignore_permissions=True)
 			frappe.db.commit()
-			
+
 			return {
 				"status": "error",
 				"message": str(e)
@@ -381,13 +423,13 @@ class SocialMediaPost(Document):
 			# TODO: Implement Instagram API integration
 			# This is a placeholder for future Instagram implementation
 			frappe.throw(_("Instagram posting is not yet implemented. Please use LinkedIn for now."))
-			
+
 		except Exception as e:
 			frappe.log_error(frappe.get_traceback(), "Instagram Post Error")
 			self.status = "Failed"
 			self.save(ignore_permissions=True)
 			frappe.db.commit()
-			
+
 			return {
 				"status": "error",
 				"message": str(e)
@@ -398,7 +440,7 @@ class SocialMediaPost(Document):
 		setting = frappe.get_single("Content Hub Setting")
 		if not self.image_generation_prompt:
 			meta_prompt = setting.image_generation_meta_prompt
-			helper_agent = frappe.get_doc("AI Agent", setting.helper_agent)
+			helper_agent = AgentService(setting.helper_agent)
 			generation_prompt = f"{meta_prompt}\n\nPost Content:\n{self.content}\n{instruction}"
 			image_generation_prompt = helper_agent.invoke(query=generation_prompt)
 		else:

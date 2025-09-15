@@ -16,6 +16,14 @@
   "agent_type",
   "lc_agent_type",
   "output_schema",
+  "memory_section",
+  "enable_memory",
+  "memory_type",
+  "advanced_section",
+  "verbose_mode",
+  "max_iterations",
+  "temperature",
+  "max_tokens",
   "chat_messages_section",
   "messages"
  ],
@@ -55,13 +63,13 @@
    "label": "Chat Messages"
   },
   {
-   "default": "Chat Agent",
+   "default": "LangGraph Agent",
    "fieldname": "agent_type",
    "fieldtype": "Select",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Agent Type",
-   "options": "Chat Agent\nKnowledge Base Agent\nGemini Cache Agent\nSearch Agent\nImage Generation Agent"
+   "options": "LangGraph Agent\nReAct Agent\nConversational Agent\nStructured Agent\nKnowledge Base Agent\nGemini Cache Agent\nSearch Agent\nImage Generation Agent\nWorkflow Agent\nMulti-Modal Agent"
   },
   {
    "depends_on": "eval:1",
@@ -105,12 +113,58 @@
    "fieldtype": "Link",
    "label": "Knowledge Base",
    "options": "Knowledge Base"
+  },
+  {
+   "fieldname": "memory_section",
+   "fieldtype": "Section Break",
+   "label": "Memory Configuration"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_memory",
+   "fieldtype": "Check",
+   "label": "Enable Memory"
+  },
+  {
+   "depends_on": "enable_memory",
+   "fieldname": "memory_type",
+   "fieldtype": "Select",
+   "label": "Memory Type",
+   "options": "Buffer Memory\nSummary Memory\nWindow Memory\nVector Memory"
+  },
+  {
+   "fieldname": "advanced_section",
+   "fieldtype": "Section Break",
+   "label": "Advanced Configuration"
+  },
+  {
+   "default": "0",
+   "fieldname": "verbose_mode",
+   "fieldtype": "Check",
+   "label": "Verbose Mode"
+  },
+  {
+   "default": "3",
+   "fieldname": "max_iterations",
+   "fieldtype": "Int",
+   "label": "Max Iterations"
+  },
+  {
+   "default": "0.7",
+   "fieldname": "temperature",
+   "fieldtype": "Float",
+   "label": "Temperature"
+  },
+  {
+   "fieldname": "max_tokens",
+   "fieldtype": "Int",
+   "label": "Max Tokens"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-12 12:46:08.579126",
+ "modified": "2025-09-15 13:21:33.234253",
  "modified_by": "Administrator",
  "module": "AI",
  "name": "AI Agent",

@@ -1,3 +1,4 @@
+from ai_crm.ai.agent.agent_service import AgentService
 import frappe
 from ai_crm.utils.perplexity import research_company, research_person
 from frappe.core.doctype.communication.email import make
@@ -175,7 +176,7 @@ def get_party_activities(party_type, party_name):
 def draft_email(lead, activity_summary):
     setting = frappe.get_single("Lead Followup Setting")
     research_text = f"\nAdditional Research:\n{lead.get('person_research')}" if lead.get("person_research") else ""
-    email_agent = frappe.get_doc("AI Agent", setting.email_agent)
+    email_service = AgentService(setting.email_agent)
     input_vars = {
         "lead_name":lead.get("lead_name", ""),
         "company_name":lead.get("company_name", ""),
@@ -189,7 +190,7 @@ def draft_email(lead, activity_summary):
         "activity_summary":activity_summary or "No recent activities.",
         "research_text":research_text
     }
-    result = email_agent.invoke(**input_vars)
+    result = email_service.invoke(**input_vars)
     signature = frappe.get_value("Email Account", setting.email_account , "signature")
     if result:
         return {

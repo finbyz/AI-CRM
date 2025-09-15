@@ -1,15 +1,23 @@
-import json
+from ai_crm.ai.agent.agent_service import AgentService
 import frappe
 from frappe.model.document import Document
-from langchain_litellm.chat_models import ChatLiteLLM
-from langchain_core.output_parsers import PydanticOutputParser
-from langchain.schema import StrOutputParser
-from langchain.prompts import ChatPromptTemplate
-from json_schema_to_pydantic import create_model
-from langchain.agents import initialize_agent, AgentType
+import os
+
 
 
 class AIAgent(Document):
+    """
+    Enhanced AI Agent with capabilities:
+    - Multiple agent types with specialized behaviors
+    - Advanced memory management
+    - Tool integration and workflow capabilities
+    - Conversation context and state management
+    - Structured output and response formatting
+    """
+    
+    def __init__(self, *args, **kwargs):
+        self._agent_service = None
+        super().__init__(*args, **kwargs)
     
     def validate(self):
         if self.agent_type == "Gemini Cache Agent":
@@ -18,172 +26,13 @@ class AIAgent(Document):
         if not self.output_schema:
             self.output_schema = None
 
+        if self.enable_memory and not self.memory_type:
+            frappe.throw("Memory type is required when memory is enabled")
+        
     @property
-    def chat_messages(self):
-        messages = []
-        for msg in self.messages:
-            messages.append((msg.type, msg.content))
-        if self.output_schema:
-            message_type = 'system' if self.agent_type != "Gemini Cache Agent" else "human"
-            messages.append((message_type, "{format_instructions}"))
-        return messages
-    
-    def get_tools(self):
-        """
-        Return a list of LangChain Tool objects for all tools linked to this agent.
-        Assumes self.tools is a child table or MultiSelect linking to AIAgentTool DocType.
-        """
-        tools_list = []
-        if self.tools:
-            for ai_agent_tool in self.tools:
-                tool = frappe.get_doc("AI Tool",ai_agent_tool.tool)
-                tools_list.append(tool.get_tool())
-        if self.agent_type == "Knowledge Base Agent":
-            kb = frappe.get_doc("Knowledge Base",self.knowledge_base)
-            vs = kb.get_vector_store()
-            tools_list.append(vs.as_tool())
-        return tools_list
+    def agent_service(self):
+        if self._agent_service:
+            return self._agent_service
+        self._agent_service = AgentService(self)
+        return self._agent_service
 
-    @property
-    def agent(self):
-        """
-        Initialize and return a LangChain agent using the tools linked to this agent.
-        """
-        tools = self.get_tools()
-        llm = self.get_llm()
-        agent = initialize_agent(
-            tools,
-            llm,
-            agent=self._resolve_agent_type(),
-            handle_parsing_errors=True
-        )
-        return agent
-
-    def _resolve_agent_type(self) -> AgentType:
-        desired = self.lc_agent_type
-        if not desired:
-            return AgentType.ZERO_SHOT_REACT_DESCRIPTION
-        for at in AgentType:
-            if desired.upper() == at.name.upper() or desired.lower() == at.value.lower():
-                return at
-        return AgentType.ZERO_SHOT_REACT_DESCRIPTION
-    
-    def get_llm(self) -> ChatLiteLLM:
-        if self.agent_type == "Gemini Cache Agent":
-            cache_doc = frappe.get_doc("Gemini Cache",self.gemini_cache)
-            llm = cache_doc._llm
-        else:
-            llm_doc = frappe.get_doc("LLM",self.llm)
-            llm = llm_doc.llm
-        return llm
-    
-    def invoke(self, query=None,**kwargs):
-        """
-        Invoke the AI agent with optional structured output schema
-        
-        Args:
-            query (str): The user query
-            kwargs (str, optional): Additional context
-        """
-        
-        llm = self.get_llm()
-        
-        messages = self.chat_messages
-        if query:
-            messages.append(("human", "{query}"))
-
-        prompt = ChatPromptTemplate.from_messages([
-            *messages,
-        ])
-        
-        if self.agent_type == "Image Generation Agent":
-            input_vars = {
-                "query": query,
-                **kwargs
-            }
-            image_generation_prompt = prompt.invoke(input_vars)
-            return llm.invoke(image_generation_prompt)
-        
-        dynamic_model = None
-        if self.output_schema:
-            dynamic_model = create_model(schema=json.loads(self.output_schema))
-        format_instructions = ''
-        if dynamic_model:
-            output_parser = PydanticOutputParser(pydantic_object=dynamic_model)
-            format_instructions = output_parser.get_format_instructions()
-        else:
-            output_parser = StrOutputParser()
-
-        chain = prompt | llm | output_parser
-        
-        input_vars = {
-            "format_instructions": format_instructions,
-            "query": query,
-            **kwargs
-        }
-        response = chain.invoke(input_vars)
-        return response
-    
-    def test_agent(self, query, variables=None):
-        """
-        Test the AI agent with a custom query and optional variables
-        
-        Args:
-            query (str): The test query
-            variables (dict, optional): Additional variables for the prompt
-            
-        Returns:
-            dict: Test result with response and metadata
-        """
-        try:
-            if variables is None:
-                variables = {}
-            
-            # Invoke the agent with the test query and variables
-            response = self.invoke(query=query, **variables)
-            
-            return {
-                "success": True,
-                "response": response,
-                "query": query,
-                "variables": variables,
-                "agent_type": self.agent_type,
-                "llm": self.llm if self.agent_type != "Gemini Cache Agent" else self.gemini_cache
-            }
-        except Exception as e:
-            return {
-                "success": False,
-                "error": str(e),
-                "query": query,
-                "variables": variables,
-                "agent_type": self.agent_type,
-                "llm": self.llm if self.agent_type != "Gemini Cache Agent" else self.gemini_cache
-            }
-
-
-@frappe.whitelist()
-def test_agent(docname, query, variables=None):
-    """
-    Server-side method to test an AI Agent
-    
-    Args:
-        docname (str): Name of the AI Agent document
-        query (str): Test query
-        variables (dict, optional): Additional variables for the prompt
-        
-    Returns:
-        dict: Test result
-    """
-    try:
-        if variables and isinstance(variables, str):
-            variables = json.loads(variables)
-        
-        doc = frappe.get_doc("AI Agent", docname)
-        return doc.test_agent(query, variables)
-    except Exception as e:
-        return {
-            "success": False,
-            "error": str(e),
-            "query": query,
-            "variables": variables
-        }

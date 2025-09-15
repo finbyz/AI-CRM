@@ -1,3 +1,4 @@
+from ai_crm.ai.agent.agent_service import AgentService
 import frappe
 from pydantic import BaseModel,Field
 
@@ -29,9 +30,9 @@ def research_company(party_type: str,party_name: str,**kwargs) -> str:
         
     # get prompt template from settings
     setting = frappe.get_single("Lead Followup Setting")
-    company_research_agent = frappe.get_doc("AI Agent",setting.company_research_agent)
+    company_research_service = AgentService(setting.company_research_agent)
 
-    result = company_research_agent.invoke(**lead_info)
+    result = company_research_service.invoke(**lead_info)
 
     if party_type == "Lead":
         doc.company_research = result
@@ -65,8 +66,8 @@ def research_person(party_type:str,party_name:str,contact_name:str) -> str:
     })
     
     setting = frappe.get_single("Lead Followup Setting")
-    person_research_agent = frappe.get_doc("AI Agent",setting.person_research_agent)
-    result = person_research_agent.invoke(**lead_info)
+    person_research_service = AgentService(setting.person_research_agent)
+    result = person_research_service.invoke(**lead_info)
     
     contact.person_research = result.research_summary
     contact.linkedin_profile = result.linkedin_profile if result.linkedin_profile.startswith("http") else None

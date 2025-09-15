@@ -18,13 +18,13 @@ class AITool(Document):
         self.tool_function = self.get_tool_path()
 
         safe_name = frappe.scrub(self.name)
-        boilerplate = f'''# Auto-generated LangChain tool for: {self.name}
+        boilerplate = f'''# Auto-generated LangChain tool for: {safe_name}
 # Module: {self.module}
 
 from typing import Any
 from langchain.tools import tool
 
-@tool("{self.name}", return_direct=False)
+@tool("{safe_name}", return_direct=False)
 def {frappe.scrub(self.name)}_tool(input: Any) -> Any:
     """
     {self.description}
@@ -100,6 +100,7 @@ def {frappe.scrub(self.name)}_tool(input: Any) -> Any:
     
     def get_tool(self):
         tool_path = self.get_tool_path()
+        safe_name = frappe.scrub(self.name)
         try:
             module_path, func_name = tool_path.rsplit('.', 1)
             if module_path in sys.modules:
@@ -113,15 +114,15 @@ def {frappe.scrub(self.name)}_tool(input: Any) -> Any:
             try:
                 return StructuredTool.from_function(
                     func=func,
-                    name=self.name,
-                    description=self.description or f"Tool: {self.name}",
+                    name=safe_name,
+                    description=self.description or f"Tool: {safe_name}",
                     infer_schema=True,
                 )
             except Exception:
                 return Tool.from_function(
                     func=func,
-                    name=self.name,
-                    description=self.description or f"Tool: {self.name}"
+                    name=safe_name,
+                    description=self.description or f"Tool: {safe_name}"
                 )
         except Exception as e:
             frappe.log_error(f"Failed to load tool {self.name}: {e}")

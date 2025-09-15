@@ -11,7 +11,7 @@ from langchain_core.language_models.base import (
 from litellm import image_generation,embedding
 from typing import TYPE_CHECKING, Any, Optional
 from langchain_core.runnables import RunnableConfig
-
+import os
 
 
 class LLM(Document):
@@ -19,6 +19,8 @@ class LLM(Document):
 	def llm(self):
 		provider = frappe.get_doc("LLM Provider", self.provider)
 		if self.supports_image_generation:
+			if self.provider == "Google":
+				os.environ['GEMINI_API_KEY'] = provider.get_password("api_key")
 			return ImageLiteLLM(
 				api_key = provider.get_password("api_key"),
 				model = self.name
