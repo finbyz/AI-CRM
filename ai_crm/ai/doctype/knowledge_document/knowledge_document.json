@@ -14,7 +14,7 @@
   {
    "fieldname": "file",
    "fieldtype": "Attach",
-   "in_list_view": 1,
+   "hidden": 1,
    "label": "File"
   },
   {
@@ -35,7 +35,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-09-10 17:57:40.416517",
+ "modified": "2025-09-15 20:28:08.491399",
  "modified_by": "Administrator",
  "module": "AI",
  "name": "Knowledge Document",

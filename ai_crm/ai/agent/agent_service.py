@@ -113,7 +113,7 @@ class AgentService():
         tools = self.get_tools()
         model = self.get_llm()
 
-        if self.agent_doc.agent_type == "React Agent":
+        if self.agent_doc.agent_type == "LangGraph Agent":
             memory = self.get_memory()
             return self._create_langgraph_agent(tools, model, memory)
         elif self.agent_doc.agent_type == "Conversational Agent":
@@ -178,10 +178,8 @@ class AgentService():
             *messages,
         ])
 
-        format_instructions = ''
         if dynamic_model:
             output_parser = PydanticOutputParser(pydantic_object=dynamic_model)
-            format_instructions = output_parser.get_format_instructions()
         else:
             output_parser = StrOutputParser()
 
@@ -228,7 +226,7 @@ class AgentService():
         try:
             if self.agent_doc.agent_type == "Image Generation Agent":
                 return self._invoke_image_generation(query, **kwargs)
-            elif self.agent_doc.agent_type in ["ReAct Agent", "Conversational Agent"]:
+            elif self.agent_doc.agent_type in ["LangGraph Agent", "Conversational Agent"]:
                 return self._invoke_with_agent_executor(query, **kwargs)
             else:
                 if getattr(self, "_is_basic_chain", False):
@@ -269,12 +267,10 @@ class AgentService():
             if memory:
                 memory_vars = memory.load_memory_variables(input_data)
                 input_data.update(memory_vars)
-            
             input_data.update(kwargs)
             
             # Invoke the agent
-            response = agent.invoke(input_data)
-            print(response)
+            response = agent.invoke(**input_data)
             # Auto-save to memory
             if memory and query and response:
                 memory.save_context(
