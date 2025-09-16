@@ -15,7 +15,7 @@
   "memory_type": null,
   "messages": [
    {
-    "content": "You are a B2B sales research assistant. {format_instructions}",
+    "content": "You are a B2B sales research assistant.",
     "parent": "Person Research",
     "parentfield": "messages",
     "parenttype": "AI Agent",
@@ -29,7 +29,7 @@
     "type": "human"
    }
   ],
-  "modified": "2025-09-15 19:23:10.261290",
+  "modified": "2025-09-15 20:38:54.857157",
   "name": "Person Research",
   "output_schema": "{\r\n  \"properties\": {\r\n    \"linkedin_profile\": {\r\n      \"default\": \"LinkedIn profile url\",\r\n      \"title\": \"Linkedin Profile\",\r\n      \"type\": \"string\"\r\n    },\r\n    \"research_summary\": {\r\n      \"default\": \"Research summary about Person\",\r\n      \"title\": \"Research Summary\",\r\n      \"type\": \"string\"\r\n    }\r\n  },\r\n  \"title\": \"PersonResearch\",\r\n  \"type\": \"object\"\r\n}",
   "temperature": 0.0,
@@ -38,7 +38,7 @@
   "verbose_mode": 0
  },
  {
-  "agent_type": "Chat Agent",
+  "agent_type": "",
   "custom_lead": null,
   "docstatus": 0,
   "doctype": "AI Agent",
@@ -67,7 +67,7 @@
     "type": "human"
    }
   ],
-  "modified": "2025-09-04 16:46:40.230884",
+  "modified": "2025-09-15 22:15:09.650993",
   "name": "Social Media Post Reviser",
   "output_schema": "{\r\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\r\n  \"title\": \"SocialMediaPostContent\",\r\n  \"type\": \"object\",\r\n  \"properties\": {\r\n    \"content\": {\r\n      \"type\": \"string\",\r\n      \"description\": \"Generated social media post content\"\r\n    }\r\n  },\r\n  \"required\": [\"content\"],\r\n  \"additionalProperties\": false\r\n}\r\n",
   "temperature": 0.0,
@@ -76,13 +76,13 @@
   "verbose_mode": 0
  },
  {
-  "agent_type": "Chat Agent",
+  "agent_type": "ReAct Agent",
   "custom_lead": null,
   "docstatus": 0,
   "doctype": "AI Agent",
   "enable_memory": 0,
   "gemini_cache": null,
-  "knowledge_base": null,
+  "knowledge_base": "finbyz_tech",
   "lc_agent_type": "",
   "llm": "openai/gpt-4.1-mini",
   "llm_provider": "OpenAI",
@@ -90,12 +90,19 @@
   "max_tokens": 0,
   "memory_type": null,
   "messages": [],
-  "modified": "2025-09-04 20:51:27.188606",
+  "modified": "2025-09-16 14:13:27.561983",
   "name": "Chat Agent",
   "output_schema": null,
   "temperature": 0.0,
   "title": "Chat Agent",
-  "tools": [],
+  "tools": [
+   {
+    "parent": "Chat Agent",
+    "parentfield": "tools",
+    "parenttype": "AI Agent",
+    "tool": "sum of 2 numbers"
+   }
+  ],
   "verbose_mode": 0
  },
  {
@@ -122,13 +129,13 @@
   "verbose_mode": 0
  },
  {
-  "agent_type": "Chat Agent",
+  "agent_type": "ReAct Agent",
   "custom_lead": null,
   "docstatus": 0,
   "doctype": "AI Agent",
   "enable_memory": 0,
   "gemini_cache": null,
-  "knowledge_base": null,
+  "knowledge_base": "finbyz_tech",
   "lc_agent_type": null,
   "llm": "openai/gpt-4.1-mini",
   "llm_provider": "OpenAI",
@@ -137,7 +144,7 @@
   "memory_type": null,
   "messages": [
    {
-    "content": "You are a social media content strategist.\nGenerate a high-quality social media post based on the inputs.\nRules:\n- Return JSON object only.\n- The output must have a \"content\" field with a maximally engaging post text.\n- The post should be tailored for the specified social media platform and target audience.\n- Use the idea_title and idea_description as the core content.\n{format_instructions}",
+    "content": "You are a social media content strategist.\nGenerate a high-quality social media post based on the inputs.\nRules:\n- Return JSON object only.\n- The output must have a \"content\" field with a maximally engaging post text.\n- The post should be tailored for the specified social media platform and target audience.\n- Use the idea_title and idea_description as the core content.",
     "parent": "Social Media Post Generator",
     "parentfield": "messages",
     "parenttype": "AI Agent",
@@ -151,7 +158,7 @@
     "type": "human"
    }
   ],
-  "modified": "2025-09-04 16:46:33.924867",
+  "modified": "2025-09-16 16:17:34.299164",
   "name": "Social Media Post Generator",
   "output_schema": "{\r\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\r\n  \"title\": \"SocialMediaPostContent\",\r\n  \"type\": \"object\",\r\n  \"properties\": {\r\n    \"post_content\": {\r\n      \"type\": \"string\",\r\n      \"description\": \"Generated social media post content\"\r\n    }\r\n  },\r\n  \"required\": [\"content\"],\r\n  \"additionalProperties\": false\r\n}\r\n",
   "temperature": 0.0,
@@ -198,7 +205,7 @@
   "verbose_mode": 0
  },
  {
-  "agent_type": "LangGraph Agent",
+  "agent_type": "LangChain Chain",
   "custom_lead": null,
   "docstatus": 0,
   "doctype": "AI Agent",
@@ -227,7 +234,7 @@
     "type": "human"
    }
   ],
-  "modified": "2025-09-15 13:32:42.148483",
+  "modified": "2025-09-16 13:23:48.162555",
   "name": "Idea Generation Agent",
   "output_schema": "{\r\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\r\n  \"title\": \"IdeasList\",\r\n  \"type\": \"object\",\r\n  \"properties\": {\r\n    \"ideas\": {\r\n      \"type\": \"array\",\r\n      \"items\": {\r\n        \"type\": \"object\",\r\n        \"title\": \"Idea\",\r\n        \"properties\": {\r\n          \"idea_title\": {\r\n            \"type\": \"string\",\r\n            \"description\": \"The title of the idea\"\r\n          },\r\n          \"post_content\": {\r\n            \"type\": \"string\",\r\n            \"description\": \"A detailed explanation of the idea\"\r\n          }\r\n        },\r\n        \"required\": [\"idea_title\", \"post_content\"],\r\n        \"additionalProperties\": false\r\n      }\r\n    }\r\n  },\r\n  \"required\": [\"ideas\"],\r\n  \"additionalProperties\": false\r\n}",
   "temperature": 0.0,
@@ -274,13 +281,13 @@
   "verbose_mode": 0
  },
  {
-  "agent_type": "LangGraph Agent",
+  "agent_type": "",
   "custom_lead": null,
   "docstatus": 0,
   "doctype": "AI Agent",
   "enable_memory": 0,
   "gemini_cache": null,
-  "knowledge_base": "finbyz_tech",
+  "knowledge_base": "",
   "lc_agent_type": null,
   "llm": "openai/gpt-4.1-mini",
   "llm_provider": "OpenAI",
@@ -289,7 +296,7 @@
   "memory_type": null,
   "messages": [
    {
-    "content": "You are a helpful assistant drafting business follow-up emails for Finbyz Tech.\nBody type should be html. Do not include signature in the email body. {format_instructions}.\nTo get more details about finbyz tech and find relative information you can utilize knowledge base.\nalso include contact details of finbyz tech",
+    "content": "You are a helpful assistant drafting professional follow-up business emails.\nAll email bodies must be in HTML format.\nDo not include an email signature in the body.\nMaintain a polite, concise, and business-friendly tone.\nWhen describing the company, its offerings, or expertise, always use the finbyz tech tool to gather accurate and up-to-date information. Do not hardcode company details in the system message.\nEmphasize how the company can help prospects achieve efficiency, streamline operations, and drive growth.\nAdapt each email to context (e.g., first follow-up, gentle reminder, proposal reference).\nKeep the focus on value creation, collaboration, and solving client challenges.\n\nalways use finbyz_tech",
     "parent": "Lead Follow up",
     "parentfield": "messages",
     "parenttype": "AI Agent",
@@ -303,7 +310,7 @@
     "type": "human"
    }
   ],
-  "modified": "2025-09-15 18:15:59.542576",
+  "modified": "2025-09-15 22:13:51.570197",
   "name": "Lead Follow up",
   "output_schema": "{\r\n  \"properties\": {\r\n    \"subject\": {\r\n      \"description\": \"Subject line of the email\",\r\n      \"title\": \"Subject\",\r\n      \"type\": \"string\"\r\n    },\r\n    \"body\": {\r\n      \"description\": \"Email body text\",\r\n      \"title\": \"Body\",\r\n      \"type\": \"string\"\r\n    }\r\n  },\r\n  \"required\": [\r\n    \"subject\",\r\n    \"body\"\r\n  ],\r\n  \"title\": \"EmailOutput\",\r\n  \"type\": \"object\"\r\n}",
   "temperature": 0.0,
