@@ -1,6 +1,6 @@
 [
  {
-  "agent_type": "",
+  "agent_type": "LangChain Chain",
   "custom_lead": null,
   "docstatus": 0,
   "doctype": "AI Agent",
@@ -29,7 +29,7 @@
     "type": "human"
    }
   ],
-  "modified": "2025-09-15 20:38:54.857157",
+  "modified": "2025-09-16 16:37:37.231417",
   "name": "Person Research",
   "output_schema": "{\r\n  \"properties\": {\r\n    \"linkedin_profile\": {\r\n      \"default\": \"LinkedIn profile url\",\r\n      \"title\": \"Linkedin Profile\",\r\n      \"type\": \"string\"\r\n    },\r\n    \"research_summary\": {\r\n      \"default\": \"Research summary about Person\",\r\n      \"title\": \"Research Summary\",\r\n      \"type\": \"string\"\r\n    }\r\n  },\r\n  \"title\": \"PersonResearch\",\r\n  \"type\": \"object\"\r\n}",
   "temperature": 0.0,
@@ -38,7 +38,7 @@
   "verbose_mode": 0
  },
  {
-  "agent_type": "",
+  "agent_type": "LangChain Chain",
   "custom_lead": null,
   "docstatus": 0,
   "doctype": "AI Agent",
@@ -67,7 +67,7 @@
     "type": "human"
    }
   ],
-  "modified": "2025-09-15 22:15:09.650993",
+  "modified": "2025-09-16 16:37:19.138533",
   "name": "Social Media Post Reviser",
   "output_schema": "{\r\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\r\n  \"title\": \"SocialMediaPostContent\",\r\n  \"type\": \"object\",\r\n  \"properties\": {\r\n    \"content\": {\r\n      \"type\": \"string\",\r\n      \"description\": \"Generated social media post content\"\r\n    }\r\n  },\r\n  \"required\": [\"content\"],\r\n  \"additionalProperties\": false\r\n}\r\n",
   "temperature": 0.0,
@@ -167,7 +167,7 @@
   "verbose_mode": 0
  },
  {
-  "agent_type": "",
+  "agent_type": "LangChain Chain",
   "custom_lead": null,
   "docstatus": 0,
   "doctype": "AI Agent",
@@ -196,7 +196,7 @@
     "type": "human"
    }
   ],
-  "modified": "2025-09-15 19:08:11.977753",
+  "modified": "2025-09-16 16:37:46.852069",
   "name": "LinkedIn Content Agent",
   "output_schema": "{\r\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\r\n  \"title\": \"IdeasList\",\r\n  \"type\": \"object\",\r\n  \"properties\": {\r\n    \"ideas\": {\r\n      \"type\": \"array\",\r\n      \"items\": {\r\n        \"type\": \"object\",\r\n        \"title\": \"Idea\",\r\n        \"properties\": {\r\n          \"idea_title\": {\r\n            \"type\": \"string\",\r\n            \"description\": \"The title of the idea\"\r\n          },\r\n          \"description\": {\r\n            \"type\": \"string\",\r\n            \"description\": \"A detailed explanation of the idea\"\r\n          }\r\n        },\r\n        \"required\": [\"idea_title\", \"description\"],\r\n        \"additionalProperties\": false\r\n      }\r\n    }\r\n  },\r\n  \"required\": [\"ideas\"],\r\n  \"additionalProperties\": false\r\n}\r\n",
   "temperature": 0.0,
@@ -243,7 +243,7 @@
   "verbose_mode": 0
  },
  {
-  "agent_type": "",
+  "agent_type": "LangChain Chain",
   "custom_lead": null,
   "docstatus": 0,
   "doctype": "AI Agent",
@@ -272,7 +272,7 @@
     "type": "human"
    }
   ],
-  "modified": "2025-09-15 19:00:31.914455",
+  "modified": "2025-09-16 16:37:58.935453",
   "name": "Company Research",
   "output_schema": null,
   "temperature": 0.0,
@@ -281,7 +281,7 @@
   "verbose_mode": 0
  },
  {
-  "agent_type": "",
+  "agent_type": "LangChain Chain",
   "custom_lead": null,
   "docstatus": 0,
   "doctype": "AI Agent",
@@ -310,7 +310,7 @@
     "type": "human"
    }
   ],
-  "modified": "2025-09-15 22:13:51.570197",
+  "modified": "2025-09-16 16:37:27.954008",
   "name": "Lead Follow up",
   "output_schema": "{\r\n  \"properties\": {\r\n    \"subject\": {\r\n      \"description\": \"Subject line of the email\",\r\n      \"title\": \"Subject\",\r\n      \"type\": \"string\"\r\n    },\r\n    \"body\": {\r\n      \"description\": \"Email body text\",\r\n      \"title\": \"Body\",\r\n      \"type\": \"string\"\r\n    }\r\n  },\r\n  \"required\": [\r\n    \"subject\",\r\n    \"body\"\r\n  ],\r\n  \"title\": \"EmailOutput\",\r\n  \"type\": \"object\"\r\n}",
   "temperature": 0.0,
