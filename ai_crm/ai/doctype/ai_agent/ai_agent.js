@@ -111,7 +111,7 @@ frappe.ui.form.on("AI Agent", {
                     freeze_message: __("Testing AI Agent... Please wait"),
                     callback: function(r) {
                         if (r.message) {
-                            frappe.msgprint(frappe.markdown(r.message.response.output))
+                            frappe.msgprint(frappe.markdown(r?.message?.response?.output || r?.message?.response || r?.message || r))
                         }
                     },
                     error: function(err) {

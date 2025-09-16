@@ -63,13 +63,12 @@
    "label": "Chat Messages"
   },
   {
-   "default": "LangGraph Agent",
    "fieldname": "agent_type",
    "fieldtype": "Select",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Agent Type",
-   "options": "\nLangGraph Agent\nConversational Agent\nGemini Cache Agent\nImage Generation Agent"
+   "options": "\nLangChain Chain\nConversational Agent\nStructured Chat Agent\nReAct Agent\nGemini Cache Agent\nImage Generation Agent"
   },
   {
    "depends_on": "eval:1",
@@ -163,7 +162,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-15 18:52:54.467654",
+ "modified": "2025-09-16 13:23:34.860816",
  "modified_by": "Administrator",
  "module": "AI",
  "name": "AI Agent",
