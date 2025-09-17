@@ -4,7 +4,7 @@
 import frappe
 from frappe.model.document import Document
 from frappe.utils.file_manager import get_file_path
-from ai_crm.ai.doctype.gemini_cache.cache import create_gemini_cache
+from ai_crm.ai.doctype.gemini_cache.cache import create_gemini_cache,delete_cache
 from langchain_google_genai.chat_models import ChatGoogleGenerativeAI
 
 class GeminiCache(Document):
@@ -32,12 +32,16 @@ class GeminiCache(Document):
             ttl=f"{self.ttl}s",
             cache_display_name=self.display_name,
             model=model_name,
+            information = self.information,
             system_instruction=self.system_instruction
         )
         if not cache: return
+        old_cache_name = self.cache_name
         self.cache_name = cache.name
         self.expiry = cache.expire_time.strftime("%Y-%m-%d %H:%M:%S")
+        self.status = "Complete"
         self.save()
+        delete_cache(cache=old_cache_name,api_key=api_key)
 
     def get_files(self):
         files = frappe.get_all(

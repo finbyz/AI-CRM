@@ -32,6 +32,7 @@ class AgentTypes(Enum):
     REACT_AGENT = "ReAct Agent"
     STRUCTURED_CHAT_AGENT = "Structured Chat Agent"
     IMAGE_GENERATION_AGENT = "Image Generation Agent"
+    GEMINI_CACHE_AGENT = "Gemini Cache Agent"
 
 
 class AgentService:
@@ -244,7 +245,7 @@ class AgentService:
     def get_llm(self) -> ChatLiteLLM:
         """Get the LLM instance for this agent."""
         try:
-            if self.agent_doc.agent_type == "Gemini Cache Agent":
+            if self.agent_doc.agent_type == AgentTypes.GEMINI_CACHE_AGENT.value:
                 cache_doc = frappe.get_doc("Gemini Cache", self.agent_doc.gemini_cache)
                 llm = cache_doc._llm
             else:

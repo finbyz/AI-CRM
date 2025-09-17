@@ -41,6 +41,7 @@ def create_gemini_cache(
     system_instruction: str = "You are a helpful assistant that answers questions based on the provided content.",
     model: str = "models/gemini-1.5-flash-latest",
     ttl: str = "3600s",
+    information:str = "",
     api_key: Optional[str] = None
 ) -> types.CachedContent:
     client = genai.Client(api_key=api_key)
@@ -67,7 +68,16 @@ def create_gemini_cache(
             uploaded_files.append(file)
         else:
             raise RuntimeError(f"Failed to process file {file_path}: {file.state.name}")
-    
+    if information:
+        uploaded_files.append({
+            "role": "user",
+            "parts": [
+                {
+                    "text": information
+                }
+            ]
+        })
+        
     if not len(uploaded_files) : return
     cache = client.caches.create(
         model=model,
@@ -80,3 +90,8 @@ def create_gemini_cache(
     )
 
     return cache
+
+
+def delete_cache(cache,api_key: Optional[str] = None):
+    client = genai.Client(api_key=api_key)
+    return client.caches.delete(name=cache)

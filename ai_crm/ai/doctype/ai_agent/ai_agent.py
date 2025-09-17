@@ -49,7 +49,7 @@ class AIAgent(Document):
             dict: Test result with response and metadata
         """
         try:
-            query = kwargs.get('query', '')
+            query = kwargs.get('input', '')
             
             response = self.agent_service.invoke(query, **kwargs)
             

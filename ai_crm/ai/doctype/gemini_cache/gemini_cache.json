@@ -7,12 +7,15 @@
  "engine": "InnoDB",
  "field_order": [
   "display_name",
+  "status",
   "llm",
   "cache_name",
   "ttl",
   "expiry",
   "column_break_tfni",
-  "system_instruction"
+  "system_instruction",
+  "section_break_bjab",
+  "information"
  ],
  "fields": [
   {
@@ -25,7 +28,8 @@
   {
    "fieldname": "cache_name",
    "fieldtype": "Data",
-   "label": "Cache Name"
+   "label": "Cache Name",
+   "read_only": 1
   },
   {
    "fieldname": "ttl",
@@ -40,7 +44,8 @@
    "fieldtype": "Datetime",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Expiry"
+   "label": "Expiry",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_tfni",
@@ -60,12 +65,29 @@
    "link_filters": "[[\"LLM Provider\",\"provider\",\"=\",\"Google\"]]",
    "options": "LLM",
    "reqd": 1
+  },
+  {
+   "fieldname": "information",
+   "fieldtype": "Long Text",
+   "label": "Information"
+  },
+  {
+   "fieldname": "section_break_bjab",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Status",
+   "options": "Complete\nIn Progress\nFailed",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-08-29 10:41:26.366585",
+ "modified": "2025-09-17 10:40:59.775117",
  "modified_by": "Administrator",
  "module": "AI",
  "name": "Gemini Cache",
@@ -88,5 +110,18 @@
  "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [
+  {
+   "color": "Blue",
+   "title": "In Progress"
+  },
+  {
+   "color": "Orange",
+   "title": "Complete"
+  },
+  {
+   "color": "Red",
+   "title": "Failed"
+  }
+ ]
 }
