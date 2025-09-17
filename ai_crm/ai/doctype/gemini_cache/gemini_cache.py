@@ -26,22 +26,31 @@ class GeminiCache(Document):
         model_name = self.llm.split('/',2)[1]
         provider = frappe.get_value("LLM", self.llm,'provider')
         api_key = frappe.get_doc("LLM Provider",provider).get_password("api_key")
-        cache = create_gemini_cache(
-            files=files,
-            api_key=api_key,
-            ttl=f"{self.ttl}s",
-            cache_display_name=self.display_name,
-            model=model_name,
-            information = self.information,
-            system_instruction=self.system_instruction
-        )
+        try:
+            cache = create_gemini_cache(
+                files=files,
+                api_key=api_key,
+                ttl=f"{self.ttl}s",
+                cache_display_name=self.display_name,
+                model=model_name,
+                information = self.information,
+                system_instruction=self.system_instruction
+            )
+        except Exception as e:
+            frappe.log_error("Gemini Cache creation error",frappe.get_traceback())
+            self.status = "Failed"
+            self.save()
+            return {
+                "success": False
+            }
         if not cache: return
         old_cache_name = self.cache_name
         self.cache_name = cache.name
         self.expiry = cache.expire_time.strftime("%Y-%m-%d %H:%M:%S")
         self.status = "Complete"
         self.save()
-        delete_cache(cache=old_cache_name,api_key=api_key)
+        if old_cache_name:
+            delete_cache(cache=old_cache_name,api_key=api_key)
 
     def get_files(self):
         files = frappe.get_all(
