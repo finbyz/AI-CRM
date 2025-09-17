@@ -80,14 +80,14 @@
    "fieldtype": "Select",
    "hidden": 1,
    "label": "Status",
-   "options": "Complete\nIn Progress\nFailed",
+   "options": "\nComplete\nIn Progress\nFailed",
    "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-17 10:40:59.775117",
+ "modified": "2025-09-17 10:54:10.320761",
  "modified_by": "Administrator",
  "module": "AI",
  "name": "Gemini Cache",
@@ -116,12 +116,16 @@
    "title": "In Progress"
   },
   {
-   "color": "Orange",
+   "color": "Green",
    "title": "Complete"
   },
   {
    "color": "Red",
    "title": "Failed"
+  },
+  {
+   "color": "Gray",
+   "title": "Draft"
   }
  ]
 }
