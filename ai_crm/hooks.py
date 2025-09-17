@@ -243,23 +243,23 @@ scheduler_events = {
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
 
-# fixtures = [
-#     "LLM",
-#     "Lead Followup Setting",
-#     "Content Hub Setting",
-#     "AI Agent",
-#     {
-#         "doctype": "Role",
-#         "filters": {"name": ["in", ["AI Automation"]]}
-#     },
-#     {
-#         "doctype": "Custom DocPerm", 
-#         "filters": {"role": ["in", ["AI Automation"]]}
-#     },
-#     {
-#         "doctype": "Custom Field",
-#         "filters": [
-#             ["module", "=", "Ai CRM"]
-#         ]
-#     }
-# ]
+fixtures = [
+    "LLM",
+    "Lead Followup Setting",
+    "Content Hub Setting",
+    "AI Agent",
+    {
+        "doctype": "Role",
+        "filters": {"name": ["in", ["AI Automation"]]}
+    },
+    {
+        "doctype": "Custom DocPerm", 
+        "filters": {"role": ["in", ["AI Automation"]]}
+    },
+    {
+        "doctype": "Custom Field",
+        "filters": [
+            ["module", "=", "Ai CRM"]
+        ]
+    }
+]

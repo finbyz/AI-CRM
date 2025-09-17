@@ -1,5 +1,28 @@
 [
  {
+  "agent_type": "Gemini Cache Agent",
+  "custom_lead": null,
+  "docstatus": 0,
+  "doctype": "AI Agent",
+  "enable_memory": 0,
+  "gemini_cache": "PDF Cache",
+  "knowledge_base": null,
+  "lc_agent_type": "",
+  "llm": null,
+  "llm_provider": null,
+  "max_iterations": 3,
+  "max_tokens": 0,
+  "memory_type": "Buffer Memory",
+  "messages": [],
+  "modified": "2025-09-17 10:28:10.697235",
+  "name": "Test Agent",
+  "output_schema": null,
+  "temperature": 0.7,
+  "title": "Test Agent",
+  "tools": [],
+  "verbose_mode": 0
+ },
+ {
   "agent_type": "LangChain Chain",
   "custom_lead": null,
   "docstatus": 0,
