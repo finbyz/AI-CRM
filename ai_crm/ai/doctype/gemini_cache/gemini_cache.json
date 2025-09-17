@@ -80,14 +80,14 @@
    "fieldtype": "Select",
    "hidden": 1,
    "label": "Status",
-   "options": "\nComplete\nIn Progress\nFailed",
+   "options": "Draft\nComplete\nIn Progress\nFailed",
    "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-17 10:54:10.320761",
+ "modified": "2025-09-17 10:59:20.880366",
  "modified_by": "Administrator",
  "module": "AI",
  "name": "Gemini Cache",
