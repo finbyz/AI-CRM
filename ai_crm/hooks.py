@@ -155,13 +155,10 @@ scheduler_events = {
 	# ],
       
 	"daily": [
-		"ai_crm.tasks.daily.smart_followup.run_followup_job",
-        "ai_crm.scheduler_tasks.reset_daily_counters"
-	],
+		"ai_crm.tasks.daily.smart_followup.run_followup_job"
+    ],
 	"hourly": [
-	# 	"ai_crm.tasks.hourly"
-    "ai_crm.scheduler_tasks.fetch_and_store_posts",
-    "ai_crm.scheduler_tasks.auto_comment_on_posts"
+	    #"ai_crm.tasks.hourly"
 	 ],
 	# "weekly": [
 	# 	"ai_crm.tasks.weekly"
@@ -255,11 +252,11 @@ fixtures = [
     "AI Agent",
     {
         "doctype": "Role",
-        "filters": {"name": ["in", ["AI Automation"]]}
+        "filters": {"name": ["in", ["AI Automation","Social Media Manager"]]}
     },
     {
         "doctype": "Custom DocPerm", 
-        "filters": {"role": ["in", ["AI Automation"]]}
+        "filters": {"role": ["in", ["AI Automation","Social Media Manager"]]}
     },
     {
         "doctype": "Custom Field",
