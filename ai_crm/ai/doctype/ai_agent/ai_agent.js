@@ -2,7 +2,8 @@
 // For license information, please see license.txt
 
 function extractVariables(msgs) {
-  const varRegex = /\{([^}]+)\}/g; // capture what's inside { }
+  // Match {var} but not {{var}} or }}var}}
+  const varRegex = /(?<!\{)\{([^{}]+)\}(?!\})/g;
   const perMessage = {};
   const seen = new Set();
   const unique = [];
@@ -27,6 +28,7 @@ function extractVariables(msgs) {
 
   return { perMessage, unique };
 }
+
 
 
 frappe.ui.form.on("AI Agent", {

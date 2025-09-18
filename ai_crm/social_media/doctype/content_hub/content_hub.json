@@ -53,7 +53,7 @@
    "fieldname": "credential_type",
    "fieldtype": "Link",
    "label": "Credential Type",
-   "link_filters": "[[\"DocType\",\"name\",\"in\",[\"LinkedIn Integration\"]]]",
+   "link_filters": "[[\"DocType\",\"name\",\"in\",[\"LinkedIn Integration\",\"Twitter Integration\",\"Reddit Integration\"]]]",
    "options": "DocType"
   },
   {
@@ -66,7 +66,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-04 09:50:25.776903",
+ "modified": "2025-09-16 10:33:49.994065",
  "modified_by": "Administrator",
  "module": "Social Media",
  "name": "Content Hub",

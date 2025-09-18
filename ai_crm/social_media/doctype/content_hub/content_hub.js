@@ -41,7 +41,7 @@ frappe.ui.form.on("ContentHubIdea", {
 
         let btn = $(`
             <button class="btn btn-xs btn-primary btn-generate-idea-${cdn}" style="margin-top:5px;">
-                <i class="fa fa-magic"></i> Generate From This Idea
+                <i class="fa fa-magic"></i> Generate Post From This Idea
             </button>
         `);
         $wrapper.append(btn);
@@ -63,9 +63,9 @@ frappe.ui.form.on("ContentHubIdea", {
                         console.log("📩 Response from generate_post_from_idea:", r);
 
                         if (r.message?.status === "success") {
-                            frappe.show_alert({
-                                message: `✅ Post created: ${r.message.post_name}`,
-                                indicator: "green"
+                            frappe.msgprint({
+                                title: __("Success"),
+                                message: `✅ Post created: ${r.message.post_name}`
                             });
                             frm.reload_doc();
                         } else {

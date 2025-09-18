@@ -153,18 +153,23 @@ scheduler_events = {
 	# "all": [
 	# 	"ai_crm.tasks.all"
 	# ],
+      
 	"daily": [
-		"ai_crm.tasks.daily.smart_followup.run_followup_job"
+		"ai_crm.tasks.daily.smart_followup.run_followup_job",
+        "ai_crm.scheduler_tasks.reset_daily_counters"
 	],
-	# "hourly": [
+	"hourly": [
 	# 	"ai_crm.tasks.hourly"
-	# ],
+    "ai_crm.scheduler_tasks.fetch_and_store_posts",
+    "ai_crm.scheduler_tasks.auto_comment_on_posts"
+	 ],
 	# "weekly": [
 	# 	"ai_crm.tasks.weekly"
 	# ],
 	# "monthly": [
 	# 	"ai_crm.tasks.monthly"
 	# ],
+   
 }
 
 # Testing

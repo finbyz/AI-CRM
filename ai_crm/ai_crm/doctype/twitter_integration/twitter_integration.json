@@ -1,0 +1,193 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:{title}",
+ "creation": "2025-09-12 15:09:14.608367",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "client_id",
+  "client_secret",
+  "redirect_uri",
+  "state",
+  "oauth_token",
+  "oauth_token_secret",
+  "code_verifier",
+  "access_token",
+  "refresh_token",
+  "connection_status",
+  "token_type",
+  "consumer_key",
+  "consumer_secret",
+  "access_token_key",
+  "access_token_secret",
+  "section_break_ueuj",
+  "username",
+  "user_id",
+  "full_name",
+  "column_break_cfhm",
+  "profile_image_url",
+  "connected_at",
+  "token_expires_at"
+ ],
+ "fields": [
+  {
+   "fieldname": "client_id",
+   "fieldtype": "Data",
+   "label": "Client ID"
+  },
+  {
+   "fieldname": "redirect_uri",
+   "fieldtype": "Small Text",
+   "label": "Redirect URI"
+  },
+  {
+   "fieldname": "state",
+   "fieldtype": "Data",
+   "label": "State"
+  },
+  {
+   "fieldname": "oauth_token",
+   "fieldtype": "Password",
+   "hidden": 1,
+   "label": "OAuth Token"
+  },
+  {
+   "fieldname": "oauth_token_secret",
+   "fieldtype": "Password",
+   "hidden": 1,
+   "label": "OAuth Token Secret"
+  },
+  {
+   "fieldname": "access_token",
+   "fieldtype": "Data",
+   "label": "Access Token"
+  },
+  {
+   "fieldname": "connection_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Connection Status",
+   "options": "Not Connected\nPending Authorization\nConnected"
+  },
+  {
+   "fieldname": "section_break_ueuj",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "username",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Username"
+  },
+  {
+   "fieldname": "user_id",
+   "fieldtype": "Data",
+   "label": "User ID\t"
+  },
+  {
+   "fieldname": "full_name",
+   "fieldtype": "Data",
+   "label": "Full Name\t"
+  },
+  {
+   "fieldname": "profile_image_url",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Profile Image URL\t"
+  },
+  {
+   "fieldname": "connected_at",
+   "fieldtype": "Datetime",
+   "label": "Connected At"
+  },
+  {
+   "fieldname": "column_break_cfhm",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "client_secret",
+   "fieldtype": "Data",
+   "label": "Client Secret"
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Account Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "code_verifier",
+   "fieldtype": "Data",
+   "label": "code_verifier"
+  },
+  {
+   "fieldname": "refresh_token",
+   "fieldtype": "Data",
+   "label": "refresh_token"
+  },
+  {
+   "default": "bearer",
+   "fieldname": "token_type",
+   "fieldtype": "Data",
+   "label": "Token Type\t"
+  },
+  {
+   "fieldname": "token_expires_at",
+   "fieldtype": "Data",
+   "label": "Token Expires At"
+  },
+  {
+   "fieldname": "consumer_key",
+   "fieldtype": "Data",
+   "label": "Consumer Key"
+  },
+  {
+   "fieldname": "consumer_secret",
+   "fieldtype": "Password",
+   "label": "consumer_secret"
+  },
+  {
+   "fieldname": "access_token_key",
+   "fieldtype": "Data",
+   "label": "access_token_key"
+  },
+  {
+   "fieldname": "access_token_secret",
+   "fieldtype": "Password",
+   "label": "access_token_secret"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-09-16 22:48:53.171355",
+ "modified_by": "Administrator",
+ "module": "Ai CRM",
+ "name": "Twitter Integration",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

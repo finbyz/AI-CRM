@@ -1,0 +1,128 @@
+{
+    "actions": [],
+    "allow_copy": 0,
+    "allow_events_in_timeline": 0,
+    "allow_guest_to_view": 0,
+    "allow_import": 0,
+    "allow_rename": 1,
+    "autoname": "field:subreddit_name",
+    "creation": "2025-01-01 00:00:00.000000",
+    "doctype": "DocType",
+    "engine": "InnoDB",
+    "field_order": [
+        "subreddit_name",
+        "is_active",
+        "monitor_frequency",
+        "section_break_4",
+        "auto_comment",
+        "comment_template",
+        "comment_delay_minutes",
+        "section_break_8",
+        "last_monitored",
+        "posts_fetched_today",
+        "total_posts_monitored",
+        "last_error"
+    ],
+    "fields": [
+        {
+            "fieldname": "subreddit_name",
+            "fieldtype": "Data",
+            "label": "Subreddit Name",
+            "reqd": 1,
+            "unique": 1
+        },
+        {
+            "default": "1",
+            "fieldname": "is_active",
+            "fieldtype": "Check",
+            "label": "Is Active"
+        },
+        {
+            "default": "30",
+            "fieldname": "monitor_frequency",
+            "fieldtype": "Int",
+            "label": "Monitor Frequency (minutes)"
+        },
+        {
+            "fieldname": "section_break_4",
+            "fieldtype": "Section Break",
+            "label": "Auto Comment Settings"
+        },
+        {
+            "default": "0",
+            "fieldname": "auto_comment",
+            "fieldtype": "Check",
+            "label": "Enable Auto Comment"
+        },
+        {
+            "depends_on": "auto_comment",
+            "fieldname": "comment_template",
+            "fieldtype": "Text",
+            "label": "Comment Template"
+        },
+        {
+            "default": "5",
+            "depends_on": "auto_comment",
+            "fieldname": "comment_delay_minutes",
+            "fieldtype": "Int",
+            "label": "Comment Delay (minutes)"
+        },
+        {
+            "fieldname": "section_break_8",
+            "fieldtype": "Section Break",
+            "label": "Statistics"
+        },
+        {
+            "fieldname": "last_monitored",
+            "fieldtype": "Datetime",
+            "label": "Last Monitored",
+            "read_only": 1
+        },
+        {
+            "default": "0",
+            "fieldname": "posts_fetched_today",
+            "fieldtype": "Int",
+            "label": "Posts Fetched Today",
+            "read_only": 1
+        },
+        {
+            "default": "0",
+            "fieldname": "total_posts_monitored",
+            "fieldtype": "Int",
+            "label": "Total Posts Monitored",
+            "read_only": 1
+        },
+        {
+            "fieldname": "last_error",
+            "fieldtype": "Text",
+            "label": "Last Error",
+            "read_only": 1
+        }
+    ],
+    "links": [],
+    "modified": "2025-01-01 00:00:00.000000",
+    "modified_by": "Administrator",
+    "module": "Ai Crm",
+    "name": "Subreddit",
+    "naming_rule": "By fieldname",
+    "owner": "Administrator",
+    "permissions": [
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "System Manager",
+            "share": 1,
+            "write": 1
+        }
+    ],
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": [],
+    "title_field": "subreddit_name",
+    "track_changes": 1
+}
