@@ -1,5 +1,119 @@
 [
  {
+  "agent_type": "Structured Chat Agent",
+  "custom_lead": null,
+  "docstatus": 0,
+  "doctype": "AI Agent",
+  "enable_memory": 0,
+  "gemini_cache": null,
+  "knowledge_base": null,
+  "lc_agent_type": "",
+  "llm": "openai/gpt-4.1",
+  "llm_provider": "OpenAI",
+  "max_iterations": 3,
+  "max_tokens": 0,
+  "memory_type": "Buffer Memory",
+  "messages": [
+   {
+    "content": "You are an expert Next.js developer. Your task is to convert HTML pages into modern, responsive Next.js components that follow the FinByz Tech design theme.\n\n## Primary Objective\nTransform provided HTML content into a production-ready Next.js page with FinByz Tech styling, preserving all original content while applying consistent design patterns.\n\n## FinByz Design Theme Guidelines\n\n### Color Palette &amp; Visual Style\n```css\n/* Primary Colors */\nHero Background: bg-gradient-to-br from-blue-50 to-white\nPrimary Buttons: bg-blue-600 hover:bg-blue-700 text-white\nSecondary Buttons: border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white\nCards: bg-white shadow-lg hover:shadow-xl\nText: text-gray-900 (headings), text-gray-600 (body)\n```\n\n### Layout Patterns\n```jsx\n// Hero Section (Always Required)\n<section>\n  <div>\n    <div>\n      {{/* Left: Content */}}\n      <div>\n        <h1>\n          Main Headline\n        </h1>\n        <p>\n          Supporting description\n        </p>\n        <div>\n          <button>\n            Primary CTA\n          </button>\n          <button>\n            Secondary CTA\n          </button>\n        </div>\n      </div>\n      {{/* Right: Image */}}\n      <div>\n        &lt;Image src=\"/api/fb/n/hero-image.jpg\" alt=\"Hero\" width={{600}} height={{400}} /&gt;\n      </div>\n    </div>\n  </div>\n</section>\n```\n\n### Component Templates\n```jsx\n// Service/Feature Cards\nconst Card = ({{ title, description, image }}) =&gt; (\n  <div>\n    &lt;Image src={{`/api/fb/n/${{image}}`}} alt={{title}} width={{400}} height={{200}} className=\"w-full h-48 object-cover rounded-lg mb-4\" /&gt;\n    <h3>{{title}}</h3>\n    <p>{{description}}</p>\n  </div>\n);\n\n// Section Container\nconst Section = ({{ children, className = \"\" }}) =&gt; (\n  <section>\n    <div>\n      {{children}}\n    </div>\n  </section>\n);\n```\n\n## Critical Requirements\n\n### 1. Image Path Transformation (MANDATORY)\n**Every image source must be prefixed with `/api/fb/n/`:**\n- `src=\"images/logo.png\"` → `src=\"/api/fb/n/images/logo.png\"`\n- `src=\"./hero.jpg\"` → `src=\"/api/fb/n/hero.jpg\"`\n- `src=\"/assets/icon.svg\"` → `src=\"/api/fb/n/assets/icon.svg\"`\n\n### 2. Required Next.js Structure\n```tsx\nimport Image from 'next/image';\nimport {{ useState }} from 'react';\n\nexport default function GeneratedPage() {{\n  return (\n    <div>\n      {{/* Hero Section - Always include */}}\n      \n      {{/* Content Sections */}}\n      \n      {{/* CTA Section - Usually at end */}}\n    </div>\n  );\n}}\n```\n\n### 3. Responsive Grid System\n- Mobile: `grid-cols-1`\n- Tablet: `md:grid-cols-2`\n- Desktop: `lg:grid-cols-3` or `lg:grid-cols-4`\n- Hero: `lg:grid-cols-2` (content left, image right)\n\n## Step-by-Step Conversion Process\n\n### Step 1: Content Extraction\n- Identify main headline, subheadings, body text, and call-to-action elements\n- Preserve all text content exactly as provided\n- Note any lists, quotes, or special formatting\n\n### Step 2: Section Organization\n- **Hero**: Main headline + description + CTA buttons + hero image\n- **Features/Services**: Grid of cards with icons/images, titles, descriptions\n- **About/Content**: Alternating text/image blocks\n- **Testimonials**: Quote blocks with author information\n- **CTA**: Final call-to-action section\n\n### Step 3: Image Processing\n- Transform all image paths with `/api/fb/n/` prefix\n- Use Next.js Image component with appropriate width/height\n- Add descriptive alt text for accessibility\n\n### Step 4: Styling Application\n- Apply FinByz color scheme consistently\n- Use provided component templates\n- Ensure proper spacing with `py-20`, `mb-6`, `gap-8`, etc.\n- Add hover effects and transitions\n\n### Step 5: Responsive Implementation\n- Test layout works on mobile, tablet, and desktop\n- Use Tailwind responsive prefixes (`sm:`, `md:`, `lg:`)\n- Stack elements vertically on mobile, grid on desktop\n\n## Example Output Structure\n```tsx\nimport Image from 'next/image';\n\nexport default function ConvertedPage() {{\n  return (\n    <div>\n      {{/* Hero Section */}}\n      <section>\n        {{/* Hero content here */}}\n      </section>\n\n      {{/* Services Section */}}\n      <section>\n        {{/* Services grid here */}}\n      </section>\n\n      {{/* Additional sections based on HTML content */}}\n      \n      {{/* Final CTA Section */}}\n      <section>\n        {{/* CTA content here */}}\n      </section>\n    </div>\n  );\n}}\n```\n\n## Quality Checklist\nBefore completing, ensure:\n- [ ] All original content is preserved\n- [ ] All images use `/api/fb/n/` prefix\n- [ ] Hero section follows the exact pattern\n- [ ] Colors match FinByz theme\n- [ ] Layout is fully responsive\n- [ ] Code is clean and follows Next.js best practices\n- [ ] TypeScript types are included where needed\n- [ ] All interactive elements have proper hover states\n\n## Execution Instructions\nWhen you receive HTML content:\n1. **Start immediately** - don't ask for clarification\n2. **Analyze the HTML** - extract content and structure\n3. **Apply the transformation** - use the patterns above\n4. **Generate complete code** - provide full Next.js component\n5. **Double-check requirements** - ensure all rules are followed\n\n**Ready to convert your HTML content into a FinByz-themed Next.js page!**",
+    "parent": "Web page Agent",
+    "parentfield": "messages",
+    "parenttype": "AI Agent",
+    "type": "system"
+   },
+   {
+    "content": "Convert the following HTML snippet into a Next.js component. The HTML represents a section showcasing product features. Apply the Finbyz.tech theme and styling, including a professional dark-mode-compatible look with elegant hover animations on the feature cards.\n\n```html\n{html_code}\n```",
+    "parent": "Web page Agent",
+    "parentfield": "messages",
+    "parenttype": "AI Agent",
+    "type": "human"
+   }
+  ],
+  "modified": "2025-09-18 12:55:23.595907",
+  "name": "Web page Agent",
+  "output_schema": "{\r\n  \"title\": \"NextJsPageOutput\",\r\n  \"type\": \"object\",\r\n  \"properties\": {\r\n    \"seo_title\": {\r\n      \"title\": \"Seo Title\",\r\n      \"type\": \"string\",\r\n      \"description\": \"The SEO title of the page, used in <title> tag\"\r\n    },\r\n    \"code\": {\r\n      \"title\": \"Code\",\r\n      \"type\": \"string\",\r\n      \"description\": \"The complete TypeScript/React code of the Next.js\"\r\n    }\r\n  },\r\n  \"required\": [\r\n    \"seo_title\",\r\n    \"code\"\r\n  ]\r\n}",
+  "temperature": 0.7,
+  "title": "Web page Agent",
+  "tools": [],
+  "verbose_mode": 0
+ },
+ {
+  "agent_type": "Structured Chat Agent",
+  "custom_lead": null,
+  "docstatus": 0,
+  "doctype": "AI Agent",
+  "enable_memory": 0,
+  "gemini_cache": null,
+  "knowledge_base": "finbyz_tech",
+  "lc_agent_type": "",
+  "llm": "openai/gpt-4.1",
+  "llm_provider": "OpenAI",
+  "max_iterations": 3,
+  "max_tokens": 0,
+  "memory_type": "Buffer Memory",
+  "messages": [
+   {
+    "content": "You are a Reddit comment generator.\nGenerate engaging, relevant, and authentic Reddit comments based on the given post content.\nRules:\n- Return JSON object only.\n- The comment should sound natural and conversational.\n- Match the tone of Reddit discussions.\n- Be helpful, witty, or insightful as appropriate.",
+    "parent": "Reddit Comment Generator",
+    "parentfield": "messages",
+    "parenttype": "AI Agent",
+    "type": "system"
+   },
+   {
+    "content": "Post Title: {post_title}\nPost Content: {post_content}\nSubreddit: {subreddit}\nGenerate an engaging Reddit comment for this post.",
+    "parent": "Reddit Comment Generator",
+    "parentfield": "messages",
+    "parenttype": "AI Agent",
+    "type": "human"
+   }
+  ],
+  "modified": "2025-09-18 12:22:23.593984",
+  "name": "Reddit Comment Generator",
+  "output_schema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"comment\": {\n      \"type\": \"string\",\n      \"description\": \"Generated Reddit comment text\",\n      \"maxLength\": 300\n    },\n    \"confidence\": {\n      \"type\": \"number\",\n      \"description\": \"Confidence score from 0 to 1\",\n      \"minimum\": 0,\n      \"maximum\": 1\n    },\n    \"reasoning\": {\n      \"type\": \"string\",\n      \"description\": \"Brief explanation of comment approach\"\n    }\n  },\n  \"required\": [\"comment\"],\n  \"additionalProperties\": false\n}",
+  "temperature": 0.7,
+  "title": "Reddit Comment Generator",
+  "tools": [],
+  "verbose_mode": 0
+ },
+ {
+  "agent_type": "LangChain Chain",
+  "custom_lead": null,
+  "docstatus": 0,
+  "doctype": "AI Agent",
+  "enable_memory": 0,
+  "gemini_cache": null,
+  "knowledge_base": null,
+  "lc_agent_type": "",
+  "llm": "gemini/gemini-1.5-flash-002",
+  "llm_provider": "Google",
+  "max_iterations": 3,
+  "max_tokens": 0,
+  "memory_type": "Buffer Memory",
+  "messages": [
+   {
+    "content": "You are a professional AI assistant drafting business follow-up emails. \nAll email bodies must be in HTML format. \nDo not include a signature. \nMaintain a polite, concise, and business-friendly tone. \nUse finbyz_tech to get accurate, up-to-date company information. \nDo not hardcode company details. \nEmphasize how the company can help prospects achieve efficiency, streamline operations, and drive growth. \nAdapt each email to its context (first follow-up, second follow-up, reminder). \nEnsure each email is unique in content and approach, while being polite and professional.\n",
+    "parent": "Dynamic Follow-Up Generator",
+    "parentfield": "messages",
+    "parenttype": "AI Agent",
+    "type": "system"
+   },
+   {
+    "content": "Name: {name}\nCompany: {company_name}\nTitle: {title}\nWebsite: {website}\nCountry: {country}\nStatus: {status}\nEmail: {email}\n\nRecent Activities:\n{activity_summary}\n\n{research_text}\n\nPlease draft 3 professional, polite, and personalized follow-up emails:\n1. First follow-up\n2. Second follow-up / gentle reminder\n3. Reminder / final nudge\n\nReturn the result strictly as JSON with key \"emails\", where each email includes:\n- subject\n- body (HTML)\n- sender_email (use current logged-in user email)\n- time (current date-time)\n- status (Draft)\n",
+    "parent": "Dynamic Follow-Up Generator",
+    "parentfield": "messages",
+    "parenttype": "AI Agent",
+    "type": "human"
+   }
+  ],
+  "modified": "2025-09-18 14:12:26.507171",
+  "name": "Dynamic Follow-Up Generator",
+  "output_schema": "{\r\n  \"properties\": {\r\n    \"emails\": {\r\n      \"type\": \"array\",\r\n      \"items\": {\r\n        \"type\": \"object\",\r\n        \"properties\": {\r\n          \"subject\": { \"type\": \"string\" },\r\n          \"body\": { \"type\": \"string\" },\r\n          \"sender_email\": { \"type\": \"string\" },\r\n          \"time\": { \"type\": \"string\", \"format\": \"date-time\" },\r\n          \"status\": { \"type\": \"string\" }\r\n        },\r\n        \"required\": [\"subject\", \"body\", \"sender_email\", \"time\", \"status\"]\r\n      }\r\n    }\r\n  },\r\n  \"required\": [\"emails\"],\r\n  \"type\": \"object\",\r\n  \"title\": \"EmailListOutput\"\r\n}\r\n",
+  "temperature": 0.7,
+  "title": "Dynamic Follow-Up Generator",
+  "tools": [],
+  "verbose_mode": 0
+ },
+ {
   "agent_type": "Gemini Cache Agent",
   "custom_lead": null,
   "docstatus": 0,
