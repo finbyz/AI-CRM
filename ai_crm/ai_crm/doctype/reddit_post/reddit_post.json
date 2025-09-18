@@ -1,167 +1,178 @@
 {
-    "actions": [],
-    "allow_copy": 0,
-    "allow_events_in_timeline": 0,
-    "allow_guest_to_view": 0,
-    "allow_import": 0,
-    "allow_rename": 1,
-    "autoname": "field:post_id",
-    "creation": "2025-01-01 00:00:00.000000",
-    "doctype": "DocType",
-    "engine": "InnoDB",
-    "field_order": [
-        "subreddit",
-        "post_id",
-        "title",
-        "author",
-        "section_break_5",
-        "url",
-        "external_url",
-        "post_type",
-        "section_break_9",
-        "score",
-        "num_comments",
-        "created_utc",
-        "section_break_13",
-        "selftext",
-        "section_break_15",
-        "comment_status",
-        "comment_posted_at",
-        "comment_error"
-    ],
-    "fields": [
-        {
-            "fieldname": "subreddit",
-            "fieldtype": "Link",
-            "in_list_view": 1,
-            "label": "Subreddit",
-            "options": "Subreddit",
-            "reqd": 1
-        },
-        {
-            "fieldname": "post_id",
-            "fieldtype": "Data",
-            "in_list_view": 1,
-            "label": "Post ID",
-            "reqd": 1,
-            "unique": 1
-        },
-        {
-            "fieldname": "title",
-            "fieldtype": "Data",
-            "in_list_view": 1,
-            "label": "Title",
-            "reqd": 1,
-            "length": 300
-        },
-        {
-            "fieldname": "author",
-            "fieldtype": "Data",
-            "in_list_view": 1,
-            "label": "Author",
-            "length": 100
-        },
-        {
-            "fieldname": "section_break_5",
-            "fieldtype": "Section Break"
-        },
-        {
-            "fieldname": "url",
-            "fieldtype": "Data",
-            "label": "Reddit URL",
-            "length": 500
-        },
-        {
-            "fieldname": "external_url",
-            "fieldtype": "Data",
-            "label": "External URL",
-            "length": 1000
-        },
-        {
-            "fieldname": "post_type",
-            "fieldtype": "Select",
-            "in_list_view": 1,
-            "label": "Post Type",
-            "options": "Text\nImage\nVideo\nLink"
-        },
-        {
-            "fieldname": "section_break_9",
-            "fieldtype": "Section Break"
-        },
-        {
-            "fieldname": "score",
-            "fieldtype": "Int",
-            "label": "Score"
-        },
-        {
-            "fieldname": "num_comments",
-            "fieldtype": "Int",
-            "label": "Number of Comments"
-        },
-        {
-            "fieldname": "created_utc",
-            "fieldtype": "Datetime",
-            "label": "Created UTC"
-        },
-        {
-            "fieldname": "section_break_13",
-            "fieldtype": "Section Break"
-        },
-        {
-            "fieldname": "selftext",
-            "fieldtype": "Text",
-            "label": "Self Text"
-        },
-        {
-            "fieldname": "section_break_15",
-            "fieldtype": "Section Break",
-            "label": "Comment Status"
-        },
-        {
-            "default": "Pending",
-            "fieldname": "comment_status",
-            "fieldtype": "Select",
-            "in_list_view": 1,
-            "label": "Comment Status",
-            "options": "Pending\nCommented\nFailed\nSkipped"
-        },
-        {
-            "fieldname": "comment_posted_at",
-            "fieldtype": "Datetime",
-            "label": "Comment Posted At",
-            "read_only": 1
-        },
-        {
-            "fieldname": "comment_error",
-            "fieldtype": "Text",
-            "label": "Comment Error",
-            "read_only": 1
-        }
-    ],
-    "links": [],
-    "modified": "2025-01-01 00:00:00.000000",
-    "modified_by": "Administrator",
-    "module": "Ai Crm",
-    "name": "Reddit Post",
-    "naming_rule": "By fieldname",
-    "owner": "Administrator",
-    "permissions": [
-        {
-            "create": 1,
-            "delete": 1,
-            "email": 1,
-            "export": 1,
-            "print": 1,
-            "read": 1,
-            "report": 1,
-            "role": "System Manager",
-            "share": 1,
-            "write": 1
-        }
-    ],
-    "sort_field": "created_utc",
-    "sort_order": "DESC",
-    "states": [],
-    "title_field": "title",
-    "track_changes": 1
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:post_id",
+ "creation": "2025-01-01 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "subreddit",
+  "post_id",
+  "title",
+  "selftext",
+  "author",
+  "section_break_5",
+  "url",
+  "external_url",
+  "post_type",
+  "section_break_9",
+  "score",
+  "num_comments",
+  "created_utc",
+  "section_break_15",
+  "comment_status",
+  "comment_posted_at",
+  "ai_generated_comment",
+  "comment_error"
+ ],
+ "fields": [
+  {
+   "fieldname": "subreddit",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Subreddit",
+   "options": "Subreddit",
+   "reqd": 1
+  },
+  {
+   "fieldname": "post_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Post ID",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title",
+   "length": 300,
+   "reqd": 1
+  },
+  {
+   "fieldname": "author",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Author",
+   "length": 100
+  },
+  {
+   "fieldname": "section_break_5",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "url",
+   "fieldtype": "Data",
+   "label": "Reddit URL",
+   "length": 500
+  },
+  {
+   "fieldname": "external_url",
+   "fieldtype": "Data",
+   "label": "External URL",
+   "length": 1000
+  },
+  {
+   "fieldname": "post_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Post Type",
+   "options": "Text\nImage\nVideo\nLink"
+  },
+  {
+   "fieldname": "section_break_9",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "score",
+   "fieldtype": "Int",
+   "label": "Score"
+  },
+  {
+   "fieldname": "num_comments",
+   "fieldtype": "Int",
+   "label": "Number of Comments"
+  },
+  {
+   "fieldname": "created_utc",
+   "fieldtype": "Datetime",
+   "label": "Created UTC"
+  },
+  {
+   "fieldname": "selftext",
+   "fieldtype": "Text",
+   "label": "Post Content"
+  },
+  {
+   "fieldname": "section_break_15",
+   "fieldtype": "Section Break",
+   "label": "Comment Status"
+  },
+  {
+   "default": "Pending",
+   "fieldname": "comment_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Comment Status",
+   "options": "Pending\nCommented\nFailed\nSkipped"
+  },
+  {
+   "fieldname": "comment_posted_at",
+   "fieldtype": "Datetime",
+   "label": "Comment Posted At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "ai_generated_comment",
+   "fieldtype": "Text",
+   "label": "AI Generated Comment",
+   "read_only": 1
+  },
+  {
+   "fieldname": "comment_error",
+   "fieldtype": "Text",
+   "label": "Comment Error",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2025-09-18 16:32:22.832840",
+ "modified_by": "Administrator",
+ "module": "Ai CRM",
+ "name": "Reddit Post",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Social Media Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "created_utc",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "title",
+ "track_changes": 1
 }

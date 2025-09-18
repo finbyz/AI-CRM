@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 from ai_crm.ai.agent.agent_service import AgentService
+from ai_crm.credentials.doctype.linkedin_integration.linkedin_integration import LinkedInIntegration
 import frappe
 import requests
 from frappe.model.document import Document
@@ -114,135 +115,65 @@ class SocialMediaPost(Document):
         self.save()
         self.reload()
         return {"status": "success"}
-
-    def _upload_linkedin_image(self, author_urn, access_token) -> str:
-        """
-        Upload a Frappe File to LinkedIn and return the image URN.
-        """
-        register_url = "https://api.linkedin.com/v2/images?action=initializeUpload"
-        headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
-        register_payload = {"initializeUploadRequest": {"owner": author_urn}}
-        reg_res = requests.post(register_url, headers=headers, json=register_payload)
-        reg_res.raise_for_status()
-        reg_data = reg_res.json()["value"]
-
-        upload_url = reg_data["uploadUrl"]
-        image_urn = reg_data["image"]
-
-        file_doc = frappe.get_doc("File", {"file_url": self.image_attachment})
-        file_path = file_doc.get_full_path()
-        mime_type = frappe.utils.file_manager.mimetypes.guess_type(file_path)[0] or "application/octet-stream"
-        with open(file_path, "rb") as f:
-            file_content = f.read()
-
-        upload_headers = {"Authorization": f"Bearer {access_token}", "Content-Type": mime_type}
-        up_res = requests.post(upload_url, headers=upload_headers, data=file_content)
-        up_res.raise_for_status()
-
-        return image_urn
-
-    @frappe.whitelist()
-    def post_to_linkedin(self):
-        """Post content to LinkedIn using the Posts API"""
-        # if not self.linkedin_account:
-        #     frappe.throw(_("LinkedIn Account is required"))
-
-        if not self.content:
-            frappe.throw(_("Content is required for posting"))
-        content_hub = frappe.get_doc("Content Hub", self.content_hub)
-        linkedin_doc = frappe.get_doc(content_hub.credential_type, content_hub.credential)
-
-        if not linkedin_doc.access_token:
-            frappe.throw(_("LinkedIn access token not found. Please reconnect your LinkedIn account."))
-
-        if linkedin_doc.connection_status != "Connected":
-            frappe.throw(_("LinkedIn account is not connected. Please reconnect your account."))
-
-        post_data = self._prepare_linkedin_post_data(linkedin_doc)
-
-        response = self._make_linkedin_api_request(post_data, linkedin_doc.access_token)
-        if response.get('status') == 'success':
-            self.status = "Posted"
-        else:
-            self.status = "Failed"
-        self.save()
-        return response
-
-    def _prepare_linkedin_post_data(self, linkedin_doc):
-        """Prepare the post data according to LinkedIn Posts API schema.
-        If an image is attached, you must first register & upload it to LinkedIn,
-        then pass the returned URN (image_urn) here.
-        """
-
-        # Pick correct author URN
-        if linkedin_doc.organization_support:
-            author_urn = f"urn:li:organization:{linkedin_doc.organization_id}"
-        else:
-            author_urn = f"urn:li:person:{linkedin_doc.person_id}"
-
-        post_data = {
-            "author": author_urn,
-            "commentary": self.content,
-            "visibility": "PUBLIC",
-            "distribution": {
-                "feedDistribution": "MAIN_FEED",
-                "targetEntities": [],
-                "thirdPartyDistributionChannels": [],
-            },
-            "lifecycleState": "PUBLISHED",
-            "isReshareDisabledByAuthor": False,
-        }
-        if self.image_attachment:
-            image_urn = self._upload_linkedin_image(author_urn, linkedin_doc.access_token)
-            post_data["content"] = {
-                "media": {
-                    "title": "Optional title",
-                    "id": image_urn
-                }
-            }
-        return post_data
-
+    
     def _get_image_url(self):
         """Get the full URL for the attached image"""
         if self.image_attachment:
             return get_url(self.image_attachment)
         return None
 
-    def _make_linkedin_api_request(self, post_data, access_token):
-        """Make the actual API request to LinkedIn Posts API"""
-        url = "https://api.linkedin.com/rest/posts"
+    @frappe.whitelist()
+    def post_to_linkedin(self):
+        """Post content to LinkedIn using the Posts API"""
+        try:
+            if not self.content:
+                frappe.throw(_("Content is required for posting"))
+            
+            if not self.content_hub:
+                frappe.throw(_("Content Hub is required for posting"))
 
-        headers = {
-            "Authorization": f"Bearer {access_token}",
-            "Content-Type": "application/json",
-            "LinkedIn-Version": "202408",  # Using latest version as per documentation
-            "X-Restli-Protocol-Version": "2.0.0"
-        }
+            # Get the content hub and credentials
+            content_hub = frappe.get_doc("Content Hub", self.content_hub)
+            linkedin_doc = frappe.get_doc(content_hub.credential_type, content_hub.credential)
 
-        response = requests.post(url, headers=headers, json=post_data, timeout=60)
-        if response.status_code == 201:
-            post_id = response.headers.get('x-restli-id')
-            post_link = f"https://www.linkedin.com/feed/update/{post_id}"
-            return {
-                "status": "success",
-                "post_id": post_id,
-                "post_link": post_link
-            }
-        else:
-            error_message = f"LinkedIn API Error: {response.status_code} - {response.text}"
-            frappe.log_error(error_message, "LinkedIn Post API")
+            # Initialize LinkedIn integration
+            linkedin_integration = LinkedInIntegration(linkedin_doc)
+            
+            # Call LinkedIn integration's post method
+            result = linkedin_integration.post_to_linkedin(self.content, self.image_attachment)
+            
+            if result.get("status") == "success":
+                self.status = "Posted"
+                self.social_media_post_id = result.get("post_id")
+                self.social_media_post_link = result.get("post_link")
+                self.save()
+                frappe.db.commit()
+                return result
+            else:
+                self.status = "Failed"
+                self.save()
+                frappe.db.commit()
+                error_msg = result.get("error", "Unknown error occurred")
+                frappe.log_error(f"LinkedIn Post Failed: {error_msg}", "LinkedIn Post Error")
+                return {
+                    "status": "error",
+                    "message": error_msg
+                }
+
+        except Exception as e:
+            frappe.log_error(f"LinkedIn Post Exception: {str(e)}", "LinkedIn Post Exception")
+            self.status = "Failed"
+            self.save()
+            frappe.db.commit()
             return {
                 "status": "error",
-                "error": error_message
+                "message": str(e)
             }
 
     @frappe.whitelist()
     def update_linkedin_post(self, post_id=None):
         """Update an existing LinkedIn post"""
         try:
-            # if not self.linkedin_account: # Assuming this is not needed if content_hub handles credentials
-            #     frappe.throw(_("LinkedIn Account is required"))
-
             # Use post_id parameter or stored post ID
             if not post_id:
                 post_id = self.social_media_post_id
@@ -250,45 +181,20 @@ class SocialMediaPost(Document):
             if not post_id:
                 frappe.throw(_("Post ID is required for updating"))
 
+            if not self.content_hub:
+                frappe.throw(_("Content Hub is required"))
+
+            # Get the content hub and credentials
             content_hub = frappe.get_doc("Content Hub", self.content_hub)
             linkedin_doc = frappe.get_doc(content_hub.credential_type, content_hub.credential)
 
-            if not linkedin_doc.access_token:
-                frappe.throw(_("LinkedIn access token not found"))
-
-            # Prepare update data
-            update_data = {
-                "patch": {
-                    "$set": {
-                        "commentary": self.content
-                    }
-                }
-            }
-
-            # Make API request
-            url = f"https://api.linkedin.com/rest/posts/{post_id}"
-            headers = {
-                "Authorization": f"Bearer {linkedin_doc.access_token}",
-                "Content-Type": "application/json",
-                "LinkedIn-Version": "202408",
-                "X-Restli-Protocol-Version": "2.0.0",
-                "X-RestLi-Method": "PARTIAL_UPDATE"
-            }
-
-            response = requests.post(url, headers=headers, json=update_data, timeout=30)
-
-            if response.status_code == 204:
-                return {
-                    "status": "success",
-                    "message": _("Post updated successfully on LinkedIn")
-                }
-            else:
-                error_message = f"LinkedIn API Error: {response.status_code} - {response.text}"
-                frappe.log_error(error_message, "LinkedIn Update API")
-                return {
-                    "status": "error",
-                    "message": error_message
-                }
+            # Initialize LinkedIn integration
+            linkedin_integration = LinkedInIntegration(linkedin_doc)
+            
+            # Call LinkedIn integration's update method
+            result = linkedin_integration.update_linkedin_post(post_id, self.content)
+            
+            return result
 
         except Exception as e:
             frappe.log_error(frappe.get_traceback(), "LinkedIn Update Error")
@@ -301,9 +207,6 @@ class SocialMediaPost(Document):
     def delete_linkedin_post(self, post_id=None):
         """Delete a LinkedIn post"""
         try:
-            # if not self.linkedin_account: # Assuming this is not needed if content_hub handles credentials
-            #     frappe.throw(_("LinkedIn Account is required"))
-
             # Use post_id parameter or stored post ID
             if not post_id:
                 post_id = self.social_media_post_id
@@ -311,35 +214,20 @@ class SocialMediaPost(Document):
             if not post_id:
                 frappe.throw(_("Post ID is required for deletion"))
 
+            if not self.content_hub:
+                frappe.throw(_("Content Hub is required"))
+
+            # Get the content hub and credentials
             content_hub = frappe.get_doc("Content Hub", self.content_hub)
             linkedin_doc = frappe.get_doc(content_hub.credential_type, content_hub.credential)
 
-            if not linkedin_doc.access_token:
-                frappe.throw(_("LinkedIn access token not found"))
-
-            # Make API request
-            url = f"https://api.linkedin.com/rest/posts/{post_id}"
-            headers = {
-                "Authorization": f"Bearer {linkedin_doc.access_token}",
-                "LinkedIn-Version": "202408",
-                "X-Restli-Protocol-Version": "2.0.0",
-                "X-RestLi-Method": "DELETE"
-            }
-
-            response = requests.delete(url, headers=headers, timeout=30)
-
-            if response.status_code == 204:
-                return {
-                    "status": "success",
-                    "message": _("Post deleted successfully from LinkedIn")
-                }
-            else:
-                error_message = f"LinkedIn API Error: {response.status_code} - {response.text}"
-                frappe.log_error(error_message, "LinkedIn Delete API")
-                return {
-                    "status": "error",
-                    "message": error_message
-                }
+            # Initialize LinkedIn integration
+            linkedin_integration = LinkedInIntegration(linkedin_doc)
+            
+            # Call LinkedIn integration's delete method
+            result = linkedin_integration.delete_linkedin_post(post_id)
+            
+            return result
 
         except Exception as e:
             frappe.log_error(frappe.get_traceback(), "LinkedIn Delete Error")

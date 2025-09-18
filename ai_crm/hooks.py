@@ -256,7 +256,7 @@ fixtures = [
     },
     {
         "doctype": "Custom DocPerm", 
-        "filters": {"role": ["in", ["AI Automation","Social Media Manager"]]}
+        "filters": {"role": ["in", ["AI Automation"]]}
     },
     {
         "doctype": "Custom Field",

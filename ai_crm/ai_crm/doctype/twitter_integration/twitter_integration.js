@@ -88,9 +88,10 @@ frappe.ui.form.on('Twitter Integration', {
                     doc: frm.doc,
                     callback: function(r) {
                         if (r.message && r.message.status === 'success') {
+                            const username = r.message.data?.data?.username || 'N/A';
                             frappe.msgprint({
                                 title: 'Success',
-                                message: `Connection successful! Username: @${r.message.username || 'N/A'}`,
+                                message: `Connection successful! Username: @${username}`,
                                 indicator: 'green'
                             });
                             frm.reload_doc();
@@ -105,7 +106,7 @@ frappe.ui.form.on('Twitter Integration', {
                 });
             });
             
-            // Add Refresh Token button (for OAuth 2.0)
+            // Add Refresh Token button (for OAuth 2.0) - Fixed method name
             frm.add_custom_button('Refresh Token', () => {
                 frappe.show_alert({
                     message: 'Refreshing access token...',
@@ -113,10 +114,10 @@ frappe.ui.form.on('Twitter Integration', {
                 });
                 
                 frappe.call({
-                    method: '_refresh_access_token',
+                    method: 'refresh_access_token',  // This is now whitelisted
                     doc: frm.doc,
                     callback: function(r) {
-                        if (r.message === true) {
+                        if (r.message && r.message.status === 'success') {
                             frappe.show_alert({
                                 message: 'Token refreshed successfully',
                                 indicator: 'green'
@@ -125,7 +126,7 @@ frappe.ui.form.on('Twitter Integration', {
                         } else {
                             frappe.msgprint({
                                 title: 'Token Refresh Failed',
-                                message: 'Failed to refresh token. You may need to re-authorize.',
+                                message: r.message?.message || 'Failed to refresh token. You may need to re-authorize.',
                                 indicator: 'red'
                             });
                         }
@@ -198,8 +199,9 @@ frappe.ui.form.on('Twitter Integration', {
                 }
             }
             
-        } else if (frm.doc.connection_status === 'Error') {
-            frm.dashboard.add_indicator('Connection Error', 'red');
+                    
+        } else if (frm.doc.connection_status === 'Not Connected') {
+            frm.dashboard.add_indicator('Not Connected', 'red');
         } else if (frm.doc.connection_status === 'Pending Authorization') {
             frm.dashboard.add_indicator('Pending Authorization', 'orange');
             frm.dashboard.add_comment(
@@ -289,4 +291,3 @@ frappe.ui.form.on('Twitter Integration', {
         }
     }
 });
-
