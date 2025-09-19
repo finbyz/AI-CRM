@@ -175,4 +175,4 @@ class TestAIConversation(FrappeTestCase):
         """Clean up test data"""
         # Clean up test conversations
         frappe.db.sql("DELETE FROM `tabAI Conversation` WHERE user = 'test@example.com'")
-        frappe.db.commit()
+        

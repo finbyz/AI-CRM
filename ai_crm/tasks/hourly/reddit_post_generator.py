@@ -101,7 +101,7 @@ def fetch_and_store_posts():
                 )
         
         # Commit all changes
-        frappe.db.commit()
+        
         frappe.logger().info(f"Completed fetch_and_store_posts - processed {processed_count} subreddits")
         
     except Exception as e:
@@ -188,7 +188,7 @@ def process_pending_ai_comments():
                 )
         
         # Commit all changes
-        frappe.db.commit()
+        
         frappe.logger().info(f"Completed process_pending_ai_comments - processed {total_processed} comments")
         
     except Exception as e:
@@ -223,7 +223,7 @@ def cleanup_old_posts():
             except Exception as e:
                 frappe.logger().error(f"Error deleting old post {post.name}: {str(e)}")
         
-        frappe.db.commit()
+        
         frappe.logger().info(f"Cleaned up {deleted_count} old posts")
         
     except Exception as e:
@@ -238,7 +238,7 @@ def reset_daily_counters():
         frappe.logger().info("Starting scheduled task: reset_daily_counters")
         
         frappe.db.sql("UPDATE `tabSubreddit` SET posts_fetched_today = 0")
-        frappe.db.commit()
+        
         
         frappe.logger().info("Successfully reset daily counters")
         

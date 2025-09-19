@@ -93,7 +93,7 @@ class SocialMediaPost(Document):
             frappe.log_error(frappe.get_traceback(), "Social Media Post Error")
             self.status = "Failed"
             self.save(ignore_permissions=True)
-            frappe.db.commit()
+            
 
             return {
                 "status": "error",
@@ -147,12 +147,12 @@ class SocialMediaPost(Document):
                 self.social_media_post_id = result.get("post_id")
                 self.social_media_post_link = result.get("post_link")
                 self.save()
-                frappe.db.commit()
+                
                 return result
             else:
                 self.status = "Failed"
                 self.save()
-                frappe.db.commit()
+                
                 error_msg = result.get("error", "Unknown error occurred")
                 frappe.log_error(f"LinkedIn Post Failed: {error_msg}", "LinkedIn Post Error")
                 return {
@@ -164,7 +164,7 @@ class SocialMediaPost(Document):
             frappe.log_error(f"LinkedIn Post Exception: {str(e)}", "LinkedIn Post Exception")
             self.status = "Failed"
             self.save()
-            frappe.db.commit()
+            
             return {
                 "status": "error",
                 "message": str(e)
@@ -265,12 +265,12 @@ class SocialMediaPost(Document):
                 self.social_media_post_id = result.get("tweet_id")
                 self.social_media_post_link = result.get("tweet_url")
                 self.save()
-                frappe.db.commit()
+                
                 return result
             else:
                 self.status = "Failed"
                 self.save()
-                frappe.db.commit()
+                
                 error_msg = result.get("message", "Unknown error occurred")
                 frappe.log_error(f"Twitter Post Failed: {error_msg}", "Twitter Post Error")
                 return {
@@ -282,7 +282,7 @@ class SocialMediaPost(Document):
             frappe.log_error(f"Twitter Post Exception: {str(e)}", "Twitter Post Exception")
             self.status = "Failed"
             self.save()
-            frappe.db.commit()
+            
             return {
                 "status": "error",
                 "message": str(e)
@@ -376,7 +376,7 @@ class SocialMediaPost(Document):
             frappe.log_error(frappe.get_traceback(), "Instagram Post Error")
             self.status = "Failed"
             self.save(ignore_permissions=True)
-            frappe.db.commit()
+            
 
             return {
                 "status": "error",

@@ -89,7 +89,7 @@ class TwitterIntegration(Document):
 
             self.connection_status = "Pending Authorization"
             self.save(ignore_permissions=True)
-            frappe.db.commit()
+            
 
             return {"status": "success", "auth_url": auth_url}
         except Exception as e:
@@ -194,7 +194,7 @@ class TwitterIntegration(Document):
                 self.token_expires_at = now_datetime() + timedelta(seconds=expires_in)
 
                 self.save(ignore_permissions=True)
-                frappe.db.commit()
+                
                 
                 frappe.log_error(message="Token refreshed successfully", title="Twitter Token Refresh")
                 return True
@@ -240,20 +240,20 @@ class TwitterIntegration(Document):
                 if user_data.get("data") and user_data["data"].get("username"):
                     self.username = user_data["data"]["username"]
                 self.save(ignore_permissions=True)
-                frappe.db.commit()
+                
                 return {"status": "success", "message": "Connection successful", "data": user_data}
             else:
                 error_msg = f"Connection test failed: {response.status_code} - {response.text}"
                 self.connection_status = "Not Connected"
                 self.save(ignore_permissions=True)
-                frappe.db.commit()
+                
                 return {"status": "error", "message": error_msg}
                 
         except Exception as e:
             error_msg = f"Connection test error: {str(e)}"
             self.connection_status = "Not Connected"
             self.save(ignore_permissions=True)
-            frappe.db.commit()
+            
             return {"status": "error", "message": error_msg}
 
     def _get_oauth1_session(self):

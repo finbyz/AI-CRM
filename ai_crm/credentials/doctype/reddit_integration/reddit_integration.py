@@ -839,7 +839,7 @@ def reddit_callback(state=None, code=None, error=None, *args, **kwargs):
             if test_result.get("status") == "success":
                 # Save the updated integration
                 reddit_integration.save(ignore_permissions=True)
-                frappe.db.commit()
+                
                 
                 return """
                 <html>

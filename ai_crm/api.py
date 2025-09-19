@@ -209,7 +209,7 @@ def create_contact(contact_data,party_type,party):
         })
         
         contact.insert(ignore_permissions=True)
-        frappe.db.commit()
+        
         
         address_data = data.get("address")
         address_name = None
@@ -235,7 +235,7 @@ def create_contact(contact_data,party_type,party):
             
             address.insert(ignore_permissions=True)
             address_name = address.name
-            frappe.db.commit()
+            
             
         return {
             "status": "success",
@@ -358,7 +358,7 @@ def delete_merged_file(file_name: str):
     """Delete a File document by name."""
     try:
         frappe.delete_doc("File", file_name, ignore_permissions=True)
-        frappe.db.commit()
+        
         frappe.logger().info(f"Deleted temporary file: {file_name}")
     except Exception as e:
         frappe.log_error(f"Failed to delete file {file_name}: {str(e)}")

@@ -24,4 +24,4 @@ def remove_permission(permissions_map):
     if frappe.db.exists("Role", role_name):
         frappe.delete_doc("Role", role_name, ignore_permissions=True, force=1)
 
-    frappe.db.commit()
+    

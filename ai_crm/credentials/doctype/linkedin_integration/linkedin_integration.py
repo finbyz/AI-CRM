@@ -265,7 +265,7 @@ def callback(code=None, state=None, error=None,*args, **kwargs):
         integration.organization = user_info.get("sub")
         integration.save(ignore_permissions=True)
 
-        frappe.db.commit()
+        
 
         return "success"
 
