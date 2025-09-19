@@ -11,8 +11,6 @@
   "client_secret",
   "redirect_uri",
   "state",
-  "oauth_token",
-  "oauth_token_secret",
   "code_verifier",
   "access_token",
   "refresh_token",
@@ -45,24 +43,14 @@
   {
    "fieldname": "state",
    "fieldtype": "Data",
-   "label": "State"
-  },
-  {
-   "fieldname": "oauth_token",
-   "fieldtype": "Password",
-   "hidden": 1,
-   "label": "OAuth Token"
-  },
-  {
-   "fieldname": "oauth_token_secret",
-   "fieldtype": "Password",
-   "hidden": 1,
-   "label": "OAuth Token Secret"
+   "label": "State",
+   "read_only": 1
   },
   {
    "fieldname": "access_token",
    "fieldtype": "Data",
-   "label": "Access Token"
+   "label": "Access Token",
+   "read_only": 1
   },
   {
    "fieldname": "connection_status",
@@ -81,28 +69,33 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Username"
+   "label": "Username",
+   "read_only": 1
   },
   {
    "fieldname": "user_id",
    "fieldtype": "Data",
-   "label": "User ID\t"
+   "label": "User ID\t",
+   "read_only": 1
   },
   {
    "fieldname": "full_name",
    "fieldtype": "Data",
-   "label": "Full Name\t"
+   "label": "Full Name\t",
+   "read_only": 1
   },
   {
    "fieldname": "profile_image_url",
    "fieldtype": "Data",
    "hidden": 1,
-   "label": "Profile Image URL\t"
+   "label": "Profile Image URL\t",
+   "read_only": 1
   },
   {
    "fieldname": "connected_at",
    "fieldtype": "Datetime",
-   "label": "Connected At"
+   "label": "Connected At",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_cfhm",
@@ -124,12 +117,14 @@
   {
    "fieldname": "code_verifier",
    "fieldtype": "Data",
-   "label": "code_verifier"
+   "label": "Code Verifier",
+   "read_only": 1
   },
   {
    "fieldname": "refresh_token",
    "fieldtype": "Data",
-   "label": "refresh_token"
+   "label": "Refresh Token",
+   "read_only": 1
   },
   {
    "default": "bearer",
@@ -140,7 +135,8 @@
   {
    "fieldname": "token_expires_at",
    "fieldtype": "Data",
-   "label": "Token Expires At"
+   "label": "Token Expires At",
+   "read_only": 1
   },
   {
    "fieldname": "consumer_key",
@@ -150,23 +146,23 @@
   {
    "fieldname": "consumer_secret",
    "fieldtype": "Password",
-   "label": "consumer_secret"
+   "label": "Consumer Secret"
   },
   {
    "fieldname": "access_token_key",
    "fieldtype": "Data",
-   "label": "access_token_key"
+   "label": "Access Token Key"
   },
   {
    "fieldname": "access_token_secret",
    "fieldtype": "Password",
-   "label": "access_token_secret"
+   "label": "Access Token Secret"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-18 16:32:39.200300",
+ "modified": "2025-09-19 09:44:47.942968",
  "modified_by": "Administrator",
  "module": "Ai CRM",
  "name": "Twitter Integration",

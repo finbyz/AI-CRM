@@ -63,7 +63,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-08-28 18:30:05.160283",
+ "modified": "2025-09-19 09:53:28.028981",
  "modified_by": "Administrator",
  "module": "Ai CRM",
  "name": "Lead Followup Setting",
@@ -76,6 +76,16 @@
    "print": 1,
    "read": 1,
    "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Social Media Manager",
    "share": 1,
    "write": 1
   }

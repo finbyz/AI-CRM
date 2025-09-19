@@ -153,28 +153,20 @@ class TwitterIntegration(Document):
             return {"status": "error", "message": str(e)}
 
     @frappe.whitelist()
-    def refresh_access_token(self):
-        """Public method to refresh the access token - whitelisted for frontend use."""
-        return self._refresh_token_internal()
-
-    def _refresh_token_internal(self):
-        """Internal method for token refresh - can be called automatically."""
+    def _refresh_access_token(self):
+        """Refresh access token with better error handling"""
         try:
             if not self.refresh_token:
-                frappe.log_error("No refresh token available", "Twitter Token Refresh")
-                return {"status": "error", "message": "No refresh token available"}
+                raise Exception("No refresh token available")
 
             url = "https://api.twitter.com/2/oauth2/token"
-            token_data = {
-                "grant_type": "refresh_token",
-                "refresh_token": self.refresh_token,
-            }
+
+            token_data = {"grant_type": "refresh_token", "refresh_token": self.refresh_token}
 
             client_secret = self.get_password("client_secret")
             if not client_secret:
-                frappe.log_error("Client Secret not found", "Twitter Token Refresh")
-                return {"status": "error", "message": "Client Secret not found"}
-
+                raise Exception("Client Secret is required")
+                
             auth_string = f"{self.client_id}:{client_secret}"
             auth_b64 = base64.b64encode(auth_string.encode("utf-8")).decode("utf-8")
 
@@ -184,97 +176,51 @@ class TwitterIntegration(Document):
             }
 
             response = requests.post(url, headers=headers, data=token_data, timeout=30)
-
+            
             frappe.log_error(
-                message=f"Refresh attempt - Status: {response.status_code}, Response: {response.text}",
-                title="Twitter Token Refresh",
+                message=f"Token refresh response: {response.status_code} - {response.text}",
+                title="Twitter Token Refresh"
             )
 
             if response.status_code == 200:
                 token_response = response.json()
-
-                # Update tokens
                 self.access_token = token_response.get("access_token")
-
-                # Twitter may or may not provide a new refresh token
+                
+                # Update refresh token if provided
                 if token_response.get("refresh_token"):
                     self.refresh_token = token_response.get("refresh_token")
 
-                # Update expiry time
                 expires_in = token_response.get("expires_in", 7200)
                 self.token_expires_at = now_datetime() + timedelta(seconds=expires_in)
 
-                # Update connection status
-                self.connection_status = "Connected"
-
-                # Save the updated tokens
                 self.save(ignore_permissions=True)
                 frappe.db.commit()
-
-                frappe.log_error(
-                    message=f"Token refreshed successfully. New expires at: {self.token_expires_at}",
-                    title="Twitter Token Refresh Success",
-                )
-                return {"status": "success", "message": "Token refreshed successfully"}
+                
+                frappe.log_error(message="Token refreshed successfully", title="Twitter Token Refresh")
+                return True
             else:
-                error_msg = f"Token refresh failed: {response.status_code} - {response.text}"
                 frappe.log_error(
-                    message=error_msg,
-                    title="Twitter Token Refresh Error",
+                    message=f"Token refresh failed: {response.status_code} - {response.text}",
+                    title="Twitter Token Refresh Error"
                 )
-                self.connection_status = "Not Connected"
-                self.save(ignore_permissions=True)
-                frappe.db.commit()
-                return {"status": "error", "message": error_msg}
-
+                return False
         except Exception as e:
-            frappe.log_error(
-                f"Token refresh exception: {str(e)}", "Twitter Token Refresh Error"
-            )
-            self.connection_status = "Not Connected"
-            self.save(ignore_permissions=True)
-            frappe.db.commit()
-            return {"status": "error", "message": str(e)}
-
+            frappe.log_error(f"Token refresh failed: {str(e)}", "Twitter OAuth2")
+            return False
     def _get_bearer_headers(self):
-        """Get bearer token headers with automatic refresh."""
-        # Always check token validity before any API call
-        if not self.access_token:
-            raise Exception("No access token available. Please re-authorize.")
-
+        """Get Bearer token headers with automatic refresh"""
         if self.token_expires_at:
             token_expiry = (
                 get_datetime(self.token_expires_at)
                 if isinstance(self.token_expires_at, str)
                 else self.token_expires_at
             )
-
-            # Check if token expires in next 10 minutes (increased buffer)
-            buffer_time = now_datetime() + timedelta(minutes=10)
-
-            frappe.log_error(
-                message=f"Current time: {now_datetime()}, Token expires: {token_expiry}, Buffer time: {buffer_time}",
-                title="Twitter Token Check",
-            )
-
+            # Check if token expires in next 5 minutes (buffer time)
+            buffer_time = now_datetime() + timedelta(minutes=5)
             if buffer_time >= token_expiry:
-                frappe.log_error(
-                    message="Token expiring soon, attempting refresh",
-                    title="Twitter Token Refresh",
-                )
-                refresh_result = self._refresh_token_internal()
-                if refresh_result.get("status") != "success":
-                    # Clear the tokens to force re-authorization
-                    self.access_token = None
-                    self.refresh_token = None
-                    self.token_expires_at = None
-                    self.connection_status = "Not Connected"
-                    self.save(ignore_permissions=True)
-                    frappe.db.commit()
-                    raise Exception(
-                        "Failed to refresh access token. Please re-authorize."
-                    )
-
+                frappe.log_error(message="Token expiring soon, attempting refresh", title="Twitter Token Refresh")
+                if not self._refresh_access_token():
+                    raise Exception("Failed to refresh access token. Please re-authorize.")
         return {"Authorization": f"Bearer {self.access_token}"}
 
     @frappe.whitelist()
