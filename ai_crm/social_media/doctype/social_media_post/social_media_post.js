@@ -4,7 +4,7 @@
 frappe.ui.form.on('Social Media Post', {
 	refresh: function(frm) {
 		// Render preview for supported platforms
-		if (frm.doc.content && ['LinkedIn', 'Twitter', 'Reddit'].includes(frm.doc.platform)) {
+		if (frm.doc.content && ['LinkedIn', 'X (Twitter)', 'Reddit'].includes(frm.doc.platform)) {
 			frm.trigger('render_preview');
 		}
 		// Add Post button when document is saved and platform is selected
@@ -40,7 +40,7 @@ frappe.ui.form.on('Social Media Post', {
 
 	// Re-render preview on content change
 	content: function(frm) {
-		if (['LinkedIn', 'Twitter', 'Reddit'].includes(frm.doc.platform)) {
+		if (['LinkedIn', 'X (Twitter)', 'Reddit'].includes(frm.doc.platform)) {
 			frm.trigger('render_preview');
 		}
 	},
@@ -58,8 +58,8 @@ frappe.ui.form.on('Social Media Post', {
 					buttonBg: '#000000',
 					icon: '🔗'
 				},
-				'Twitter': {
-					title: 'Twitter Post Preview',
+				'X (Twitter)': {
+					title: 'X (Twitter) Post Preview',
 					brandColor: '#1d9bf0',
 					accentText: '#1d9bf0',
 					buttonBg: '#0f1419',

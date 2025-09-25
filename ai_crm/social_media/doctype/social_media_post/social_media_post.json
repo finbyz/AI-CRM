@@ -1,7 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "format: SM-POST-{#####}",
+ "autoname": "format: {title}-{##}",
  "creation": "2025-08-25 13:42:24.950382",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -11,6 +11,8 @@
   "status",
   "content_hub",
   "image_attachment",
+  "created_on",
+  "post_on",
   "column_break_nnmu",
   "content",
   "image_generation_prompt",
@@ -48,7 +50,7 @@
   {
    "fieldname": "content",
    "fieldtype": "Long Text",
-   "label": "content",
+   "label": "Content",
    "options": "AI Agent"
   },
   {
@@ -72,13 +74,25 @@
    "fieldname": "image_generation_prompt",
    "fieldtype": "Small Text",
    "label": "Image Generation Prompt"
+  },
+  {
+   "default": "Today",
+   "fieldname": "created_on",
+   "fieldtype": "Date",
+   "label": "Created On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "post_on",
+   "fieldtype": "Datetime",
+   "label": "Post On"
   }
  ],
  "grid_page_length": 50,
  "image_field": "image_attachment",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-18 17:48:00.504321",
+ "modified": "2025-09-25 13:11:15.017603",
  "modified_by": "Administrator",
  "module": "Social Media",
  "name": "Social Media Post",

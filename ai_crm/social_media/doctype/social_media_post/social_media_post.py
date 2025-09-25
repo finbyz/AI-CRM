@@ -2,7 +2,6 @@
 # For license information, please see license.txt
 
 from ai_crm.ai.agent.agent_service import AgentService
-from ai_crm.credentials.doctype.linkedin_integration.linkedin_integration import LinkedInIntegration
 import frappe
 import requests
 from frappe.model.document import Document
@@ -93,7 +92,7 @@ class SocialMediaPost(Document):
             frappe.log_error(frappe.get_traceback(), "Social Media Post Error")
             self.status = "Failed"
             self.save(ignore_permissions=True)
-            
+            frappe.db.commit()
 
             return {
                 "status": "error",
@@ -115,20 +114,14 @@ class SocialMediaPost(Document):
         self.save()
         self.reload()
         return {"status": "success"}
-    
-    def _get_image_url(self):
-        """Get the full URL for the attached image"""
-        if self.image_attachment:
-            return get_url(self.image_attachment)
-        return None
 
     @frappe.whitelist()
     def post_to_linkedin(self):
-        """Post content to LinkedIn using the Posts API"""
+        """Bridge method to post content to LinkedIn using LinkedInIntegration"""
         try:
             if not self.content:
                 frappe.throw(_("Content is required for posting"))
-            
+
             if not self.content_hub:
                 frappe.throw(_("Content Hub is required for posting"))
 
@@ -136,23 +129,26 @@ class SocialMediaPost(Document):
             content_hub = frappe.get_doc("Content Hub", self.content_hub)
             linkedin_doc = frappe.get_doc(content_hub.credential_type, content_hub.credential)
 
-            # Initialize LinkedIn integration
-            linkedin_integration = LinkedInIntegration(linkedin_doc)
-            
+            if not linkedin_doc.access_token:
+                frappe.throw(_("LinkedIn access token not found. Please reconnect your LinkedIn account."))
+
+            if linkedin_doc.connection_status != "Connected":
+                frappe.throw(_("LinkedIn account is not connected. Please reconnect your account."))
+
             # Call LinkedIn integration's post method
-            result = linkedin_integration.post_to_linkedin(self.content, self.image_attachment)
+            result = linkedin_doc.post_to_linkedin(self.content, self.image_attachment)
             
             if result.get("status") == "success":
                 self.status = "Posted"
                 self.social_media_post_id = result.get("post_id")
                 self.social_media_post_link = result.get("post_link")
                 self.save()
-                
+                frappe.db.commit()
                 return result
             else:
                 self.status = "Failed"
                 self.save()
-                
+                frappe.db.commit()
                 error_msg = result.get("error", "Unknown error occurred")
                 frappe.log_error(f"LinkedIn Post Failed: {error_msg}", "LinkedIn Post Error")
                 return {
@@ -164,7 +160,7 @@ class SocialMediaPost(Document):
             frappe.log_error(f"LinkedIn Post Exception: {str(e)}", "LinkedIn Post Exception")
             self.status = "Failed"
             self.save()
-            
+            frappe.db.commit()
             return {
                 "status": "error",
                 "message": str(e)
@@ -172,8 +168,11 @@ class SocialMediaPost(Document):
 
     @frappe.whitelist()
     def update_linkedin_post(self, post_id=None):
-        """Update an existing LinkedIn post"""
+        """Bridge method to update an existing LinkedIn post"""
         try:
+            if not self.content_hub:
+                frappe.throw(_("Content Hub is required"))
+
             # Use post_id parameter or stored post ID
             if not post_id:
                 post_id = self.social_media_post_id
@@ -181,19 +180,11 @@ class SocialMediaPost(Document):
             if not post_id:
                 frappe.throw(_("Post ID is required for updating"))
 
-            if not self.content_hub:
-                frappe.throw(_("Content Hub is required"))
-
-            # Get the content hub and credentials
             content_hub = frappe.get_doc("Content Hub", self.content_hub)
             linkedin_doc = frappe.get_doc(content_hub.credential_type, content_hub.credential)
 
-            # Initialize LinkedIn integration
-            linkedin_integration = LinkedInIntegration(linkedin_doc)
-            
             # Call LinkedIn integration's update method
-            result = linkedin_integration.update_linkedin_post(post_id, self.content)
-            
+            result = linkedin_doc.update_linkedin_post(post_id, self.content)
             return result
 
         except Exception as e:
@@ -205,8 +196,11 @@ class SocialMediaPost(Document):
 
     @frappe.whitelist()
     def delete_linkedin_post(self, post_id=None):
-        """Delete a LinkedIn post"""
+        """Bridge method to delete a LinkedIn post"""
         try:
+            if not self.content_hub:
+                frappe.throw(_("Content Hub is required"))
+
             # Use post_id parameter or stored post ID
             if not post_id:
                 post_id = self.social_media_post_id
@@ -214,19 +208,11 @@ class SocialMediaPost(Document):
             if not post_id:
                 frappe.throw(_("Post ID is required for deletion"))
 
-            if not self.content_hub:
-                frappe.throw(_("Content Hub is required"))
-
-            # Get the content hub and credentials
             content_hub = frappe.get_doc("Content Hub", self.content_hub)
             linkedin_doc = frappe.get_doc(content_hub.credential_type, content_hub.credential)
 
-            # Initialize LinkedIn integration
-            linkedin_integration = LinkedInIntegration(linkedin_doc)
-            
             # Call LinkedIn integration's delete method
-            result = linkedin_integration.delete_linkedin_post(post_id)
-            
+            result = linkedin_doc.delete_linkedin_post(post_id)
             return result
 
         except Exception as e:
@@ -265,12 +251,12 @@ class SocialMediaPost(Document):
                 self.social_media_post_id = result.get("tweet_id")
                 self.social_media_post_link = result.get("tweet_url")
                 self.save()
-                
+                frappe.db.commit()
                 return result
             else:
                 self.status = "Failed"
                 self.save()
-                
+                frappe.db.commit()
                 error_msg = result.get("message", "Unknown error occurred")
                 frappe.log_error(f"Twitter Post Failed: {error_msg}", "Twitter Post Error")
                 return {
@@ -282,7 +268,7 @@ class SocialMediaPost(Document):
             frappe.log_error(f"Twitter Post Exception: {str(e)}", "Twitter Post Exception")
             self.status = "Failed"
             self.save()
-            
+            frappe.db.commit()
             return {
                 "status": "error",
                 "message": str(e)
@@ -376,7 +362,7 @@ class SocialMediaPost(Document):
             frappe.log_error(frappe.get_traceback(), "Instagram Post Error")
             self.status = "Failed"
             self.save(ignore_permissions=True)
-            
+            frappe.db.commit()
 
             return {
                 "status": "error",
@@ -386,8 +372,34 @@ class SocialMediaPost(Document):
     @frappe.whitelist()
     def generate_image(self, instruction=''):
         setting = frappe.get_single("Content Hub Setting")
-        if not self.image_generation_prompt:
+
+        if not self.content_hub:
+            frappe.throw("No Content Hub selected")
+
+        content_hub_doc = frappe.get_doc("Content Hub", self.content_hub)
+
+        if not content_hub_doc.credential:
+            frappe.throw("No credential selected in Content Hub")
+
+        credential_doc = frappe.get_doc(content_hub_doc.credential_type, content_hub_doc.credential)
+
+        # Determine which image agent to use
+        if credential_doc.use_default_ai_agents == 1:
+            image_agent = setting.image_agent
             meta_prompt = setting.image_generation_meta_prompt
+        else:
+            image_agent_name = getattr(credential_doc, "image_generation_agent", None)
+            meta_prompt_cred = getattr(credential_doc, "image_generation_meta_prompt", None)
+            if image_agent_name:
+                ai_agent_doc = frappe.get_doc("AI Agent", image_agent_name)
+                image_agent = ai_agent_doc.agent_service
+            else:
+                image_agent = setting.image_agent  # fallback
+
+            # Meta prompt fallback
+            meta_prompt = meta_prompt_cred or setting.image_generation_meta_prompt
+
+        if not self.image_generation_prompt:
             helper_agent = AgentService(setting.helper_agent)
             generation_prompt = f"{meta_prompt}\n\nPost Content:\n{self.content}\n{instruction}"
             image_generation_prompt = helper_agent.invoke(query=generation_prompt)
@@ -396,30 +408,30 @@ class SocialMediaPost(Document):
 
         frappe.log_error("prompt", image_generation_prompt)
 
-        agent = setting.image_agent
         try:
-            image_response = agent.invoke(query=image_generation_prompt[:900], size=setting.image_size)
+            image_response = image_agent.invoke(query=image_generation_prompt[:900], size=setting.image_size)
         except Exception as e:
             frappe.log_error("Image genration failed", frappe.get_traceback())
             return {
                 "status": "error",
                 "error": e
             }
+
         url = image_response.data[0].url
         response = requests.get(url, stream=True)
         response.raise_for_status()
-
         image_bytes = response.content
+
         file_name = f"{frappe.scrub(self.title)}_{self.platform.lower()}.png"
         file_doc = frappe.new_doc("File")
         file_doc.content = image_bytes
         file_doc.file_name = file_name
         file_doc.is_private = True
         file_doc.save()
+
         self.image_attachment = file_doc.file_url
         self.image_generation_prompt = image_generation_prompt
         self.save()
         self.reload()
-        return {
-            "status": "success"
-        }
+
+        return {"status": "success"}
