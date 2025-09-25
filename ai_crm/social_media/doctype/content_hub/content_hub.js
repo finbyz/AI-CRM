@@ -42,7 +42,7 @@ frappe.ui.form.on("Content Hub", {
     }
 });
 
-frappe.ui.form.on("ContentHubIdea", {
+frappe.ui.form.on("Content Hub Idea", {
     form_render: function (frm, cdt, cdn) {
         let row = locals[cdt][cdn];
         let $wrapper = frm.fields_dict["ideas_child_table"]
