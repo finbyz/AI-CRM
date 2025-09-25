@@ -66,7 +66,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-09-04 21:24:02.819579",
+ "modified": "2025-09-25 14:39:45.525032",
  "modified_by": "Administrator",
  "module": "Social Media",
  "name": "Content Hub Setting",
@@ -79,6 +79,16 @@
    "print": 1,
    "read": 1,
    "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Social Media Manager",
    "share": 1,
    "write": 1
   }
