@@ -344,7 +344,8 @@ function generate_image(frm){
 			label: __('Instruction'),
 			fieldtype: 'Small Text',
 			reqd: false,
-			description: __('Describe how you want to generate this image')
+			description: __('Describe how you want to generate this image'),
+			default: frm.doc.user_instructions || ""
 		}
 	], (values) => {
 		frappe.show_alert({

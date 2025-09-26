@@ -17,6 +17,7 @@
   "column_break_nnmu",
   "content",
   "image_generation_prompt",
+  "user_instructions",
   "preview_tab",
   "preview_html"
  ],
@@ -96,13 +97,19 @@
    "fieldtype": "Data",
    "hidden": 1,
    "label": "Post Link"
+  },
+  {
+   "fieldname": "user_instructions",
+   "fieldtype": "Small Text",
+   "hidden": 1,
+   "label": "User Instructions"
   }
  ],
  "grid_page_length": 50,
  "image_field": "image_attachment",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-26 09:41:05.157221",
+ "modified": "2025-09-26 12:17:53.361100",
  "modified_by": "Administrator",
  "module": "Social Media",
  "name": "Social Media Post",

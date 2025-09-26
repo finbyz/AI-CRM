@@ -383,6 +383,14 @@ class SocialMediaPost(Document):
             frappe.throw("No credential selected in Content Hub")
 
         credential_doc = frappe.get_doc(content_hub_doc.credential_type, content_hub_doc.credential)
+        
+        if instruction:
+            if not self.user_instructions:
+                self.user_instructions = instruction
+            else:
+                self.user_instructions += f"\n{instruction}"
+            self.save(ignore_permissions=True)
+            frappe.db.commit()
 
         # Determine which image agent to use
         if credential_doc.use_default_ai_agents == 1:
