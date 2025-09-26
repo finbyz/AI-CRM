@@ -1,7 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "format: {title}-{##}",
+ "autoname": "format: {created_on}-{##}",
  "creation": "2025-08-25 13:42:24.950382",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -13,6 +13,7 @@
   "image_attachment",
   "created_on",
   "post_on",
+  "post_link",
   "column_break_nnmu",
   "content",
   "image_generation_prompt",
@@ -30,7 +31,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "Draft\nGenerated\nScheduled\nPosted\nFailed"
+   "options": "Draft\nScheduled\nPosted\nFailed"
   },
   {
    "fieldname": "preview_tab",
@@ -44,7 +45,6 @@
   {
    "fieldname": "title",
    "fieldtype": "Data",
-   "in_list_view": 1,
    "label": "Title"
   },
   {
@@ -79,20 +79,30 @@
    "default": "Today",
    "fieldname": "created_on",
    "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Created On",
    "read_only": 1
   },
   {
    "fieldname": "post_on",
    "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Post On"
+  },
+  {
+   "fieldname": "post_link",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Post Link"
   }
  ],
  "grid_page_length": 50,
  "image_field": "image_attachment",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-25 13:11:15.017603",
+ "modified": "2025-09-26 09:41:05.157221",
  "modified_by": "Administrator",
  "module": "Social Media",
  "name": "Social Media Post",
@@ -127,5 +137,23 @@
  "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [
+  {
+   "color": "Gray",
+   "title": "Draft"
+  },
+  {
+   "color": "Blue",
+   "title": "Scheduled"
+  },
+  {
+   "color": "Green",
+   "title": "Posted"
+  },
+  {
+   "color": "Red",
+   "title": "Failed"
+  }
+ ],
+ "title_field": "title"
 }

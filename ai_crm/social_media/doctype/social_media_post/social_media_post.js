@@ -222,6 +222,8 @@ function post_to_social_media(frm) {
                     const linkedin_url = r.message.post_link;
                     success_message += '<br><br>' + __(`<a href="${linkedin_url}" target="_blank">View Post on ${frm.doc.platform}</a>`);
 				}
+				frm.set_value("post_link", linkedin_url);
+        		frm.save_or_update();
 
 				frappe.msgprint({
 					title: __('Success'),

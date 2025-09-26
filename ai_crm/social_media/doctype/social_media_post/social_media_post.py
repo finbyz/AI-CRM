@@ -7,7 +7,8 @@ import requests
 from frappe.model.document import Document
 from frappe.utils import get_url
 from frappe import _
-from urllib.parse import urlencode  # Needed for post_to_twitter
+from urllib.parse import urlencode 
+from frappe.utils import now_datetime 
 
 
 class SocialMediaPost(Document):
@@ -402,36 +403,82 @@ class SocialMediaPost(Document):
         if not self.image_generation_prompt:
             helper_agent = AgentService(setting.helper_agent)
             generation_prompt = f"{meta_prompt}\n\nPost Content:\n{self.content}\n{instruction}"
-            image_generation_prompt = helper_agent.invoke(query=generation_prompt)
-        else:
-            image_generation_prompt = self.image_generation_prompt
+            image_generation_response = helper_agent.invoke(query=generation_prompt)
 
-        frappe.log_error("prompt", image_generation_prompt)
+            # ✅ Extract the actual usable string
+            if isinstance(image_generation_response, dict) and "output" in image_generation_response:
+                image_generation_prompt = image_generation_response["output"]
+            elif hasattr(image_generation_response, 'content'):
+                image_generation_prompt = str(image_generation_response.content)
+            elif hasattr(image_generation_response, 'text'):
+                image_generation_prompt = str(image_generation_response.text)
+            else:
+                image_generation_prompt = str(image_generation_response)
+        else:
+            image_generation_prompt = str(self.image_generation_prompt)
 
         try:
-            image_response = image_agent.invoke(query=image_generation_prompt[:900], size=setting.image_size)
+            prompt_text = str(image_generation_prompt)[:900]
+            image_response = image_agent.invoke(query=prompt_text, size=setting.image_size)
         except Exception as e:
-            frappe.log_error("Image genration failed", frappe.get_traceback())
+            frappe.log_error("Image generation failed", frappe.get_traceback())
             return {
                 "status": "error",
-                "error": e
+                "error": str(e)
             }
 
-        url = image_response.data[0].url
-        response = requests.get(url, stream=True)
-        response.raise_for_status()
-        image_bytes = response.content
+        # Handle the image response safely
+        try:
+            if hasattr(image_response, 'data') and len(image_response.data) > 0:
+                url = image_response.data[0].url
+            elif hasattr(image_response, 'url'):
+                url = image_response.url
+            else:
+                frappe.throw("Invalid image response format")
 
-        file_name = f"{frappe.scrub(self.title)}_{self.platform.lower()}.png"
-        file_doc = frappe.new_doc("File")
-        file_doc.content = image_bytes
-        file_doc.file_name = file_name
-        file_doc.is_private = True
-        file_doc.save()
+            response = requests.get(url, stream=True)
+            response.raise_for_status()
+            image_bytes = response.content
 
-        self.image_attachment = file_doc.file_url
-        self.image_generation_prompt = image_generation_prompt
-        self.save()
-        self.reload()
+            file_name = f"{frappe.scrub(self.title or 'social_post')}_{self.platform.lower()}.png"
+            file_doc = frappe.new_doc("File")
+            file_doc.content = image_bytes
+            file_doc.file_name = file_name
+            file_doc.is_private = True
+            file_doc.save()
 
-        return {"status": "success"}
+            self.image_attachment = file_doc.file_url
+            self.image_generation_prompt = prompt_text
+            self.save()
+            self.reload()
+
+            return {"status": "success"}
+
+        except Exception as e:
+            frappe.log_error("Image download/save failed", frappe.get_traceback())
+            return {
+                "status": "error",
+                "error": str(e)
+            }
+
+
+    def schedule_social_media_posts():
+        """Check scheduled posts and publish if datetime matches"""
+        current_time = now_datetime()
+
+        posts = frappe.get_all(
+            "Social Media Post",
+            filters={
+                "status": "Draft",
+                "post_on": ["<=", current_time]
+            },
+            fields=["name"]
+        )
+
+        for post in posts:
+            try:
+                doc = frappe.get_doc("Social Media Post", post.name)
+                doc.post()  # reuse your existing post() method
+                frappe.db.commit()
+            except Exception:
+                frappe.log_error(frappe.get_traceback(), "Scheduled Social Media Post Error")
