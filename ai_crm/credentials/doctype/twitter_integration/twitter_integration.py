@@ -579,7 +579,7 @@ class TwitterIntegration(Document):
                     return {
                         "status": "success",
                         "message": "Tweet posted successfully",
-                        "tweet_url": tweet_url,
+                        "post_link": tweet_url,
                         "data": data,
                     }
                 else:

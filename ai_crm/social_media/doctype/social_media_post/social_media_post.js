@@ -95,9 +95,9 @@ frappe.ui.form.on('Social Media Post', {
 
 		const styledHtml = `
 			<div style="
-				font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
-				background: #ffffff; 
-				border-radius: 12px; 
+				font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+				background: #ffffff;
+				border-radius: 12px;
 				border: 1px solid #e0e0e0;
 				max-width: 100%;
 				overflow: hidden;
@@ -118,7 +118,7 @@ frappe.ui.form.on('Social Media Post', {
 						<span style="font-size: 18px;">${theme.icon}</span>
 						${theme.title}
 					</div>
-					<button class="btn btn-xs btn-revise-post" 
+					<button class="btn btn-xs btn-revise-post"
 						style="background-color: ${theme.buttonBg}; color: white; border: none; border-radius:5px;">
 						✨ Revise Post
 					</button>
@@ -126,8 +126,8 @@ frappe.ui.form.on('Social Media Post', {
 
 				<div style="
 					padding: 18px;
-					line-height: 1.6; 
-					color: #000000e6; 
+					line-height: 1.6;
+					color: #000000e6;
 					word-wrap: break-word;
 				">
 					${html}
@@ -152,14 +152,12 @@ frappe.ui.form.on('Social Media Post', {
 	open_review_dialog: function(frm) {
 		let dialog = new frappe.ui.Dialog({
 			title: __('Revise Your Post'),
-			fields: [
-				{
-					label: __('What changes would you like?'),
-					fieldname: 'review_feedback',
-					fieldtype: 'Small Text',
-					reqd: 1
-				}
-			],
+			fields: [{
+				label: __('What changes would you like?'),
+				fieldname: 'review_feedback',
+				fieldtype: 'Small Text',
+				reqd: 1
+			}],
 			primary_action_label: __('Send Revision'),
 			primary_action: function(values) {
 				if (!values.review_feedback) {
@@ -167,11 +165,20 @@ frappe.ui.form.on('Social Media Post', {
 					return;
 				}
 				dialog.hide();
-				frappe.show_alert({ message: __('Revising post...'), indicator: 'blue' });
-				frm.call('revise_post', { instruction: values.review_feedback })
+				frappe.show_alert({
+					message: __('Revising post...'),
+					indicator: 'blue'
+				});
+				frm.call('revise_post', {
+						instruction: values.review_feedback
+					})
 					.then(r => {
 						if (r.message && r.message.status === 'success') {
-							frappe.msgprint({ title: __('Success'), message: __('Post revised successfully.'), indicator: 'green' });
+							frappe.msgprint({
+								title: __('Success'),
+								message: __('Post revised successfully.'),
+								indicator: 'green'
+							});
 							frm.reload_doc();
 						} else {
 							frappe.msgprint({
@@ -217,13 +224,11 @@ function post_to_social_media(frm) {
 		if (r.message) {
 			if (r.message.status === 'success') {
 				let success_message = __('Post published successfully on {0}!', [frm.doc.platform]);
-				
-				if (r.message.post_link) {					
-                    const linkedin_url = r.message.post_link;
-                    success_message += '<br><br>' + __(`<a href="${linkedin_url}" target="_blank">View Post on ${frm.doc.platform}</a>`);
+
+				if (r.message.post_link) {
+					const linkedin_url = r.message.post_link;
+					success_message += `<br><br><a href="${linkedin_url}" target="_blank">View Post on ${frm.doc.platform}</a>`;
 				}
-				frm.set_value("post_link", linkedin_url);
-        		frm.save_or_update();
 
 				frappe.msgprint({
 					title: __('Success'),
@@ -252,7 +257,7 @@ function post_to_social_media(frm) {
 function view_linkedin_post(frm) {
 	// Open LinkedIn post in new tab
 	const post_id = frm.doc.social_media_post_id;
-	
+
 	if (!post_id) {
 		frappe.msgprint(__('No post ID found. Cannot view post.'));
 		return;
@@ -261,7 +266,7 @@ function view_linkedin_post(frm) {
 	// Convert LinkedIn post ID to URL
 	const linkedin_post_id = post_id.replace('urn:li:share:', '');
 	const linkedin_url = `https://www.linkedin.com/feed/update/${linkedin_post_id}`;
-	
+
 	// Open in new tab
 	window.open(linkedin_url, '_blank');
 }
@@ -269,7 +274,7 @@ function view_linkedin_post(frm) {
 function update_social_media_post(frm) {
 	// Use the stored post ID
 	const post_id = frm.doc.social_media_post_id;
-	
+
 	if (!post_id) {
 		frappe.msgprint(__('No post ID found. Cannot update post.'));
 		return;
@@ -337,87 +342,95 @@ function delete_social_media_post(frm) {
 	);
 }
 
-function generate_image(frm){
-	frappe.prompt([
-		{
-			fieldname: 'instruction',
-			label: __('Instruction'),
-			fieldtype: 'Small Text',
-			reqd: false,
-			description: __('Describe how you want to generate this image'),
-			default: frm.doc.user_instructions || ""
-		}
-	], (values) => {
+function generate_image(frm) {
+	frappe.prompt([{
+		fieldname: 'instruction',
+		label: __('Instruction'),
+		fieldtype: 'Small Text',
+		reqd: false,
+		description: __('Describe how you want to generate this image'),
+		default: frm.doc.user_instructions || ""
+	}], (values) => {
 		frappe.show_alert({
 			message: __('Generating image for your post...'),
 			indicator: 'blue'
 		});
 
-		frm.call({ method: 'generate_image', doc: frm.doc, args: { instruction: values.instruction }, freeze: true, freeze_message: __('Generating image for your post...') })
-			.then(r => {
-				if (r.message && r.message.status === 'success') {
-					frappe.msgprint({
-						title: __('Success'),
-						message: __('Image for your post generated successfully.'),
-						indicator: 'green'
-					});
-					frm.reload_doc();
-				} else {
-					frappe.msgprint({
-						title: __('Error'),
-						message: (r.message && (r.message.message || r.message.error)) || __('Failed to image generation'),
-						indicator: 'red'
-					});
-				}
-			})
-			.catch(err => {
+		frm.call({
+			method: 'generate_image',
+			doc: frm.doc,
+			args: {
+				instruction: values.instruction
+			},
+			freeze: true,
+			freeze_message: __('Generating image for your post...')
+		}).then(r => {
+			if (r.message && r.message.status === 'success') {
+				frappe.msgprint({
+					title: __('Success'),
+					message: __('Image for your post generated successfully.'),
+					indicator: 'green'
+				});
+				frm.reload_doc();
+			} else {
 				frappe.msgprint({
 					title: __('Error'),
-					message: __('An error occurred while revising: {0}', [err.message || err]),
+					message: (r.message && (r.message.message || r.message.error)) || __('Failed to image generation'),
 					indicator: 'red'
 				});
+			}
+		}).catch(err => {
+			frappe.msgprint({
+				title: __('Error'),
+				message: __('An error occurred while revising: {0}', [err.message || err]),
+				indicator: 'red'
 			});
+		});
 	});
 }
 
-function revise_post(frm){
-	frappe.prompt([
-		{
-			fieldname: 'instruction',
-			label: __('Instruction'),
-			fieldtype: 'Small Text',
-			reqd: true,
-			description: __('Describe how you want to revise this post')
-		}
-	], (values) => {
+function revise_post(frm) {
+	frappe.prompt([{
+		fieldname: 'instruction',
+		label: __('Instruction'),
+		fieldtype: 'Small Text',
+		reqd: true,
+		description: __('Describe how you want to revise this post')
+	}], (values) => {
 		frappe.show_alert({
 			message: __('Revising post...'),
 			indicator: 'blue'
 		});
 
-		frm.call({ method: 'revise_post', doc: frm.doc, args: { instruction: values.instruction }, freeze: true, freeze_message: __('Revising post...') })
-			.then(r => {
-				if (r.message && r.message.status === 'success') {
-					frappe.msgprint({
-						title: __('Success'),
-						message: __('Post revised successfully.'),
-						indicator: 'green'
-					});
-					frm.reload_doc();
-				} else {
-					frappe.msgprint({
-						title: __('Error'),
-						message: (r.message && (r.message.message || r.message.error)) || __('Failed to revise post'),
-						indicator: 'red'
-					});
-				}
-			})
-			.catch(err => {
+		frm.call({
+			method: 'revise_post',
+			doc: frm.doc,
+			args: {
+				instruction: values.instruction
+			},
+			freeze: true,
+			freeze_message: __('Revising post...')
+		}).then(r => {
+			if (r.message && r.message.status === 'success') {
+				frappe.msgprint({
+					title: __('Success'),
+					message: __('Post revised successfully.'),
+					indicator: 'green'
+				});
+				frm.reload_doc();
+			} else {
 				frappe.msgprint({
 					title: __('Error'),
-					message: __('An error occurred while revising: {0}', [err.message || err]),
+					message: (r.message && (r.message.message || r.message.error)) || __('Failed to revise post'),
 					indicator: 'red'
 				});
+			}
+		}).catch(err => {
+			frappe.msgprint({
+				title: __('Error'),
+				message: __('An error occurred while revising: {0}', [err.message || err]),
+				indicator: 'red'
 			});
+		});
 	});
 }
