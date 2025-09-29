@@ -1,6 +1,7 @@
 # Copyright (c) 2025, finbyz and contributors
 # For license information, please see license.txt
 
+import base64
 from ai_crm.ai.agent.agent_service import AgentService
 import frappe
 import requests
@@ -12,20 +13,18 @@ from frappe.utils import now_datetime
 
 
 class SocialMediaPost(Document):
-    # def validate(self):
-    #     """Validate the social media post before saving"""
-    #     if self.platform == "LinkedIn" and not self.linkedin_account:
-    #         frappe.throw(_("LinkedIn Account is required for LinkedIn posts"))
 
-    #     if self.platform == "LinkedIn" and self.status == "Posted":
-    #         self.validate_linkedin_content()
-
-    #     # Add validation for other platforms as needed
-    #     if self.platform == "Twitter" and self.status == "Posted":
-    #         self.validate_twitter_content()
-
-    #     if self.platform == "Facebook" and self.status == "Posted":
-    #         self.validate_facebook_content()
+    def get_credentials(self):
+        """Fetch credential document from either Content Hub or direct fields"""
+        if self.content_hub:
+            content_hub_doc = frappe.get_doc("Content Hub", self.content_hub)
+            if not content_hub_doc.credential:
+                frappe.throw("No credential selected in Content Hub")
+            return frappe.get_doc(content_hub_doc.credential_type, content_hub_doc.credential)
+        else:
+            if not self.credential_type or not self.credential:
+                frappe.throw("Either Content Hub or direct Credential fields are required")
+            return frappe.get_doc(self.credential_type, self.credential)
 
     def validate_linkedin_content(self):
         """Validate LinkedIn specific content requirements"""
@@ -103,18 +102,52 @@ class SocialMediaPost(Document):
     @frappe.whitelist()
     def revise_post(self, instruction: str):
         content_hub_setting = frappe.get_single("Content Hub Setting")
-        revise_agent = content_hub_setting.revise_agent
+
+        # Step 1: Get credential from Content Hub or fallback to this record
+        if self.content_hub:
+            hub_doc = frappe.get_doc("Content Hub", self.content_hub)
+            if hub_doc.credential:
+                credential_doc = frappe.get_doc(hub_doc.credential_type, hub_doc.credential)
+            else:
+                frappe.throw("No credential selected in linked Content Hub")
+        else:
+            if not self.credential:
+                frappe.throw("No credential selected in this document or linked Content Hub")
+            credential_doc = frappe.get_doc(self.credential_type, self.credential)
+
+        # Step 2: Decide which AI agent to use
+        if credential_doc.use_default_ai_agents == 1:
+            revise_agent = content_hub_setting.revise_agent
+        else:
+            if getattr(credential_doc, "revise_generator_agent", None):
+                ai_agent_doc = frappe.get_doc("AI Agent", credential_doc.revise_generator_agent)
+                revise_agent = ai_agent_doc.agent_service
+            else:
+                revise_agent = content_hub_setting.revise_agent
+
+        # Step 3: Prepare input for AI
         ai_input_data = {
             "title": self.title,
             "social_media": self.platform,
             "prevois_post": self.content,
             "query": instruction,
+            "content_hub_name": self.content_hub or self.name,
         }
+
+        # Step 4: Call AI agent
         result = revise_agent.invoke(**ai_input_data)
-        self.content = result.content
+        revised_content = getattr(result, "content", None)
+
+        if not revised_content:
+            frappe.throw("AI agent did not return revised content")
+
+        # Step 5: Save result back
+        self.content = revised_content
         self.save()
         self.reload()
-        return {"status": "success"}
+
+        return {"status": "success", "revised_content": revised_content}
+
 
     @frappe.whitelist()
     def post_to_linkedin(self):
@@ -123,26 +156,21 @@ class SocialMediaPost(Document):
             if not self.content:
                 frappe.throw(_("Content is required for posting"))
 
-            if not self.content_hub:
-                frappe.throw(_("Content Hub is required for posting"))
-
-            # Get the content hub and credentials
-            content_hub = frappe.get_doc("Content Hub", self.content_hub)
-            linkedin_doc = frappe.get_doc(content_hub.credential_type, content_hub.credential)
+            linkedin_doc = self.get_credentials()
 
             if not linkedin_doc.access_token:
-                frappe.throw(_("LinkedIn access token not found. Please reconnect your LinkedIn account."))
+                frappe.throw(_("LinkedIn OAuth 2.0 access token not found. Please reconnect your LinkedIn account."))
 
             if linkedin_doc.connection_status != "Connected":
                 frappe.throw(_("LinkedIn account is not connected. Please reconnect your account."))
 
-            # Call LinkedIn integration's post method
             result = linkedin_doc.post_to_linkedin(self.content, self.image_attachment)
             
             if result.get("status") == "success":
                 self.status = "Posted"
                 self.social_media_post_id = result.get("post_id")
                 self.social_media_post_link = result.get("post_link")
+                self.post_link = result.get("post_link")
                 self.save()
                 frappe.db.commit()
                 return result
@@ -171,57 +199,65 @@ class SocialMediaPost(Document):
     def update_linkedin_post(self, post_id=None):
         """Bridge method to update an existing LinkedIn post"""
         try:
-            if not self.content_hub:
-                frappe.throw(_("Content Hub is required"))
+            if not self.social_media_post_id:
+                frappe.throw(_("No LinkedIn post ID found to update"))
 
-            # Use post_id parameter or stored post ID
-            if not post_id:
-                post_id = self.social_media_post_id
+            linkedin_doc = self.get_credentials()
 
-            if not post_id:
-                frappe.throw(_("Post ID is required for updating"))
+            result = linkedin_doc.update_linkedin_post(self.social_media_post_id, self.content)
 
-            content_hub = frappe.get_doc("Content Hub", self.content_hub)
-            linkedin_doc = frappe.get_doc(content_hub.credential_type, content_hub.credential)
-
-            # Call LinkedIn integration's update method
-            result = linkedin_doc.update_linkedin_post(post_id, self.content)
-            return result
+            if result.get("status") == "success":
+                self.status = "Updated"
+                self.save()
+                frappe.db.commit()
+                return result
+            else:
+                self.status = "Failed"
+                self.save()
+                frappe.db.commit()
+                error_msg = result.get("message", "Unknown error occurred")
+                frappe.log_error(f"LinkedIn Update Failed: {error_msg}", "LinkedIn Update Error")
+                return {"status": "error", "message": error_msg}
 
         except Exception as e:
-            frappe.log_error(frappe.get_traceback(), "LinkedIn Update Error")
-            return {
-                "status": "error",
-                "message": str(e)
-            }
+            frappe.log_error(f"LinkedIn Update Exception: {str(e)}", "LinkedIn Update Exception")
+            self.status = "Failed"
+            self.save()
+            frappe.db.commit()
+            return {"status": "error", "message": str(e)}
 
     @frappe.whitelist()
     def delete_linkedin_post(self, post_id=None):
         """Bridge method to delete a LinkedIn post"""
         try:
-            if not self.content_hub:
-                frappe.throw(_("Content Hub is required"))
+            if not self.social_media_post_id:
+                frappe.throw(_("No LinkedIn post ID found to delete"))
 
-            # Use post_id parameter or stored post ID
-            if not post_id:
-                post_id = self.social_media_post_id
+            linkedin_doc = self.get_credentials()
 
-            if not post_id:
-                frappe.throw(_("Post ID is required for deletion"))
+            result = linkedin_doc.delete_linkedin_post(self.social_media_post_id)
 
-            content_hub = frappe.get_doc("Content Hub", self.content_hub)
-            linkedin_doc = frappe.get_doc(content_hub.credential_type, content_hub.credential)
-
-            # Call LinkedIn integration's delete method
-            result = linkedin_doc.delete_linkedin_post(post_id)
-            return result
+            if result.get("status") == "success":
+                self.status = "Deleted"
+                self.social_media_post_id = None
+                self.social_media_post_link = None
+                self.save()
+                frappe.db.commit()
+                return result
+            else:
+                self.status = "Failed"
+                self.save()
+                frappe.db.commit()
+                error_msg = result.get("message", "Unknown error occurred")
+                frappe.log_error(f"LinkedIn Delete Failed: {error_msg}", "LinkedIn Delete Error")
+                return {"status": "error", "message": error_msg}
 
         except Exception as e:
-            frappe.log_error(frappe.get_traceback(), "LinkedIn Delete Error")
-            return {
-                "status": "error",
-                "message": str(e)
-            }
+            frappe.log_error(f"LinkedIn Delete Exception: {str(e)}", "LinkedIn Delete Exception")
+            self.status = "Failed"
+            self.save()
+            frappe.db.commit()
+            return {"status": "error", "message": str(e)}
 
     @frappe.whitelist()
     def post_to_twitter(self):
@@ -230,12 +266,7 @@ class SocialMediaPost(Document):
             if not self.content:
                 frappe.throw(_("Content is required for posting"))
 
-            if not self.content_hub:
-                frappe.throw(_("Content Hub is required for posting"))
-
-            # Get the content hub and credentials
-            content_hub = frappe.get_doc("Content Hub", self.content_hub)
-            twitter_doc = frappe.get_doc(content_hub.credential_type, content_hub.credential)
+            twitter_doc = self.get_credentials()
             
             # OAuth 2.0 validation
             if not twitter_doc.access_token:
@@ -251,6 +282,7 @@ class SocialMediaPost(Document):
                 self.status = "Posted"
                 self.social_media_post_id = result.get("tweet_id")
                 self.social_media_post_link = result.get("tweet_url")
+                self.post_link = result.get("tweet_url")
                 self.save()
                 frappe.db.commit()
                 return result
@@ -280,12 +312,7 @@ class SocialMediaPost(Document):
     def post_to_reddit(self):
         """Post content to Reddit"""
         try:
-            if not self.content_hub:
-                frappe.throw(_("Content Hub is required for posting"))
-
-            # Get the content hub and credentials
-            content_hub = frappe.get_doc("Content Hub", self.content_hub)
-            reddit_doc = frappe.get_doc(content_hub.credential_type, content_hub.credential)
+            reddit_doc = self.get_credentials()
 
             if not reddit_doc.access_token:
                 frappe.throw(_("Reddit access token not found. Please reconnect your Reddit account."))
@@ -335,6 +362,7 @@ class SocialMediaPost(Document):
                 self.status = "Posted"
                 self.social_media_post_id = result.get("id", "")
                 self.social_media_post_link = result.get("url", "")
+                self.post_link = result.get("url", "")
                 self.save()
                 return result
             else:
@@ -374,23 +402,11 @@ class SocialMediaPost(Document):
     def generate_image(self, instruction=''):
         setting = frappe.get_single("Content Hub Setting")
 
-        if not self.content_hub:
-            frappe.throw("No Content Hub selected")
+        credential_doc = self.get_credentials()
 
-        content_hub_doc = frappe.get_doc("Content Hub", self.content_hub)
-
-        if not content_hub_doc.credential:
-            frappe.throw("No credential selected in Content Hub")
-
-        credential_doc = frappe.get_doc(content_hub_doc.credential_type, content_hub_doc.credential)
-        
         if instruction:
-            if not self.user_instructions:
-                self.user_instructions = instruction
-            else:
-                self.user_instructions += f"\n{instruction}"
+            self.user_instructions = instruction
             self.save(ignore_permissions=True)
-            frappe.db.commit()
 
         # Determine which image agent to use
         if credential_doc.use_default_ai_agents == 1:
@@ -437,16 +453,8 @@ class SocialMediaPost(Document):
 
         # Handle the image response safely
         try:
-            if hasattr(image_response, 'data') and len(image_response.data) > 0:
-                url = image_response.data[0].url
-            elif hasattr(image_response, 'url'):
-                url = image_response.url
-            else:
-                frappe.throw("Invalid image response format")
-
-            response = requests.get(url, stream=True)
-            response.raise_for_status()
-            image_bytes = response.content
+            b64_image = image_response.images[0]
+            image_bytes = base64.b64decode(b64_image)
 
             file_name = f"{frappe.scrub(self.title or 'social_post')}_{self.platform.lower()}.png"
             file_doc = frappe.new_doc("File")
@@ -469,24 +477,41 @@ class SocialMediaPost(Document):
                 "error": str(e)
             }
 
+@frappe.whitelist()
+def schedule_social_media_posts():
+    """
+    This function is intended to be run by the Frappe scheduler.
+    It fetches all 'Scheduled' social media posts where the 'post_on' datetime
+    is in the past and attempts to publish them.
+    """
+    current_time = now_datetime()
 
-    def schedule_social_media_posts():
-        """Check scheduled posts and publish if datetime matches"""
-        current_time = now_datetime()
+    posts_to_publish = frappe.get_all(
+        "Social Media Post",
+        filters={
+            "status": "Scheduled",
+            "post_on": ["<=", current_time]
+        },
+        fields=["name"]
+    )
 
-        posts = frappe.get_all(
-            "Social Media Post",
-            filters={
-                "status": "Draft",
-                "post_on": ["<=", current_time]
-            },
-            fields=["name"]
-        )
+    # --- Start of new debugging code ---
+    if not posts_to_publish:
+        # If no posts are found, return a clear message.
+        return "No posts found with 'Scheduled' status and a past 'post_on' time."
+    # --- End of new debugging code ---
 
-        for post in posts:
-            try:
-                doc = frappe.get_doc("Social Media Post", post.name)
-                doc.post()  # reuse your existing post() method
-                frappe.db.commit()
-            except Exception:
-                frappe.log_error(frappe.get_traceback(), "Scheduled Social Media Post Error")
+    processed_posts = [] # Keep track of what we process
+    for post_meta in posts_to_publish:
+        try:
+            post_doc = frappe.get_doc("Social Media Post", post_meta.name)
+            post_doc.post()
+            processed_posts.append(post_meta.name) # Add to our list
+        except Exception:
+            frappe.log_error(
+                f"Failed to publish scheduled post: {post_meta.name}\n{frappe.get_traceback()}",
+                "Scheduled Social Media Post Error"
+            )
+
+    # Return the list of posts that the loop attempted to process.
+    return f"Attempted to process the following posts: {processed_posts}"

@@ -55,9 +55,6 @@ frappe.ui.form.on("AI Agent", {
 
         fields_to_hide_and_clear.forEach(field => {
             frm.toggle_display(field, !hide_fields); 
-            if (hide_fields) {
-                frm.set_value(field, '');
-            }
         });
 
     },

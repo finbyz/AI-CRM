@@ -12,6 +12,7 @@ from litellm import image_generation,embedding
 from typing import TYPE_CHECKING, Any, Optional
 from langchain_core.runnables import RunnableConfig
 import os
+from ai_crm.ai.doctype.llm.image_llm import ImageGeneration
 
 
 class LLM(Document):
@@ -21,10 +22,11 @@ class LLM(Document):
 		if self.supports_image_generation:
 			if self.provider == "Google":
 				os.environ['GEMINI_API_KEY'] = provider.get_password("api_key")
-			return ImageLiteLLM(
-				api_key = provider.get_password("api_key"),
-				model = self.name
-			)
+			
+			return ImageGeneration(
+       			self.name,
+          		api_key=provider.get_password("api_key")
+        	)
 		return ChatLiteLLM(
 			api_key = provider.get_password("api_key"),
 			model = self.name,
