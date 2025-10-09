@@ -7,6 +7,10 @@ frappe.ui.form.on('Social Media Post', {
 		if (frm.doc.content && ['LinkedIn', 'X (Twitter)', 'Reddit'].includes(frm.doc.platform)) {
 			frm.trigger('render_preview');
 		}
+		if (frm.doc.post_on && frm.doc.status === "Draft") {
+			frm.set_value("status", "Scheduled");
+		}
+		
 		// Add Post button when document is saved and platform is selected
 		if (frm.doc.platform && frm.doc.content && frm.doc.status !== 'Posted') {
 			frm.add_custom_button(__('Post to Social Media'), function() {
@@ -37,6 +41,22 @@ frappe.ui.form.on('Social Media Post', {
 		}
 
 	},
+	post_on: function(frm) {
+		if (frm.doc.post_on && frm.doc.status === "Draft") {
+			frm.set_value("status", "Scheduled");
+		}
+	},
+	credential_type: function(frm) {
+        if (frm.doc.credential_type === "Twitter Integration") {
+            frm.set_value("platform", "X (Twitter)");
+        }
+        else if (frm.doc.credential_type === "LinkedIn Integration") {
+            frm.set_value("platform", "LinkedIn");
+        }
+        else if (frm.doc.credential_type === "Reddit Integration") {
+            frm.set_value("platform", "Reddit");
+        }
+    },
 
 	// Re-render preview on content change
 	content: function(frm) {

@@ -8,8 +8,10 @@
  "field_order": [
   "title",
   "platform",
+  "credential_type",
   "status",
   "content_hub",
+  "credential",
   "image_attachment",
   "created_on",
   "post_on",
@@ -61,15 +63,18 @@
   },
   {
    "fieldname": "platform",
-   "fieldtype": "Data",
+   "fieldtype": "Select",
    "in_list_view": 1,
-   "label": "Platform"
+   "label": "Platform",
+   "options": "\nLinkedIn\nReddit\nX (Twitter)",
+   "read_only": 1
   },
   {
    "fieldname": "content_hub",
    "fieldtype": "Link",
    "label": "Content Hub",
-   "options": "Content Hub"
+   "options": "Content Hub",
+   "read_only": 1
   },
   {
    "fieldname": "image_generation_prompt",
@@ -103,13 +108,28 @@
    "fieldtype": "Small Text",
    "hidden": 1,
    "label": "User Instructions"
+  },
+  {
+   "depends_on": "eval:!doc.content_hub",
+   "fieldname": "credential_type",
+   "fieldtype": "Link",
+   "label": "Credential Type",
+   "link_filters": "[[\"DocType\",\"name\",\"in\",[\"LinkedIn Integration\",\"Twitter Integration\",\"Reddit Integration\"]]]",
+   "options": "DocType"
+  },
+  {
+   "depends_on": "eval:!doc.content_hub",
+   "fieldname": "credential",
+   "fieldtype": "Dynamic Link",
+   "label": "Credential",
+   "options": "credential_type"
   }
  ],
  "grid_page_length": 50,
  "image_field": "image_attachment",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-26 12:17:53.361100",
+ "modified": "2025-09-27 23:16:04.086547",
  "modified_by": "Administrator",
  "module": "Social Media",
  "name": "Social Media Post",

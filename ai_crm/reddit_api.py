@@ -1,4 +1,4 @@
-import praw
+
 import frappe
 from frappe import _
 from frappe.utils import get_timestamp, now, add_to_date, get_datetime
@@ -6,439 +6,958 @@ from datetime import datetime, timedelta
 import json
 import requests
 from typing import List, Dict, Any
+import traceback
+from bs4 import BeautifulSoup
+import re
 
 class RedditAPI:
     def __init__(self, integration_name=None):
-        """
-        Initialize Reddit API with credentials from RedditIntegration doctype
-        
-        Args:
-            integration_name: Name of the RedditIntegration document. 
-                            If None, will use the first active integration found.
-        """
-        # Get Reddit Integration document
-        if integration_name:
-            self.integration = frappe.get_doc('Reddit Integration', integration_name)
-        else:
-            # Find the first connected Reddit Integration
-            integrations = frappe.get_all(
-                'Reddit Integration',
-                filters={'connection_status': 'Connected'},
-                limit=1
-            )
-            
-            if not integrations:
-                # Try to find any Reddit Integration
-                integrations = frappe.get_all('Reddit Integration', limit=1)
-                
-            if not integrations:
-                frappe.throw(_("No Reddit Integration found. Please create one first."))
-                
-            self.integration = frappe.get_doc('Reddit Integration', integrations[0].name)
-        
-        # Check if integration is connected
-        if self.integration.connection_status != 'Connected':
-            frappe.throw(_(f"Reddit Integration '{self.integration.name}' is not connected. Please connect it first."))
-        
-        # Get credentials from the integration
-        client_id = self.integration.client_id
-        client_secret = self.integration.get_password('client_secret')
-        user_agent = self.integration.user_agent or 'ERPNext Reddit Monitor/1.0'
-        username = self.integration.username
-        
-        # For PRAW, we need password authentication or OAuth
-        # Since we have OAuth tokens, we'll use a different approach
-        
         try:
-            # Method 1: Use refresh token if available for script app
-            if hasattr(self.integration, 'refresh_token') and self.integration.refresh_token:
-                self.reddit = praw.Reddit(
-                    client_id=client_id,
-                    client_secret=client_secret,
-                    user_agent=user_agent,
-                    refresh_token=self.integration.get_password('refresh_token')
+            if not integration_name:
+                integrations = frappe.get_all(
+                    'Reddit Integration',
+                    filters={'connection_status': 'Connected'},
+                    limit=1
                 )
-            else:
-                # Method 2: Use read-only mode with client credentials
-                self.reddit = praw.Reddit(
-                    client_id=client_id,
-                    client_secret=client_secret,
-                    user_agent=user_agent
-                )
-                
-        except Exception as e:
-            frappe.throw(_(f"Failed to initialize Reddit API: {str(e)}"))
-    
-    def get_oauth_headers(self):
-        """Get headers for direct Reddit API calls using OAuth token"""
-        token = self.integration._get_valid_token()
-        if not token:
-            frappe.throw(_("No valid OAuth token available"))
+                if not integrations:
+                    frappe.throw(_("No connected Reddit Integration found"))
+                integration_name = integrations[0].name
             
+            self.integration = frappe.get_doc('Reddit Integration', integration_name)
+            if not self.integration.ensure_valid_token():
+                frappe.throw(
+                    _(f"Failed to validate/refresh access token for {integration_name}. "
+                      "Please reconnect your Reddit account.")
+                )
+            self.integration.reload()
+            self.access_token = self.integration.get_password("access_token")
+            if not self.access_token:
+                frappe.throw(
+                    _(f"No access token available for {integration_name}. "
+                      "Please reconnect your Reddit account.")
+                )
+            self.user_agent = self.integration.get_user_agent()
+            
+            frappe.logger().info(
+                f"RedditAPI initialized for u/{self.integration.username} "
+                f"(integration: {integration_name})"
+            )
+        except Exception as e:
+            frappe.log_error(
+                title=f"Reddit API Initialization Failed - {integration_name}",
+                message=frappe.get_traceback()
+            )
+            raise
+    def _get_headers(self):
+        """Get headers with fresh access token"""
+        if not self.integration.ensure_valid_token():
+            frappe.throw(_("Reddit authentication failed. Token refresh unsuccessful."))
+        
+        self.integration.reload()
+        self.access_token = self.integration.get_password("access_token")
+        
         return {
-            "Authorization": f"Bearer {token}",
-            "User-Agent": self.integration.user_agent
+            "Authorization": f"Bearer {self.access_token}",
+            "User-Agent": self.user_agent
         }
     
-    def fetch_reddit_posts(self, subreddit_name: str, limit: int = 25) -> List[Dict[str, Any]]:
-        """Fetch posts from a subreddit"""
+    def scrape_external_content(self, url):
         try:
-            subreddit = self.reddit.subreddit(subreddit_name)
+            response = requests.get(url, timeout=10, headers={
+                'User-Agent': 'Mozilla/5.0 (compatible; Reddit Bot)'
+            })
+            soup = BeautifulSoup(response.content, 'html.parser')
+            for script in soup(["script", "style"]):
+                script.decompose()
+            text = soup.get_text()
+            lines = (line.strip() for line in text.splitlines())
+            chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+            text = '\n'.join(chunk for chunk in chunks if chunk)
+            
+            return text[:2000]
+        except Exception as e:  # FIX: Added Exception as e
+            frappe.logger().error(f"Error scraping {url}: {str(e)}")
+            return None
+            
+    def fetch_reddit_posts(self, subreddit: str, sort_type: str = "hot", limit: int = 5, time_filter: str = "week") -> List[Dict]:
+        valid_sorts = ["hot", "new", "top", "rising","best"]
+        if sort_type not in valid_sorts:
+            frappe.log_error(f"Invalid sort_type: {sort_type}. Valid options: {valid_sorts}")
+            return []
+        
+        if sort_type in ["hot", "new", "top", "rising", "best"]:
+            base_url = f"https://www.reddit.com/r/{subreddit}/{sort_type}.json"
+            params = {"limit": limit * 2, "t": time_filter}
+        else:
+            base_url = f"https://www.reddit.com/r/{subreddit}/{sort_type}.json"
+            params = {"limit": limit * 2}
+        
+        headers = {
+            "User-Agent": self.integration.get_user_agent()
+        }
+        try:
+            frappe.logger().info(f"Fetching {sort_type} posts from r/{subreddit} with limit {limit}")
+            
+            response = requests.get(base_url, headers=headers, params=params, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+            
             posts = []
-            
-            for submission in subreddit.new(limit=limit):
-                # Determine post type
-                post_type = "Text"
-                if submission.url != submission.permalink:
-                    if any(ext in submission.url.lower() for ext in ['.jpg', '.jpeg', '.png', '.gif']):
-                        post_type = "Image"
-                    elif any(ext in submission.url.lower() for ext in ['.mp4', '.webm', '.gifv']):
-                        post_type = "Video"
-                    else:
-                        post_type = "Link"
+            existing_post_ids = set(frappe.get_all(
+                'Reddit Post',
+                filters={'subreddit': subreddit},
+                pluck='post_id'
+            ))
+            for child in data.get("data", {}).get("children", []):
+                post_data = child.get("data", {})
+                post_id = post_data.get('id', '')
                 
-                post_data = {
-                    'post_id': submission.id,
-                    'title': submission.title[:140],  # Limit title length
-                    'author': str(submission.author) if submission.author else '[deleted]',
-                    'url': f"https://reddit.com{submission.permalink}",
-                    'external_url': submission.url if submission.url != submission.permalink else '',
-                    'post_type': post_type,
-                    'score': submission.score,
-                    'num_comments': submission.num_comments,
-                    'selftext': submission.selftext,
-                    'created_utc': datetime.fromtimestamp(submission.created_utc)
+                if post_id in existing_post_ids:
+                    frappe.logger().info(f"Skipping duplicate post: {post_id}")
+                    continue
+                
+                if post_data.get('stickied', False):
+                    frappe.logger().info(f"Skipping stickied post: {post_id}")
+                    continue
+                
+                if len(posts) >= limit:
+                    break
+                    
+                post_content = self._get_reddit_post_content(post_data)
+                post_type = self._determine_post_type(post_data)
+                
+                permalink = post_data.get('permalink', '')
+                reddit_url = f"https://www.reddit.com{permalink}" if permalink else f"https://www.reddit.com/r/{subreddit}/comments/{post_id}/"
+                
+                original_url = post_data.get("url", "")
+                is_external_link = (
+                    original_url and 
+                    not any(domain in original_url.lower() for domain in ['reddit.com', 'redd.it']) and
+                    original_url != reddit_url
+                )
+                external_url = original_url if is_external_link else ""
+                post_obj = {
+                    "id": post_id,
+                    "title": post_data.get("title", ""),
+                    "author": post_data.get("author", ""),
+                    "score": post_data.get("score", 0),
+                    "url": reddit_url,  
+                    "external_url": external_url,  
+                    "original_url": original_url,
+                    "permalink": permalink,
+                    "created_utc": post_data.get("created_utc", 0),
+                    "num_comments": post_data.get("num_comments", 0),
+                    "selftext": post_content,
+                    "post_type": post_type,
+                    "sort_type": sort_type,
+                    "time_filter": time_filter if sort_type in ["top", "controversial"] else None,
+                    
                 }
-                posts.append(post_data)
-            
-            return posts
-            
-        except Exception as e:
-            frappe.log_error(f"Error fetching posts from r/{subreddit_name}: {str(e)}")
-            raise
-    
-    def post_comment(self, post_id: str, comment_text: str) -> bool:
-        """Post a comment on a Reddit post using OAuth API"""
-        try:
-            # Use the OAuth method from integration instead of PRAW
-            result = self.integration.create_comment(post_id, comment_text)
-            
-            if result.get('status') == 'success':
-                frappe.logger().info(f"Comment posted successfully on post {post_id}")
-                return True
-            else:
-                frappe.log_error(f"Error posting comment on post {post_id}: {result.get('message')}")
-                return False
                 
-        except Exception as e:
-            frappe.log_error(f"Error posting comment on post {post_id}: {str(e)}")
-            return False
+                posts.append(post_obj)
+                frappe.logger().info(f"NEW POST: {post_obj['title'][:50]}... | ID: {post_id} | Comments: {post_obj['num_comments']}")
+            
+            frappe.logger().info(f"Successfully fetched {len(posts)} NEW posts from r/{subreddit} ({sort_type})")
+            return posts
 
+        except requests.exceptions.HTTPError as e:
+            error_msg = f"HTTP Error fetching {sort_type} posts from r/{subreddit}: {str(e)}"
+            if hasattr(e, 'response') and e.response is not None:
+                error_msg += f" | Status: {e.response.status_code} | Response: {e.response.text[:200]}"
+            frappe.log_error(error_msg)
+            return []
+        except Exception as e:
+            frappe.log_error(f"Unexpected error fetching {sort_type} posts from r/{subreddit}: {str(e)}\n{traceback.format_exc()}")
+            return []
+
+    def _get_reddit_post_content(self, post_data):
+        """Get post content"""
+        selftext = post_data.get('selftext', '').strip()
+        if selftext and selftext not in ['', '[removed]', '[deleted]']:
+            return selftext[:2000]
+        
+        url = post_data.get('url', '')
+        if url and not any(domain in url.lower() for domain in ['reddit.com', 'redd.it']):
+            try:
+                scraped = self.scrape_external_content(url)
+                if scraped:
+                    return scraped
+            except:
+                pass
+            return f"External link: {url}"
+        
+        return post_data.get('title', '')
+    
+    def create_comment(self, post_id, comment_text):
+        try:
+            if not post_id or not comment_text:
+                return False
+            
+            if not self.integration.ensure_valid_token():
+                return False
+            
+            self.integration.reload()
+            self.access_token = self.integration.get_password("access_token")
+            
+            url = "https://oauth.reddit.com/api/comment"
+            data = {
+                "thing_id": f"t3_{post_id}",
+                "text": comment_text.strip()
+            }
+            
+            headers = {
+                "Authorization": f"Bearer {self.access_token}",
+                "User-Agent": self.user_agent
+            }
+            
+            response = requests.post(url, headers=headers, data=data, timeout=30)
+            
+            if response.status_code == 200:
+                return True
+            
+            frappe.log_error(
+                f"Reddit comment failed: {response.status_code} - {response.text[:200]}",
+                "Reddit Comment Error"
+            )
+            return False
+            
+        except Exception as e:
+            frappe.log_error(str(e), "Reddit Comment Exception")
+            return False
+    def fetch_post_comments(self, post_id, limit=10, sort='top'):
+        """Fetch comments for a post with enhanced debugging"""
+        try:
+            comments_url = f"https://oauth.reddit.com/comments/{post_id}"
+            params = {
+                'sort': sort,
+                'limit': limit,
+                'depth': 1
+            }
+            
+            if not self.integration.ensure_valid_token():
+                frappe.log_error(
+                    title=f"Token Validation Failed - {post_id}",
+                    message="Failed to validate/refresh Reddit access token"
+                )
+                frappe.throw(_("Failed to validate token"))
+            
+            self.integration.reload()
+            self.access_token = self.integration.get_password("access_token")
+            
+            if not self.access_token:
+                frappe.log_error(
+                    title=f"No Access Token - {post_id}",
+                    message=f"No access token available for integration: {self.integration.name}"
+                )
+                frappe.throw(_("No access token available"))
+            
+            headers = {
+                "Authorization": f"Bearer {self.access_token}",
+                "User-Agent": self.user_agent
+            }
+            
+            frappe.logger().info(
+                f" Fetching {sort} comments for post: {post_id} (limit: {limit})"
+            )
+            
+            # Make API call
+            response = requests.get(comments_url, headers=headers, params=params, timeout=10)
+            
+            # Log response status
+            frappe.logger().info(f"Reddit API Response Status: {response.status_code}")
+            
+            if response.status_code != 200:
+                frappe.log_error(
+                    title=f"Reddit API Error - {post_id}",
+                    message=f"Status: {response.status_code}\nResponse: {response.text[:500]}"
+                )
+                response.raise_for_status()
+            
+            data = response.json()
+            comments = []
+            
+            # Parse comments
+            if len(data) > 1:
+                comment_list = data[1]['data']['children']
+                frappe.logger().info(f"Found {len(comment_list)} comment objects in response")
+                
+                for comment_data in comment_list:
+                    if comment_data.get('kind') != 't1':
+                        continue
+                    
+                    comment = comment_data['data']
+                    
+                    # Skip deleted/removed comments
+                    if (comment.get('body') in ['[deleted]', '[removed]'] or 
+                        comment.get('body') is None or
+                        comment.get('author') is None):
+                        continue
+                    
+                    comments.append({
+                        'author': comment.get('author', '[deleted]'),
+                        'body': comment.get('body', ''),
+                        'score': comment.get('score', 0),
+                        'created_utc': comment.get('created_utc', 0),
+                        'comment_id': comment.get('id', '')
+                    })
+                    
+                    if len(comments) >= limit:
+                        break
+            
+            frappe.logger().info(f"Successfully fetched {len(comments)} valid {sort} comments")
+            
+            if len(comments) == 0:
+                frappe.logger().warning(
+                    f" No valid comments found for post {post_id}. "
+                    "All comments might be deleted/removed."
+                )
+            
+            return comments
+            
+        except requests.exceptions.HTTPError as e:
+            error_msg = f"HTTP Error fetching comments for {post_id}: {str(e)}"
+            frappe.logger().error(f"{error_msg}")
+            frappe.log_error(
+                title=f"Comment Fetch HTTP Error - {post_id}",
+                message=f"{error_msg}\nResponse: {e.response.text if e.response else 'No response'}"
+            )
+            return []
+            
+        except Exception as e:
+            error_msg = f"Error fetching comments for {post_id}: {str(e)}"
+            frappe.logger().error(f"{error_msg}")
+            frappe.log_error(
+                title=f"Comment Fetch Error - {post_id}",
+                message=f"{error_msg}\n{traceback.format_exc()}"
+            )
+        return []
+        
+    def _determine_post_type(self, post_data):
+        url = post_data.get('url', '')
+        selftext = post_data.get('selftext', '')
+        post_hint = post_data.get('post_hint', '')
+        
+        if selftext and selftext.strip() and selftext not in ['', '[removed]', '[deleted]']:
+            return "Text"
+        
+        if post_hint:
+            if 'image' in post_hint:
+                return "Image"
+            elif 'video' in post_hint:
+                return "Video"
+            elif 'link' in post_hint:
+                return "Link"
+        if url:
+            if any(ext in url.lower() for ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp']):
+                return "Image"
+            elif any(ext in url.lower() for ext in ['.mp4', '.webm', '.gifv', 'youtube.com', 'youtu.be']):
+                return "Video"
+            elif any(domain in url.lower() for domain in ['reddit.com', 'redd.it']):
+                return "Text"  
+            else:
+                return "Link"
+        return "Text"
+ 
 def store_posts_in_db(subreddit_name: str, posts: List[Dict[str, Any]]) -> int:
-    """Store fetched posts in Reddit Post doctype"""
+    """Store posts in database and fetch comments with enhanced logging"""
+    from datetime import datetime
     stored_count = 0
     
+    # Get integration_name once for all posts
+    integration_name = None
+    subreddit_doc = None
+    
+    if frappe.db.exists('Subreddit', subreddit_name):
+        subreddit_doc = frappe.get_doc('Subreddit', subreddit_name)
+        integration_name = subreddit_doc.reddit_integration
+        
+        if not integration_name:
+            frappe.logger().warning(
+                f"No Reddit Integration configured for r/{subreddit_name}. "
+                "Comments will NOT be fetched automatically."
+            )
+        else:
+            frappe.logger().info(f"Using Reddit Integration: {integration_name}")
+    
     for post_data in posts:
-        # Check if post already exists
-        if frappe.db.exists('Reddit Post', post_data['post_id']):
+        post_id = post_data.get('post_id') or post_data.get('id')
+        
+        if frappe.db.exists('Reddit Post', post_id):
+            frappe.logger().debug(f"Skipping duplicate post: {post_id}")
             continue
         
         try:
-            # Create new Reddit Post record
+            created_utc = post_data.get('created_utc')
+            if created_utc:
+                created_datetime = datetime.fromtimestamp(created_utc)
+            else:
+                created_datetime = frappe.utils.now_datetime()
+            
+            # Create new Reddit Post
             reddit_post = frappe.new_doc('Reddit Post')
             reddit_post.update({
                 'subreddit': subreddit_name,
-                'post_id': post_data['post_id'],
-                'title': post_data['title'],
-                'author': post_data['author'],
-                'url': post_data['url'],
-                'external_url': post_data['external_url'],
-                'post_type': post_data['post_type'],
-                'score': post_data['score'],
-                'num_comments': post_data['num_comments'],
-                'selftext': post_data['selftext'],
-                'created_utc': post_data['created_utc'],
-                'comment_status': 'Pending'
+                'post_id': post_id,
+                'title': post_data.get('title', ''),
+                'author': post_data.get('author', ''),
+                'url': post_data.get('url', ''),
+                'external_url': post_data.get('external_url', ''),
+                'post_type': post_data.get('post_type', 'Text'),
+                'score': post_data.get('score', 0),
+                'num_comments': post_data.get('num_comments', 0),
+                'selftext': post_data.get('selftext', ''),
+                'created_utc': created_datetime,
+                'comment_status': 'Pending',
             })
-            reddit_post.insert()
+            reddit_post.insert(ignore_permissions=True)
+            frappe.db.commit()
             stored_count += 1
+            num_comments = post_data.get('num_comments', 0)
+            frappe.logger().info(
+                f"Stored post {post_id} | Comments: {post_data.get('num_comments', 0)} | "
+                f"Title: {post_data.get('title', '')[:50]}..."
+            )
             
+            
+            if num_comments > 0:
+                frappe.logger().info(
+                    f"{'='*60}\n"
+                    f"POST HAS {num_comments} COMMENTS - FETCHING NOW\n"
+                    f"Post ID: {post_id}\n"
+                    f"Integration: {integration_name or 'NOT SET'}\n"
+                    f"{'='*60}"
+                )
+                
+                if not integration_name:
+                    frappe.logger().error(
+                        f" Cannot fetch comments for {post_id}: No Reddit Integration configured!\n"
+                        f"   Post has {num_comments} comments\n"
+                        f"   Subreddit: r/{subreddit_name}\n"
+                        f"   FIX: Configure 'Reddit Account' in Subreddit settings"
+                    )
+                    
+                    frappe.log_error(
+                        title=f"Cannot Fetch Comments - {post_id}",
+                        message=f"Post {post_id} has {num_comments} comments but no Reddit Integration "
+                                f"is configured for r/{subreddit_name}"
+                    )
+                    continue  
+                try:
+                    if not frappe.db.exists('Reddit Integration', integration_name):
+                        frappe.logger().error(
+                            f" Integration '{integration_name}' does not exist!"
+                        )
+                        continue
+                    
+                    integration_doc = frappe.get_doc('Reddit Integration', integration_name)
+                    
+                    if integration_doc.connection_status != 'Connected':
+                        frappe.logger().error(
+                            f" Integration '{integration_name}' is not connected! "
+                            f"Status: {integration_doc.connection_status}"
+                        )
+                        continue
+                    
+                    frappe.logger().info(f"Integration verified and connected")
+                    
+                except Exception as e:
+                    frappe.logger().error(f" Error verifying integration: {str(e)}")
+                    continue
+                
+                try:
+                    frappe.logger().info(
+                        f"Calling fetch_and_store_comments(post_id={post_id}, limit=10, sort='top')"
+                    )
+                    
+                    result = fetch_and_store_comments(
+                        post_id=post_id,
+                        limit=10,
+                        sort='top'
+                    )
+                    
+                    frappe.logger().info(f"Fetch result: {result}")
+                    
+                    if result.get('success'):
+                        comment_count = result.get('count', 0)
+                        if comment_count > 0:
+                            frappe.logger().info(
+                                f" SUCCESS! Fetched and stored {comment_count} comments for {post_id}"
+                            )
+                        else:
+                            frappe.logger().warning(
+                                f" Fetch returned 0 comments. Comments might be deleted/removed."
+                            )
+                    else:
+                        error = result.get('error', 'Unknown error')
+                        frappe.logger().error(f"Failed to fetch comments: {error}")
+                        
+                        # Queue for background processing
+                        frappe.logger().info(f" Queuing background job for retry...")
+                        frappe.enqueue(
+                            'ai_crm.reddit_api.fetch_and_store_comments',
+                            post_id=post_id,
+                            limit=10,
+                            sort='top',
+                            queue='short',
+                            timeout=60,
+                        )
+                        frappe.logger().info(f" Background job queued for {post_id}")
+                        
+                except Exception as e:
+                    error_msg = f"Exception during comment fetch for {post_id}: {str(e)}"
+                    frappe.logger().error(f"{error_msg}")
+                    frappe.log_error(
+                        title=f"Comment Fetch Exception - {post_id}",
+                        message=f"{error_msg}\n{traceback.format_exc()}"
+                    )
+                    
+                    # Still try to queue it for background
+                    try:
+                        frappe.enqueue(
+                            'ai_crm.reddit_api.fetch_and_store_comments',
+                            post_id=post_id,
+                            limit=10,
+                            sort='top',
+                            queue='short',
+                            timeout=60,
+                        )
+                        frappe.logger().info(f"Queued background job after exception")
+                    except Exception as queue_error:
+                        frappe.logger().error(f"Failed to queue job: {str(queue_error)}")
+            
+            else:
+                frappe.logger().debug(f"Post {post_id} has 0 comments, skipping fetch")
+                        
         except Exception as e:
-            frappe.log_error(f"Error storing post {post_data['post_id']}: {str(e)}")
+            error_msg = f"Error storing post {post_id}: {str(e)}"
+            frappe.logger().error(f"{error_msg}")
+            frappe.log_error(
+                title=f"Store Post Error - {post_id}",
+                message=f"{error_msg}\n{traceback.format_exc()}"
+            )
+    
+    frappe.logger().info(
+        f"\n{'='*60}\n"
+        f"SUMMARY: Stored {stored_count} new posts in r/{subreddit_name}\n"
+        f"{'='*60}"
+    )
     
     return stored_count
 
 @frappe.whitelist()
-def queue_ai_comment(post_name):
-    """Queue AI comment for later processing"""
+def fetch_and_store_comments(post_id, limit=10, sort='top'):
     try:
-        post_doc = frappe.get_doc('Reddit Post', post_name)
+        from datetime import datetime
+        import time
+        
+        if not frappe.db.exists('Reddit Post', post_id):
+            frappe.logger().error(f"Post {post_id} not found in database")
+            return {'success': False, 'error': 'Post not found'}
+        
+        post_doc = frappe.get_doc('Reddit Post', post_id)
         subreddit_doc = frappe.get_doc('Subreddit', post_doc.subreddit)
+        integration_name = subreddit_doc.reddit_integration
+    
+        if not integration_name:
+            error_msg = f"No Reddit Integration configured for subreddit: {post_doc.subreddit}"
+            frappe.logger().error(error_msg)
+            return {'success': False, 'error': 'No Reddit Integration configured'}
         
-        # Check delay requirement
-        delay_minutes = subreddit_doc.comment_delay_minutes or 5
-        comment_time = add_to_date(post_doc.created_utc, minutes=delay_minutes)
-        current_time = get_datetime()
+        frappe.logger().info(f"Fetching comments for post {post_id} using authenticated API")
+        reddit_api = RedditAPI(integration_name)
+
+        comments = reddit_api.fetch_post_comments(post_id, limit=limit, sort=sort)
         
-        if current_time >= comment_time:
-            # Generate and post comment immediately
-            return generate_ai_comment_internal(post_name, subreddit_doc.ai_comment_agent)
-        else:
-            # Schedule for later (will be picked up by scheduler)
-            frappe.logger().info(f"Post {post_name} queued for AI comment after delay")
-            return {'success': True, 'message': 'Queued for later processing'}
+        if not comments:
+            frappe.logger().warning(f"No comments fetched for post {post_id}")
+            return {'success': True, 'count': 0, 'message': 'No comments found'}
+        
+        # FIX: Retry logic with reload only (no direct DB insert)
+        max_retries = 5
+        retry_count = 0
+        
+        while retry_count < max_retries:
+            try:
+                # Reload to get latest version
+                post_doc.reload()
+                
+                # Clear and add comments
+                post_doc.set('reddit_post_comments', [])
+                
+                for comment in comments:
+                    post_doc.append('reddit_post_comments', {
+                        'author': comment.get('author', '[deleted]'),
+                        'content': comment.get('body', ''),
+                        'score': comment.get('score', 0)
+                    })
+                
+                post_doc.save(ignore_permissions=True)
+                frappe.db.commit()
+                
+                frappe.logger().info(f"✓ Stored {len(comments)} comments for post {post_id} (attempt {retry_count + 1})")
+                
+                return {
+                    'success': True, 
+                    'count': len(comments),
+                    'message': f'Successfully stored {len(comments)} comments'
+                }
+                
+            except frappe.exceptions.TimestampMismatchError as tse:
+                retry_count += 1
+                frappe.logger().warning(
+                    f"Timestamp mismatch for {post_id} (attempt {retry_count}/{max_retries})"
+                )
+                
+                if retry_count >= max_retries:
+                    error_msg = f"Failed after {max_retries} retries due to concurrent modifications"
+                    frappe.logger().error(error_msg)
+                    return {
+                        'success': False,
+                        'error': error_msg
+                    }
+                
+                time.sleep(0.5 * retry_count)
+                continue
             
     except Exception as e:
-        frappe.log_error(f"Error queuing AI comment for post {post_name}: {str(e)}")
+        error_msg = f"Error fetching comments for {post_id}: {str(e)}\n{traceback.format_exc()}"
+        frappe.logger().error(error_msg)
+        frappe.log_error(error_msg, f"Fetch Comments Error - {post_id}")
         return {'success': False, 'error': str(e)}
-
-def generate_ai_comment_internal(post_name, agent_name=None):
-    """Internal function to generate AI comment without @frappe.whitelist()"""
-    try:
-        # Get Reddit Post
-        post_doc = frappe.get_doc('Reddit Post', post_name)
+    
+def extract_comment_from_ai_result(result):
+    """Extract clean comment text from AI result, removing ALL metadata"""
+    comment_text = ""
+    
+    if isinstance(result, str):
+        result_str = result.strip()
         
-        # Get subreddit document to check for AI agent
-        subreddit_doc = None
-        if frappe.db.exists('Subreddit', post_doc.subreddit):
-            subreddit_doc = frappe.get_doc('Subreddit', post_doc.subreddit)
-            if not agent_name and subreddit_doc.ai_comment_agent:
-                agent_name = subreddit_doc.ai_comment_agent
+        if "comment=" in result_str.lower():
+            
+            patterns = [
+                r"comment\s*=\s*['\"](.+?)['\"](?:\s+\w+\s*=)",  
+                r"comment\s*=\s*['\"](.+?)['\"]$",             
+                r"comment\s*=\s*['\"](.+)['\"]",                
+            ]
+            
+            for pattern in patterns:
+                match = re.search(pattern, result_str, re.IGNORECASE | re.DOTALL)
+                if match:
+                    comment_text = match.group(1).strip()
+                    break
+        
+        elif result_str.startswith('{') and result_str.endswith('}'):
+            try:
+                json_result = json.loads(result_str)
+                if isinstance(json_result, dict):
+                    comment_text = (json_result.get('comment') or 
+                                   json_result.get('response') or 
+                                   json_result.get('text') or '')
+            except json.JSONDecodeError:
+                pass
+        
+        if not comment_text and not any(marker in result_str.lower() for marker in ['confidence=', 'reasoning=', 'score=']):
+            comment_text = result_str
+    
+    elif isinstance(result, dict):
+        for field_name in ['comment', 'response', 'text', 'content', 'message', 'output', 'result']:
+            if field_name in result and result[field_name]:
+                comment_text = str(result[field_name]).strip()
+                break
+    
+    elif hasattr(result, '__dict__'):
+        result_dict = result.__dict__
+        for field_name in ['comment', 'response', 'text', 'content', 'message']:
+            if field_name in result_dict and result_dict[field_name]:
+                comment_text = str(result_dict[field_name]).strip()
+                break
+    
+    if not comment_text and isinstance(result, (list, tuple)) and len(result) > 0:
+        return extract_comment_from_ai_result(result[0])
+    
+    if comment_text:
+        comment_text = re.sub(r'^comment\s*=\s*[\'"]?', '', comment_text, flags=re.IGNORECASE)
+        comment_text = re.sub(r'^revise_comment\s*=\s*[\'"]?', '', comment_text, flags=re.IGNORECASE)
+        comment_text = re.sub(r'[\'"]?\s+\w+\s*=.*$', '', comment_text, flags=re.IGNORECASE | re.DOTALL)
+       
+        for field in ['confidence', 'reasoning', 'improvements_made', 'revision_reason', 'quality_score']:
+            comment_text = re.sub(rf'[\'"]?\s*{field}\s*=.*$', '', comment_text, flags=re.IGNORECASE | re.DOTALL)
+        
+        comment_text = comment_text.strip('\'"')
+        comment_text = comment_text.strip()
+        
+        if any(pattern in comment_text.lower() for pattern in ['confidence=', 'reasoning=', 'score=']):
+            for marker in ['confidence=', 'reasoning=', 'improvements_made=', 'revision_reason=', 'quality_score=']:
+                if marker in comment_text.lower():
+                    idx = comment_text.lower().index(marker)
+                    comment_text = comment_text[:idx].strip().strip('\'"')
+                    break
+    
+    return comment_text
+def generate_ai_comment_internal(post_name, agent_name=None):
+    try:
+        post_doc = frappe.get_doc('Reddit Post', post_name)
+        frappe.logger().info(f"Generating AI comment for post: {post_name}")
         
         if not agent_name:
-            # Try to find Reddit Comment Generator agent
-            agents = frappe.get_all(
-                'AI Agent',
-                filters={'name': ['like', '%reddit%comment%']},
-                limit=1
-            )
-            if agents:
-                agent_name = agents[0].name
-            else:
-                return {'success': False, 'error': 'No Reddit Comment AI Agent found'}
+            if not frappe.db.exists('Subreddit', post_doc.subreddit):
+                return {'success': False, 'error': f'Subreddit {post_doc.subreddit} not found'}
+            
+            subreddit_doc = frappe.get_doc('Subreddit', post_doc.subreddit)
+            agent_name = subreddit_doc.ai_comment_agent
+            
+            if not agent_name:
+                return {'success': False, 'error': 'No AI Comment Agent configured'}
         
-        # Prepare input for AI Agent
-        agent_input = {
-            "post_title": post_doc.title,
+        if not frappe.db.exists('AI Agent', agent_name):
+            return {'success': False, 'error': f'AI Agent "{agent_name}" not found'}
+    
+        if not post_doc.existing_comments:
+            reddit_api = RedditAPI(subreddit_doc.reddit_integration)
+            existing_comments = reddit_api.fetch_post_comments(post_doc.post_id, limit=5, sort='top')
+            comments_text = ""
+            if existing_comments:
+                comments_text = "\n\nExisting Comments:\n"
+                for i, comment in enumerate(existing_comments[:5], 1):
+                    comments_text += f"{i}. {comment['author']} (score: {comment['score']}): {comment['body'][:200]}\n"
+                post_doc.existing_comments = comments_text
+                post_doc.save(ignore_permissions=True)
+        else:
+            comments_text = post_doc.existing_comments
+
+        agent_doc = frappe.get_doc('AI Agent', agent_name)
+        ai_input_data = {
+            "post_title": post_doc.title or "",
             "post_content": post_doc.selftext or "",
-            "subreddit": post_doc.subreddit,
-            "post_type": post_doc.post_type,
-            "score": post_doc.score,
-            "author": post_doc.author
+            "subreddit": post_doc.subreddit or "",
+            "post_type": post_doc.post_type or "Text",
+            "score": post_doc.score or 0,
+            "author": post_doc.author or "",
+            "existing_comments": comments_text  
         }
         
-        # Call AI Agent
-        ai_response = call_ai_agent_internal(agent_name, agent_input)
+        result = agent_doc.test_agent(**ai_input_data)
+        comment_text = extract_comment_from_ai_result(result)
         
-        if 'error' in ai_response:
-            return {'success': False, 'error': ai_response['error']}
-        
-        # Extract comment from AI response
-        comment_text = ai_response.get('comment', '')
         if not comment_text:
             return {'success': False, 'error': 'AI Agent returned empty comment'}
         
-        # Post the AI-generated comment
-        reddit_api = RedditAPI()
-        success = reddit_api.post_comment(post_doc.post_id, comment_text)
+        post_doc.ai_generated_comment = comment_text
+        post_doc.comment_status = 'Ready'
+        post_doc.save()
         
-        # Update post status
+        frappe.logger().info(f"✓ Generated clean comment (length: {len(comment_text)})")
+        
+        return {
+            'success': True, 
+            'comment': comment_text,
+            'existing_comments_count': len(existing_comments) if 'existing_comments' in locals() else 0
+        }
+    except Exception as e:
+        frappe.log_error(str(e), "Generate AI Comment Error")
+        return {'success': False, 'error': str(e)}
+    
+@frappe.whitelist()
+def post_comment_to_reddit(post_name):
+    try:
+        post_doc = frappe.get_doc('Reddit Post', post_name)
+        
+        if not post_doc.ai_generated_comment:
+            return {
+                'success': False, 
+                'error': 'No AI comment to post. Generate comment first.'
+            }
+        
+        if post_doc.comment_status == 'Commented':
+            return {
+                'success': False, 
+                'error': 'Comment already posted'
+            }
+       
+        clean_comment = extract_comment_from_ai_result(post_doc.ai_generated_comment)
+        
+        if not clean_comment or not clean_comment.strip():
+            frappe.logger().error(f"Failed to extract clean comment from: {post_doc.ai_generated_comment[:200]}")
+            return {
+                'success': False,
+                'error': 'Failed to extract clean comment text',
+                'debug': post_doc.ai_generated_comment[:200]
+            }
+        
+        frappe.logger().info(f"Clean comment extracted (length {len(clean_comment)}): {clean_comment[:100]}...")
+        subreddit_doc = frappe.get_doc('Subreddit', post_doc.subreddit)
+        integration_name = getattr(subreddit_doc, 'reddit_integration', None)
+        
+        try:
+            reddit_api = RedditAPI(integration_name)
+        except Exception as e:
+            return {
+                'success': False,
+                'error': f'Failed to initialize Reddit API: {str(e)}'
+            }
+        
+        frappe.logger().info(f"Posting comment to post {post_doc.post_id}")
+        success = reddit_api.create_comment(post_doc.post_id, clean_comment)
+        
         if success:
             post_doc.comment_status = 'Commented'
             post_doc.comment_posted_at = frappe.utils.now()
             post_doc.comment_error = ''
-            post_doc.ai_generated_comment = comment_text
+            post_doc.save(ignore_permissions=True)
+            frappe.db.commit()
             
-            # Update subreddit AI comment count
-            if subreddit_doc:
-                subreddit_doc.ai_comments_generated = (subreddit_doc.ai_comments_generated or 0) + 1
-                subreddit_doc.save()
+            frappe.logger().info(f"Successfully posted comment for {post_name}")
+            
+            return {
+                'success': True,
+                'message': 'Comment posted successfully to Reddit'
+            }
         else:
             post_doc.comment_status = 'Failed'
-            post_doc.comment_error = 'Failed to post AI generated comment'
-        
-        post_doc.save()
-        return {'success': success, 'comment': comment_text}
+            post_doc.comment_error = 'Failed to post comment to Reddit'
+            post_doc.save(ignore_permissions=True)
+            frappe.db.commit()
+            
+            return {
+                'success': False, 
+                'error': 'Failed to post comment to Reddit. Check error log for details.'
+            }
         
     except Exception as e:
-        frappe.log_error(f"Error generating AI comment for post {post_name}: {str(e)}")
-        return {'success': False, 'error': str(e)}
+        error_msg = f"Error in post_comment_to_reddit: {str(e)}"
+        frappe.log_error(
+            title=f"Post Comment Error - {post_name}",
+            message=f"{error_msg}\n{traceback.format_exc()}"
+        )
+        
+        return {
+            'success': False, 
+            'error': error_msg
+        }
 
-def call_ai_agent_internal(agent_name: str, input_data: dict) -> dict:
-    """Internal AI Agent call without @frappe.whitelist()"""
+@frappe.whitelist()
+def call_ai_agent_revise(doc_name):
     try:
-        # Get AI Agent document
-        if not frappe.db.exists('AI Agent', agent_name):
-            return {"error": f"AI Agent '{agent_name}' not found"}
-            
-        agent = frappe.get_doc('AI Agent', agent_name)
+        post_doc = frappe.get_doc('Reddit Post', doc_name)
         
-        # Prepare the prompt with input data
-        system_messages = frappe.get_all(
-            'AI Agent Message',
-            filters={'parent': agent_name, 'message_type': 'system'},
-            fields=['content'],
-            order_by='idx'
-        )
+        if not post_doc.ai_generated_comment:
+            return {
+                'success': False,
+                'error': 'No AI comment found to revise'
+            }
         
-        human_messages = frappe.get_all(
-            'AI Agent Message',
-            filters={'parent': agent_name, 'message_type': 'human'},
-            fields=['content'],
-            order_by='idx'
-        )
+        subreddit_doc = frappe.get_doc('Subreddit', post_doc.subreddit)
+        revise_agent = getattr(subreddit_doc, 'comment_revise_agent', None)
         
-        # Build messages array
-        messages = []
+        if not revise_agent:
+            return {
+                'success': False,
+                'error': 'No Comment Revise Agent configured'
+            }
         
-        # Add system messages
-        for msg in system_messages:
-            messages.append({
-                "role": "system",
-                "content": msg.content
-            })
+        agent_doc = frappe.get_doc('AI Agent', revise_agent)
+    
+        original_comment = extract_comment_from_ai_result(post_doc.ai_generated_comment)
         
-        # Add human messages with variable substitution
-        for msg in human_messages:
-            content = msg.content
-            # Replace variables in the message
-            for key, value in input_data.items():
-                content = content.replace(f"{{{key}}}", str(value))
-            
-            messages.append({
-                "role": "user",
-                "content": content
-            })
-        
-        # Call the LLM API
-        from frappe.integrations.utils import make_post_request
-        
-        # Get OpenAI settings
-        try:
-            openai_settings = frappe.get_single('OpenAI Settings')
-            if not openai_settings.api_key:
-                return {"error": "OpenAI API key not configured"}
-        except:
-            return {"error": "OpenAI Settings not found"}
-        
-        headers = {
-            "Authorization": f"Bearer {openai_settings.get_password('api_key')}",
-            "Content-Type": "application/json"
+        ai_input_data = {
+            "original_comment": original_comment,
+            "post_title": post_doc.title or "",
+            "post_content": post_doc.selftext or "",
+            "subreddit": post_doc.subreddit or "",
+            "author": post_doc.author or "",
+            "score": post_doc.score or 0,
+            "post_type": post_doc.post_type or "Text",
         }
         
-        # Prepare request data
-        request_data = {
-            "model": agent.llm or "gpt-4o-mini",
-            "messages": messages,
-            "temperature": agent.temperature or 0.7,
-            "max_tokens": agent.max_tokens or 150
-        }
+        frappe.logger().info(f"Calling revise agent with clean comment: {original_comment[:100]}")
+        result = agent_doc.test_agent(**ai_input_data)
+        frappe.logger().info(f"Raw result from agent: {str(result)[:200]}")
+
+        revised_comment = extract_comment_from_ai_result(result)
+        frappe.logger().info(f"Extracted revised comment: {revised_comment[:100]}")
         
-        # Add response format if structured output is defined
-        if agent.structured_output:
-            try:
-                response_format = json.loads(agent.structured_output)
-                request_data["response_format"] = {
-                    "type": "json_schema",
-                    "json_schema": response_format
-                }
-            except json.JSONDecodeError:
-                frappe.log_error("Invalid structured output JSON in AI Agent")
-        
-        # Make API call
-        response = make_post_request(
-            "https://api.openai.com/v1/chat/completions",
-            headers=headers,
-            data=json.dumps(request_data)
-        )
-        
-        if response.get('choices'):
-            content = response['choices'][0]['message']['content']
+        if revised_comment and revised_comment.strip():
             
-            # Try to parse as JSON if structured output is expected
-            if agent.structured_output:
-                try:
-                    return json.loads(content)
-                except json.JSONDecodeError:
-                    return {"comment": content}
-            else:
-                return {"comment": content}
+            post_doc.ai_generated_comment = revised_comment.strip()
+            if hasattr(post_doc, 'revise_comment'):
+                post_doc.revise_comment = ''
+            
+            post_doc.comment_status = 'Ready'
+            post_doc.save(ignore_permissions=True)
+            frappe.db.commit()
+            
+            frappe.logger().info(f"✓ Comment revised and saved: {revised_comment[:50]}...")
+            
+            return {
+                'success': True,
+                'message': 'Comment revised successfully',
+                'revised_comment': revised_comment
+            }
         else:
-            return {"error": "No response from AI Agent"}
+            frappe.logger().error(f"Empty result after extraction. Raw result was: {str(result)[:500]}")
+            return {
+                'success': False,
+                'error': 'AI Agent returned empty response after extraction',
+                'debug': str(result)[:200]
+            }
             
     except Exception as e:
-        frappe.log_error(f"Error calling AI Agent {agent_name}: {str(e)}")
-        return {"error": str(e)}
-
-# Public API Functions with @frappe.whitelist()
-
+        error_msg = f"Error in call_ai_agent_revise: {str(e)}\n{traceback.format_exc()}"
+        frappe.logger().error(error_msg)
+        frappe.log_error(error_msg, "call_ai_agent_revise Error")
+        return {'success': False, 'error': str(e)}
+        
 @frappe.whitelist()
 def generate_ai_comment(post_name, agent_name=None):
-    """Public API to generate AI comment"""
-    return generate_ai_comment_internal(post_name, agent_name)
-
-@frappe.whitelist()
-def call_ai_agent(agent_name: str, input_data: dict) -> dict:
-    """Public API to call AI Agent"""
-    return call_ai_agent_internal(agent_name, input_data)
-
-@frappe.whitelist()
-def fetch_posts_manually(subreddit_name, integration_name=None):
-    """Manually fetch posts for a subreddit using RedditIntegration credentials"""
     try:
+        frappe.logger().info(
+            f"generate_ai_comment called with post_name: {post_name}, agent_name: {agent_name}"
+        )
+        return generate_ai_comment_internal(post_name, agent_name)
+    except Exception as e:
+        frappe.logger().error(f"Error in generate_ai_comment for {post_name}: {str(e)}")
+        return {'success': False, 'error': str(e)}
+
+@frappe.whitelist()
+def fetch_posts_manually(subreddit_name, sort_type="hot", limit=5, time_filter="week", integration_name=None):
+    try:
+        
+        if not integration_name and frappe.db.exists('Subreddit', subreddit_name):
+            subreddit_doc = frappe.get_doc('Subreddit', subreddit_name)
+            integration_name = subreddit_doc.reddit_integration  
         reddit_api = RedditAPI(integration_name)
-        posts = reddit_api.fetch_reddit_posts(subreddit_name)
+        posts = reddit_api.fetch_reddit_posts(subreddit_name, sort_type, limit, time_filter)
+        
+        frappe.logger().info(f"Fetched {len(posts)} posts, storing in DB...")  
+        
         stored_count = store_posts_in_db(subreddit_name, posts)
         
-        # Update subreddit stats if Subreddit doctype exists
+        frappe.logger().info(f"Stored {stored_count} posts successfully")  
+        
         if frappe.db.exists('Subreddit', subreddit_name):
             subreddit_doc = frappe.get_doc('Subreddit', subreddit_name)
             subreddit_doc.last_monitored = frappe.utils.now()
-            subreddit_doc.posts_fetched_today = (subreddit_doc.posts_fetched_today or 0) + stored_count
-            subreddit_doc.total_posts_monitored = (subreddit_doc.total_posts_monitored or 0) + stored_count
+            subreddit_doc.posts_fetched_today = (getattr(subreddit_doc, 'posts_fetched_today', 0) or 0) + stored_count
+            subreddit_doc.total_posts_monitored = (getattr(subreddit_doc, 'total_posts_monitored', 0) or 0) + stored_count
             subreddit_doc.last_error = ''
             subreddit_doc.save()
+            frappe.db.commit()  
         
-        return {'count': stored_count}
+        return {
+            'success': True,
+            'count': stored_count,
+            'fetched': len(posts),  
+            'sort_type': sort_type,
+            'time_filter': time_filter if sort_type in ['top', 'controversial'] else 'N/A'
+        }
     except Exception as e:
-        frappe.throw(str(e))
-
-@frappe.whitelist()
-def post_comment_manually(post_name, integration_name=None, use_ai=False):
-    """Manually post comment on a specific post using RedditIntegration"""
-    try:
-        if use_ai:
-            return generate_ai_comment(post_name)
-        
-        reddit_api = RedditAPI(integration_name)
-        post_doc = frappe.get_doc('Reddit Post', post_name)
-        
-        # Get comment template from Subreddit if it exists
-        comment_template = "Thanks for sharing!"  # Default comment
-        if frappe.db.exists('Subreddit', post_doc.subreddit):
-            subreddit_doc = frappe.get_doc('Subreddit', post_doc.subreddit)
-            if subreddit_doc.comment_template:
-                comment_template = subreddit_doc.comment_template
-        
-        success = reddit_api.post_comment(post_doc.post_id, comment_template)
-        
-        if success:
-            post_doc.comment_status = 'Commented'
-            post_doc.comment_posted_at = frappe.utils.now()
-            post_doc.comment_error = ''
-        else:
-            post_doc.comment_status = 'Failed'
-            post_doc.comment_error = 'Manual comment failed'
-        
-        post_doc.save()
-        return {'success': success}
-        
-    except Exception as e:
+        error_msg = f"Error in fetch_posts_manually: {str(e)}\n{traceback.format_exc()}"
+        frappe.log_error(error_msg)
         return {'success': False, 'error': str(e)}
 
 @frappe.whitelist()
 def get_post_statistics(subreddit_name):
-    """Get statistics for posts in a subreddit"""
+    
     try:
         stats = frappe.db.sql("""
             SELECT 
@@ -452,165 +971,25 @@ def get_post_statistics(subreddit_name):
             FROM `tabReddit Post`
             WHERE subreddit = %s
         """, subreddit_name, as_dict=True)[0]
-        
         return stats
         
     except Exception as e:
+        frappe.log_error(f"Error in get_post_statistics: {str(e)}\n{traceback.format_exc()}")
         frappe.throw(str(e))
 
 @frappe.whitelist()
-def get_available_integrations():
-    """Get list of available Reddit integrations"""
+def get_recent_error_logs(limit=10):
+    """Get recent error logs related to Reddit operations"""
     try:
-        integrations = frappe.get_all(
-            'Reddit Integration',
-            fields=['name', 'username', 'connection_status', 'connected_at'],
-            order_by='connection_status desc, connected_at desc'
-        )
-        return integrations
-    except Exception as e:
-        frappe.throw(str(e))
-
-@frappe.whitelist()
-def get_available_ai_agents():
-    """Get list of available AI Agents for Reddit commenting"""
-    try:
-        agents = frappe.get_all(
-            'AI Agent',
-            fields=['name', 'agent_name', 'llm'],
-            order_by='name'
-        )
-        return agents
-    except Exception as e:
-        frappe.throw(str(e))
-
-@frappe.whitelist()
-def test_ai_agent_connection(agent_name):
-    """Test AI Agent connection and configuration"""
-    try:
-        # Test with sample data
-        test_input = {
-            "post_title": "Test Post Title",
-            "post_content": "This is a test post content",
-            "subreddit": "test",
-            "post_type": "Text",
-            "score": 10,
-            "author": "testuser"
-        }
-        
-        result = call_ai_agent_internal(agent_name, test_input)
-        
-        if 'error' in result:
-            return {'success': False, 'error': result['error']}
-        else:
-            return {'success': True, 'response': result}
-            
-    except Exception as e:
-        return {'success': False, 'error': str(e)}
-
-@frappe.whitelist()
-def bulk_update_comment_status(post_names, new_status):
-    """Bulk update comment status for multiple posts"""
-    try:
-        if not isinstance(post_names, list):
-            post_names = json.loads(post_names)
-        
-        updated_count = 0
-        for post_name in post_names:
-            try:
-                post_doc = frappe.get_doc('Reddit Post', post_name)
-                post_doc.comment_status = new_status
-                post_doc.save()
-                updated_count += 1
-            except Exception as e:
-                frappe.log_error(f"Error updating post {post_name}: {str(e)}")
-        
-        return {'success': True, 'updated_count': updated_count}
-        
-    except Exception as e:
-        return {'success': False, 'error': str(e)}
-
-@frappe.whitelist()
-def get_reddit_post_details(post_name):
-    """Get detailed information about a Reddit post"""
-    try:
-        post_doc = frappe.get_doc('Reddit Post', post_name)
-        subreddit_doc = frappe.get_doc('Subreddit', post_doc.subreddit)
-        
-        return {
-            'post': post_doc.as_dict(),
-            'subreddit': subreddit_doc.as_dict()
-        }
-        
-    except Exception as e:
-        return {'success': False, 'error': str(e)}
-
-@frappe.whitelist()
-def retry_failed_comments(subreddit_name=None, limit=10):
-    """Retry failed comments for a specific subreddit or all subreddits"""
-    try:
-        filters = {'comment_status': 'Failed'}
-        if subreddit_name:
-            filters['subreddit'] = subreddit_name
-        
-        failed_posts = frappe.get_all(
-            'Reddit Post',
-            filters=filters,
-            fields=['name', 'post_id', 'subreddit'],
+        logs = frappe.get_all(
+            'Error Log',
+            filters={
+                'error': ['like', '%reddit%']
+            },
+            fields=['name', 'error', 'creation'],
+            order_by='creation desc',
             limit=limit
         )
-        
-        retry_count = 0
-        for post in failed_posts:
-            try:
-                # Reset status to Pending for retry
-                post_doc = frappe.get_doc('Reddit Post', post.name)
-                post_doc.comment_status = 'Pending'
-                post_doc.comment_error = ''
-                post_doc.save()
-                retry_count += 1
-            except Exception as e:
-                frappe.log_error(f"Error retrying post {post.name}: {str(e)}")
-        
-        return {'success': True, 'retry_count': retry_count}
-        
+        return {'success': True, 'logs': logs}
     except Exception as e:
         return {'success': False, 'error': str(e)}
-
-# Background job functions (not whitelisted)
-
-def process_ai_comment_queue():
-    """Process queued AI comments (called by scheduler)"""
-    try:
-        # This is called by the scheduler task process_pending_ai_comments
-        # Implementation is in scheduler_tasks.py
-        pass
-    except Exception as e:
-        frappe.log_error(f"Error processing AI comment queue: {str(e)}")
-
-def cleanup_failed_posts():
-    """Clean up posts that have been failing for too long"""
-    try:
-        # Posts that have been failing for more than 7 days
-        cutoff_date = add_to_date(get_datetime(), days=-7)
-        
-        old_failed_posts = frappe.get_all(
-            'Reddit Post',
-            filters={
-                'comment_status': 'Failed',
-                'modified': ['<', cutoff_date]
-            },
-            fields=['name']
-        )
-        
-        for post in old_failed_posts:
-            try:
-                post_doc = frappe.get_doc('Reddit Post', post.name)
-                post_doc.comment_status = 'Skipped'
-                post_doc.comment_error = 'Skipped after multiple failures'
-                post_doc.save()
-            except Exception as e:
-                frappe.log_error(f"Error updating failed post {post.name}: {str(e)}")
-                
-    except Exception as e:
-        frappe.log_error(f"Error cleaning up failed posts: {str(e)}")

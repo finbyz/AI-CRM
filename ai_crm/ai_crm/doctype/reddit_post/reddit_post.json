@@ -2,7 +2,7 @@
  "actions": [],
  "allow_rename": 1,
  "autoname": "field:post_id",
- "creation": "2025-01-01 00:00:00",
+ "creation": "2025-09-25 11:40:58.992001",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -11,10 +11,11 @@
   "title",
   "selftext",
   "author",
+  "reddit_post_comments_table_section",
+  "reddit_post_comments",
   "section_break_5",
   "url",
   "external_url",
-  "post_type",
   "section_break_9",
   "score",
   "num_comments",
@@ -44,11 +45,16 @@
   },
   {
    "fieldname": "title",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "in_list_view": 1,
    "label": "Title",
-   "length": 300,
+   "length": 500,
    "reqd": 1
+  },
+  {
+   "fieldname": "selftext",
+   "fieldtype": "Text",
+   "label": "Post Content"
   },
   {
    "fieldname": "author",
@@ -62,23 +68,16 @@
    "fieldtype": "Section Break"
   },
   {
+   "description": "Direct link to the Reddit post",
    "fieldname": "url",
-   "fieldtype": "Data",
-   "label": "Reddit URL",
-   "length": 500
+   "fieldtype": "Small Text",
+   "label": "Reddit URL"
   },
   {
+   "description": "External link if this is a link post",
    "fieldname": "external_url",
-   "fieldtype": "Data",
-   "label": "External URL",
-   "length": 1000
-  },
-  {
-   "fieldname": "post_type",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "label": "Post Type",
-   "options": "Text\nImage\nVideo\nLink"
+   "fieldtype": "Small Text",
+   "label": "External URL"
   },
   {
    "fieldname": "section_break_9",
@@ -100,11 +99,6 @@
    "label": "Created UTC"
   },
   {
-   "fieldname": "selftext",
-   "fieldtype": "Text",
-   "label": "Post Content"
-  },
-  {
    "fieldname": "section_break_15",
    "fieldtype": "Section Break",
    "label": "Comment Status"
@@ -115,7 +109,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Comment Status",
-   "options": "Pending\nCommented\nFailed\nSkipped"
+   "options": "Pending\nReady\nCommented\nFailed\nSkipped"
   },
   {
    "fieldname": "comment_posted_at",
@@ -126,18 +120,27 @@
   {
    "fieldname": "ai_generated_comment",
    "fieldtype": "Text",
-   "label": "AI Generated Comment",
-   "read_only": 1
+   "label": "Comment"
   },
   {
    "fieldname": "comment_error",
    "fieldtype": "Text",
    "label": "Comment Error",
    "read_only": 1
+  },
+  {
+   "fieldname": "reddit_post_comments_table_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "reddit_post_comments",
+   "fieldtype": "Table",
+   "label": "Reddit Post Comments",
+   "options": "Reddit Post Comments"
   }
  ],
  "links": [],
- "modified": "2025-09-18 16:32:22.832840",
+ "modified": "2025-10-03 18:28:14.894044",
  "modified_by": "Administrator",
  "module": "Ai CRM",
  "name": "Reddit Post",

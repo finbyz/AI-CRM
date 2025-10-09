@@ -1,149 +1,143 @@
-# scheduler_tasks.py (Updated for automatic AI comments)
+from frappe import _
+from ai_crm.reddit_api import generate_ai_comment_internal
 import frappe
-from frappe.utils import now, add_to_date, get_datetime
-from ai_crm.reddit_api import RedditAPI, store_posts_in_db, generate_ai_comment_internal
+from frappe.utils import get_datetime, add_to_date
+import time
+from ai_crm.reddit_api import (
+    RedditAPI, 
+    store_posts_in_db, 
+    extract_comment_from_ai_result
+)
 
-def fetch_and_store_posts():
-    """Scheduler task to fetch posts from all active subreddits"""
+def fetch_reddit_posts():
+    
     try:
-        frappe.logger().info("Starting scheduled task: fetch_and_store_posts")
-        
-        # Get all active subreddits that need monitoring
         subreddits = frappe.get_all(
             'Subreddit',
-            filters={
-                'is_active': 1,
-                'docstatus': ['!=', 2]
-            },
-            fields=['name', 'subreddit_name', 'monitor_frequency', 'last_monitored']
+            filters={'is_active': 1},
+            fields=['name', 'subreddit_name', 'sort_type', 'fetch_limit', 'reddit_integration']
         )
         
         if not subreddits:
-            frappe.logger().info("No active subreddits found for monitoring")
+            frappe.logger().info("No active subreddits found")
             return
         
-        reddit_api = RedditAPI()
-        current_time = get_datetime()
         processed_count = 0
         
         for subreddit in subreddits:
             try:
-                # Check if it's time to monitor this subreddit
-                if subreddit.last_monitored:
-                    next_monitor_time = add_to_date(
-                        subreddit.last_monitored, 
-                        minutes=subreddit.monitor_frequency
+                integration_name = subreddit.reddit_integration
+                if not integration_name:
+                    frappe.logger().warning(
+                        f"No Reddit Integration for r/{subreddit.subreddit_name}, skipping"
                     )
-                    
-                    if current_time < next_monitor_time:
-                        frappe.logger().debug(
-                            f"Skipping r/{subreddit.subreddit_name} - not time yet"
-                        )
-                        continue
-                
-                frappe.logger().info(f"Fetching posts from r/{subreddit.subreddit_name}")
-                
-                # Fetch posts
-                posts = reddit_api.fetch_reddit_posts(subreddit.subreddit_name)
-                
-                if not posts:
-                    frappe.logger().info(f"No new posts found in r/{subreddit.subreddit_name}")
+                    continue
+                if not frappe.db.exists('Reddit Integration', integration_name):
+                    frappe.logger().error(
+                        f"Integration '{integration_name}' not found for r/{subreddit.subreddit_name}"
+                    )
                     continue
                 
-                # Store posts in database
+                integration_doc = frappe.get_doc('Reddit Integration', integration_name)
+                if integration_doc.connection_status != 'Connected':
+                    frappe.logger().warning(
+                        f"Integration '{integration_name}' not connected, skipping r/{subreddit.subreddit_name}"
+                    )
+                    continue
+                
+                reddit_api = RedditAPI(integration_name)
+                
+                posts = reddit_api.fetch_reddit_posts(
+                    subreddit.subreddit_name,
+                    sort_type=subreddit.sort_type or 'new',
+                    limit=subreddit.fetch_limit or 10
+                )
+                
+                if not posts:
+                    frappe.logger().info(
+                        f"No new posts found for r/{subreddit.subreddit_name}"
+                    )
+                    continue
+                
+                frappe.logger().info(
+                    f"Fetched {len(posts)} posts from r/{subreddit.subreddit_name}"
+                )
+               
                 stored_count = store_posts_in_db(subreddit.subreddit_name, posts)
                 
-                # Update subreddit statistics
                 subreddit_doc = frappe.get_doc('Subreddit', subreddit.name)
-                subreddit_doc.last_monitored = current_time
+                subreddit_doc.last_monitored = frappe.utils.now()
                 subreddit_doc.posts_fetched_today = (subreddit_doc.posts_fetched_today or 0) + stored_count
                 subreddit_doc.total_posts_monitored = (subreddit_doc.total_posts_monitored or 0) + stored_count
                 subreddit_doc.last_error = ''
-                subreddit_doc.save()
+                subreddit_doc.save(ignore_permissions=True)
                 
                 processed_count += 1
-                frappe.logger().info(f"Stored {stored_count} new posts from r/{subreddit.subreddit_name}")
+                frappe.logger().info(
+                    f"✓ Stored {stored_count} new posts for r/{subreddit.subreddit_name}"
+                )
                 
-                # Auto-queue AI comments for new posts if enabled
-                if subreddit_doc.auto_comment and subreddit_doc.use_ai_comments and subreddit_doc.ai_comment_agent:
-                    # Get newly created posts
-                    new_posts = frappe.get_all(
-                        'Reddit Post',
-                        filters={
-                            'subreddit': subreddit.name,
-                            'comment_status': 'Pending',
-                            'creation': ['>=', add_to_date(current_time, minutes=-5)]  # Posts created in last 5 minutes
-                        },
-                        fields=['name', 'post_id']
-                    )
-                    
-                    for post in new_posts:
-                        frappe.enqueue(
-                            'ai_crm.reddit_api.queue_ai_comment',
-                            post_name=post.name,
-                            queue='short',
-                            timeout=300
-                        )
-                        frappe.logger().info(f"Queued AI comment for post {post.post_id}")
+                # Rate limiting
+                time.sleep(2)
                 
             except Exception as e:
-                # Log error to subreddit
+                error_msg = f"Error fetching posts from r/{subreddit.subreddit_name}: {str(e)}"
+                frappe.log_error(message=error_msg, title="Reddit Fetch Error")
+                
                 try:
                     subreddit_doc = frappe.get_doc('Subreddit', subreddit.name)
                     subreddit_doc.last_error = str(e)[:500]
-                    subreddit_doc.save()
+                    subreddit_doc.save(ignore_permissions=True)
                 except Exception as save_error:
-                    frappe.logger().error(f"Failed to save error to subreddit: {str(save_error)}")
-                
-                frappe.log_error(
-                    message=str(e), 
-                    title=f"Error processing subreddit {subreddit.subreddit_name}"
-                )
+                    frappe.logger().error(f"Failed to save error: {str(save_error)}")
         
-        # Commit all changes
-        
-        frappe.logger().info(f"Completed fetch_and_store_posts - processed {processed_count} subreddits")
+        frappe.logger().info(f"✓ Completed fetch_reddit_posts - processed {processed_count} subreddits")
         
     except Exception as e:
-        frappe.log_error(
-            message=str(e), 
-            title="Error in fetch_and_store_posts scheduler task"
-        )
-        frappe.logger().error(f"Critical error in fetch_and_store_posts: {str(e)}")
+        frappe.log_error(f"Error in fetch_reddit_posts scheduler: {str(e)}")
 
 def process_pending_ai_comments():
-    """Scheduler task to process pending AI comments after delay period"""
     try:
         frappe.logger().info("Starting scheduled task: process_pending_ai_comments")
         
         current_time = get_datetime()
         total_processed = 0
         
-        # Get all subreddits with AI commenting enabled
         ai_subreddits = frappe.get_all(
             'Subreddit',
             filters={
-                'auto_comment': 1,
+                'auto_comment_enabled': 1,
                 'use_ai_comments': 1,
                 'is_active': 1
             },
-            fields=['name', 'subreddit_name', 'comment_delay_minutes', 'ai_comment_agent']
+            fields=[
+                'name', 
+                'subreddit_name', 
+                'comment_delay_minutes', 
+                'ai_comment_agent', 
+                'reddit_integration'
+            ]
         )
-        
         if not ai_subreddits:
             frappe.logger().info("No subreddits with AI commenting enabled")
             return
         
         for subreddit in ai_subreddits:
             if not subreddit.ai_comment_agent:
+                frappe.logger().warning(
+                    f"No AI agent configured for r/{subreddit.subreddit_name}"
+                )
                 continue
-                
+            
+            if not subreddit.reddit_integration:
+                frappe.logger().warning(
+                    f"No Reddit Integration for r/{subreddit.subreddit_name}"
+                )
+                continue
+            
             try:
-                # Calculate delay time
                 delay_minutes = subreddit.comment_delay_minutes or 5
                 delay_time = add_to_date(current_time, minutes=-delay_minutes)
-                
-                # Get posts ready for AI commenting
                 pending_posts = frappe.get_all(
                     'Reddit Post',
                     filters={
@@ -152,27 +146,63 @@ def process_pending_ai_comments():
                         'created_utc': ['<=', delay_time]
                     },
                     fields=['name', 'post_id', 'title'],
-                    limit=5  # Process 5 posts at a time to avoid rate limits
+                    limit=5
                 )
                 
                 if not pending_posts:
                     continue
                 
-                frappe.logger().info(f"Processing {len(pending_posts)} AI comments for r/{subreddit.subreddit_name}")
+                frappe.logger().info(
+                    f"Processing {len(pending_posts)} AI comments for r/{subreddit.subreddit_name}"
+                )
+               
+                reddit_api = RedditAPI(subreddit.reddit_integration)
                 
                 for post in pending_posts:
                     try:
-                        # Generate AI comment
-                        result = generate_ai_comment_internal(post.name, subreddit.ai_comment_agent)
                         
+                        from ai_crm.reddit_api import generate_ai_comment_internal
+                        result = generate_ai_comment_internal(
+                            post.name, 
+                            subreddit.ai_comment_agent
+                        )
+
                         if result.get('success'):
-                            total_processed += 1
-                            frappe.logger().info(f"AI comment posted for post {post.post_id}")
+                            post_doc = frappe.get_doc('Reddit Post', post.name)
+                            
+                            if post_doc.ai_generated_comment:
+                                clean_comment = extract_comment_from_ai_result(
+                                    post_doc.ai_generated_comment
+                                )
+                               
+                                success = reddit_api.create_comment(post_doc.post_id, clean_comment)
+                                
+                                if success:
+                                    post_doc.comment_status = 'Commented'
+                                    post_doc.comment_posted_at = frappe.utils.now()
+                                    post_doc.comment_error = ''
+                                    post_doc.save(ignore_permissions=True)
+                                    
+                                    total_processed += 1
+                                    frappe.logger().info(
+                                        f" Posted AI comment to r/{subreddit.subreddit_name} - {post.post_id}"
+                                    )
+                                else:
+                                    post_doc.comment_status = 'Failed'
+                                    post_doc.comment_error = 'Failed to post comment to Reddit'
+                                    post_doc.save(ignore_permissions=True)
+                                    frappe.logger().error(
+                                        f"Failed to post comment for {post.post_id}"
+                                    )
+                            else:
+                                frappe.logger().error(
+                                    f"No AI comment generated for {post.post_id}"
+                                )
                         else:
-                            frappe.logger().error(f"AI comment failed for post {post.post_id}: {result.get('error')}")
+                            frappe.logger().error(
+                                f"AI comment generation failed for {post.post_id}: {result.get('error')}"
+                            )
                         
-                        # Add delay between comments to avoid rate limiting
-                        import time
                         time.sleep(3)
                         
                     except Exception as e:
@@ -184,26 +214,21 @@ def process_pending_ai_comments():
             except Exception as e:
                 frappe.log_error(
                     message=str(e),
-                    title=f"Error processing AI comments for subreddit {subreddit.subreddit_name}"
+                    title=f"Error processing AI comments for r/{subreddit.subreddit_name}"
                 )
         
-        # Commit all changes
-        
-        frappe.logger().info(f"Completed process_pending_ai_comments - processed {total_processed} comments")
+        frappe.logger().info(
+            f"✓ Completed process_pending_ai_comments - processed {total_processed} comments"
+        )
         
     except Exception as e:
-        frappe.log_error(
-            message=str(e),
-            title="Error in process_pending_ai_comments scheduler task"
-        )
-        frappe.logger().error(f"Critical error in process_pending_ai_comments: {str(e)}")
+        frappe.log_error(f"Error in process_pending_ai_comments: {str(e)}")
 
 def cleanup_old_posts():
-    """Clean up old Reddit posts to prevent database bloat"""
+    
     try:
         frappe.logger().info("Starting scheduled task: cleanup_old_posts")
         
-        # Delete posts older than 30 days that are already commented or failed
         cutoff_date = add_to_date(get_datetime(), days=-30)
         
         old_posts = frappe.get_all(
@@ -218,11 +243,10 @@ def cleanup_old_posts():
         deleted_count = 0
         for post in old_posts:
             try:
-                frappe.delete_doc('Reddit Post', post.name)
+                frappe.delete_doc('Reddit Post', post.name, ignore_permissions=True)
                 deleted_count += 1
             except Exception as e:
                 frappe.logger().error(f"Error deleting old post {post.name}: {str(e)}")
-        
         
         frappe.logger().info(f"Cleaned up {deleted_count} old posts")
         
@@ -232,15 +256,16 @@ def cleanup_old_posts():
             title="Error in cleanup_old_posts scheduler task"
         )
 
+
 def reset_daily_counters():
     """Reset daily post counters at midnight"""
     try:
         frappe.logger().info("Starting scheduled task: reset_daily_counters")
         
         frappe.db.sql("UPDATE `tabSubreddit` SET posts_fetched_today = 0")
+        frappe.db.commit()
         
-        
-        frappe.logger().info("Successfully reset daily counters")
+        frappe.logger().info("✓ Successfully reset daily counters")
         
     except Exception as e:
         frappe.log_error(
@@ -248,30 +273,100 @@ def reset_daily_counters():
             title="Error in reset_daily_counters scheduler task"
         )
 
-# Test functions
-@frappe.whitelist()
-def test_fetch_and_store():
-    """Test function to manually trigger fetch_and_store_posts"""
-    try:
-        fetch_and_store_posts()
-        return {"status": "success", "message": "fetch_and_store_posts completed"}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
-
-@frappe.whitelist() 
-def test_ai_comments():
-    """Test function to manually trigger process_pending_ai_comments"""
-    try:
-        process_pending_ai_comments()
-        return {"status": "success", "message": "process_pending_ai_comments completed"}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
 
 @frappe.whitelist()
-def test_cleanup():
-    """Test function to manually trigger cleanup_old_posts"""
+def trigger_fetch_manually(subreddit_name, integration_name=None):
+    """Manually trigger post fetching for a specific subreddit"""
     try:
-        cleanup_old_posts()
-        return {"status": "success", "message": "cleanup_old_posts completed"}
+        from ai_crm.reddit_api import fetch_posts_manually
+        
+        if not integration_name:
+            subreddit_doc = frappe.get_doc('Subreddit', subreddit_name)
+            integration_name = subreddit_doc.reddit_integration
+        
+        if not integration_name:
+            frappe.throw("No Reddit Integration configured for this subreddit")
+        
+
+        if not frappe.db.exists('Reddit Integration', integration_name):
+            frappe.throw(f"Reddit Integration '{integration_name}' not found")
+            
+        integration = frappe.get_doc('Reddit Integration', integration_name)
+        if integration.connection_status != 'Connected':
+            frappe.throw(f"Reddit Integration '{integration_name}' is not connected")
+        
+        result = fetch_posts_manually(
+            subreddit_name=subreddit_name,
+            integration_name=integration_name,
+            sort_type=subreddit_doc.sort_type or "hot",
+            limit=5,
+            time_filter="week"
+        )
+        
+        if result.get('success'):
+            posts_count = result.get('count', 0)
+            if posts_count > 0:
+                frappe.msgprint(
+                    f"Successfully fetched {posts_count} new posts from r/{subreddit_name}",
+                    indicator='green',
+                    alert=True
+                )
+            else:
+                frappe.msgprint(
+                    f"No new posts found in r/{subreddit_name}",
+                    indicator='blue',
+                    alert=True
+                )
+            return result
+        else:
+            error_msg = result.get('error', 'Unknown error occurred')
+            frappe.throw(f"Failed to fetch posts: {error_msg}")
+        
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+       
+        frappe.log_error(
+            title=f"Fetch Error - {subreddit_name[:30]}",  
+            message=frappe.get_traceback()
+        )
+        frappe.throw(str(e))
+
+
+@frappe.whitelist()
+def trigger_ai_comments_manually(subreddit_name=None):
+    """Manually trigger AI comment generation for pending posts"""
+    try:
+        from ai_crm.reddit_api import generate_ai_comment_internal
+        
+        filters = {'comment_status': 'Pending'}
+        if subreddit_name:
+            filters['subreddit'] = subreddit_name
+            
+        pending_posts = frappe.get_all(
+            'Reddit Post',
+            filters=filters,
+            fields=['name'],
+            limit=10
+        )
+        
+        processed = 0
+        errors = 0
+        
+        for post in pending_posts:
+            try:
+                result = generate_ai_comment_internal(post.name)
+                if result.get('success'):
+                    processed += 1
+                else:
+                    errors += 1
+            except Exception as e:
+                errors += 1
+                frappe.log_error(str(e))
+        
+        return {
+            'success': True,
+            'processed': processed,
+            'errors': errors
+        }
+        
+    except Exception as e:
+        return {'success': False, 'error': str(e)}

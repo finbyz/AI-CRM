@@ -1,7 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "format: {title}-{##}",
+ "autoname": "format: CONT-HUB-{##}",
  "creation": "2025-08-29 12:14:00.553770",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -46,8 +46,9 @@
   {
    "fieldname": "platform",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Platform",
-   "options": "LinkedIn\nReddit\nX (Twitter)"
+   "options": "\nLinkedIn\nReddit\nX (Twitter)"
   },
   {
    "fieldname": "credential_type",
@@ -66,7 +67,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-25 14:40:06.947611",
+ "modified": "2025-09-27 11:01:42.613299",
  "modified_by": "Administrator",
  "module": "Social Media",
  "name": "Content Hub",
@@ -101,5 +102,6 @@
  "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "title_field": "title"
 }

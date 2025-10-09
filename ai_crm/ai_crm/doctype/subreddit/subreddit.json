@@ -7,18 +7,18 @@
  "engine": "InnoDB",
  "field_order": [
   "subreddit_name",
+  "reddit_integration",
   "is_active",
-  "monitor_frequency",
   "section_break_4",
-  "auto_comment",
-  "use_ai_comments",
+  "auto_comment_enabled",
   "ai_comment_agent",
-  "comment_delay_minutes",
+  "comment_revise_agent",
+  "post_type",
   "section_break_8",
+  "sort_type",
   "last_monitored",
   "posts_fetched_today",
   "total_posts_monitored",
-  "ai_comments_generated",
   "last_error"
  ],
  "fields": [
@@ -31,16 +31,17 @@
    "unique": 1
   },
   {
+   "description": "Select which Reddit account to use for this subreddit",
+   "fieldname": "reddit_integration",
+   "fieldtype": "Link",
+   "label": "Reddit  Account",
+   "options": "Reddit Integration"
+  },
+  {
    "default": "1",
    "fieldname": "is_active",
    "fieldtype": "Check",
    "label": "Is Active"
-  },
-  {
-   "default": "30",
-   "fieldname": "monitor_frequency",
-   "fieldtype": "Int",
-   "label": "Monitor Frequency (minutes)"
   },
   {
    "fieldname": "section_break_4",
@@ -48,36 +49,48 @@
    "label": "Auto Comment Settings"
   },
   {
-   "default": "0",
-   "fieldname": "auto_comment",
+   "default": "1",
+   "description": "Enable automated commenting via scheduler",
+   "fieldname": "auto_comment_enabled",
    "fieldtype": "Check",
-   "label": "Enable Auto Comment"
+   "label": "Auto Comment Enabled (Scheduler)"
   },
   {
-   "default": "0",
-   "depends_on": "auto_comment",
-   "fieldname": "use_ai_comments",
-   "fieldtype": "Check",
-   "label": "Use AI Generated Comments"
-  },
-  {
-   "depends_on": "eval:doc.auto_comment && doc.use_ai_comments",
+   "depends_on": "eval:doc.auto_comment_enabled ",
    "fieldname": "ai_comment_agent",
    "fieldtype": "Link",
    "label": "AI Comment Agent",
    "options": "AI Agent"
   },
   {
-   "default": "5",
-   "depends_on": "auto_comment",
-   "fieldname": "comment_delay_minutes",
-   "fieldtype": "Int",
-   "label": "Comment Delay (minutes)"
+   "depends_on": "eval:doc.auto_comment_enabled ",
+   "description": "AI Agent for revising generated comments",
+   "fieldname": "comment_revise_agent",
+   "fieldtype": "Link",
+   "label": "Comment Revise Agent",
+   "options": "AI Agent"
+  },
+  {
+   "fieldname": "post_type",
+   "fieldtype": "Data",
+   "label": "Post Type",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_8",
    "fieldtype": "Section Break",
-   "label": "Statistics"
+   "label": "Fetch Settings"
+  },
+  {
+   "fieldname": "sort_type",
+   "fieldtype": "Select",
+   "label": "Sort Type",
+   "options": "new\nhot\nbest\ntop\nrising"
+  },
+  {
+   "fieldname": "section_break_8",
+   "fieldtype": "Section Break",
+   "label": "Fetch Settings"
   },
   {
    "fieldname": "last_monitored",
@@ -100,13 +113,6 @@
    "read_only": 1
   },
   {
-   "default": "0",
-   "fieldname": "ai_comments_generated",
-   "fieldtype": "Int",
-   "label": "AI Comments Generated",
-   "read_only": 1
-  },
-  {
    "fieldname": "last_error",
    "fieldtype": "Text",
    "label": "Last Error",
@@ -114,7 +120,7 @@
   }
  ],
  "links": [],
- "modified": "2025-09-18 16:32:09.701594",
+ "modified": "2025-10-07 12:59:28.653055",
  "modified_by": "Administrator",
  "module": "Ai CRM",
  "name": "Subreddit",
