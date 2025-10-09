@@ -16,7 +16,7 @@ class RedditIntegration(Document):
             self.state = secrets.token_urlsafe(32)
 
         if not self.redirect_uri:
-            self.redirect_uri = f"https://{frappe.conf.hostname}/api/method/ai_crm.credentials.doctype.reddit_integration.reddit_integration.reddit_callback"
+            self.redirect_uri = f"https://{frappe.conf.hostname}/api/method/ai_crm.credentials.doctype.reddit_integration.reddit_integration.callback"
 
         if not self.user_agent:
             self.user_agent = self.get_user_agent()
@@ -237,7 +237,7 @@ class RedditIntegration(Document):
         return None
 
 @frappe.whitelist(allow_guest=True)
-def reddit_callback(state=None, code=None, error=None, *args, **kwargs):
+def callback(state=None, code=None, error=None, *args, **kwargs):
     """Handle Reddit OAuth callback with improved error handling"""
     try:
         if error:
