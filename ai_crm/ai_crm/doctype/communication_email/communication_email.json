@@ -1,0 +1,98 @@
+{
+  "actions": [],
+  "allow_rename": 1,
+  "autoname": "hash",
+  "creation": "2025-10-08 12:00:00.000000",
+  "doctype": "DocType",
+  "editable_grid": 1,
+  "engine": "InnoDB",
+  "field_order": [
+    "subject",
+    "column_break_subject",
+    "status",
+    "time",
+    "section_break_content",
+    "content",
+    "section_break_sending",
+    "sent_at",
+    "column_break_sent",
+    "error_message"
+  ],
+  "fields": [
+    {
+      "fieldname": "subject",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Subject",
+      "reqd": 1
+    },
+    {
+      "fieldname": "column_break_subject",
+      "fieldtype": "Column Break"
+    },
+    {
+      "default": "Unsent",
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "label": "Status",
+      "options": "Unsent\nSent\nFailed\nCancelled",
+      "reqd": 1
+    },
+    {
+      "fieldname": "time",
+      "fieldtype": "Datetime",
+      "in_list_view": 1,
+      "label": "Scheduled Time",
+      "reqd": 1
+    },
+    {
+      "fieldname": "section_break_content",
+      "fieldtype": "Section Break",
+      "label": "Email Content"
+    },
+    {
+      "fieldname": "content",
+      "fieldtype": "Text Editor",
+      "label": "Content",
+      "reqd": 1
+    },
+    {
+      "collapsible": 1,
+      "fieldname": "section_break_sending",
+      "fieldtype": "Section Break",
+      "label": "Sending Details"
+    },
+    {
+      "fieldname": "sent_at",
+      "fieldtype": "Datetime",
+      "label": "Sent At",
+      "read_only": 1
+    },
+    {
+      "fieldname": "column_break_sent",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "error_message",
+      "fieldtype": "Small Text",
+      "label": "Error Message",
+      "read_only": 1
+    }
+  ],
+  "index_web_pages_for_search": 1,
+  "istable": 1,
+  "links": [],
+  "modified": "2025-10-08 12:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Ai CRM",
+  "name": "Communication Email",
+  "naming_rule": "Random",
+  "owner": "Administrator",
+  "permissions": [],
+  "quick_entry": 1,
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "states": [],
+  "track_changes": 1
+}

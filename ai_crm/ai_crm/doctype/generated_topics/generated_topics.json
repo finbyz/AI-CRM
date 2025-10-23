@@ -1,0 +1,53 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-09-29 18:14:21.790122",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "topic_title",
+  "description",
+  "source_keyword",
+  "source_content"
+ ],
+ "fields": [
+  {
+   "fieldname": "topic_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Topic Title"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Description"
+  },
+  {
+   "fieldname": "source_keyword",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Source Keyword"
+  },
+  {
+   "fieldname": "source_content",
+   "fieldtype": "Long Text",
+   "label": "Source Content"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-09-30 12:51:18.613837",
+ "modified_by": "Administrator",
+ "module": "Ai CRM",
+ "name": "Generated Topics",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

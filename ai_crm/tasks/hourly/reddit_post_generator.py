@@ -12,6 +12,7 @@ from ai_crm.reddit_api import (
 def fetch_reddit_posts():
     
     try:
+        frappe.log_error("Starting scheduled task: fetch_reddit_posts")
         subreddits = frappe.get_all(
             'Subreddit',
             filters={'is_active': 1},

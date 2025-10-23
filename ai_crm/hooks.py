@@ -70,11 +70,19 @@ before_uninstall = "ai_crm.install.before_uninstall"
 
 # Scheduled Tasks
 # ---------------
+doc_events = {
+    "Lead": {
+        "after_insert": "ai_crm.ai_crm.doctype.communication_log.communication_log.generate_followups_on_party_activity"
+    },
+    "Customer": {
+        "after_insert": "ai_crm.ai_crm.doctype.communication_log.communication_log.generate_followups_on_party_activity"
+    }
+}
 
 scheduler_events = {
-	# "all": [
-	# 	"ai_crm.tasks.all"
-	# ],
+	"all": [
+		"ai_crm.tasks.hourly.reddit_post_generator.fetch_reddit_posts"
+	],
       
 	"daily": [
 		"ai_crm.tasks.daily.smart_followup.run_followup_job"
@@ -89,7 +97,8 @@ scheduler_events = {
         ],
         # Every 1 minute → check social media scheduled posts
         "*/10 * * * *": [
-            "ai_crm.social_media.doctype.social_media_post.social_media_post.schedule_social_media_posts"
+            "ai_crm.tasks.all.social_media_scheduler.schedule_social_media_posts",
+            "ai_crm.tasks.daily.email_sender.enqueue_scheduled_emails"
         ]
     }
 }

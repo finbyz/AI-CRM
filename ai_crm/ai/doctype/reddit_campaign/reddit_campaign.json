@@ -90,7 +90,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-18 16:35:25.817165",
+ "modified": "2025-09-25 14:36:27.235261",
  "modified_by": "Administrator",
  "module": "AI",
  "name": "Reddit Campaign",
@@ -110,14 +110,9 @@
   },
   {
    "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
+   "if_owner": 1,
    "read": 1,
-   "report": 1,
    "role": "Social Media Manager",
-   "share": 1,
    "write": 1
   }
  ],

@@ -1,0 +1,80 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format: TREND-{##}",
+ "creation": "2025-09-29 18:12:35.609687",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "keywords",
+  "ai_agent",
+  "number_of_topics",
+  "last_generated_on",
+  "source_summary",
+  "generated_topics"
+ ],
+ "fields": [
+  {
+   "fieldname": "keywords",
+   "fieldtype": "Data",
+   "label": "keywords"
+  },
+  {
+   "fieldname": "ai_agent",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "AI Agent",
+   "options": "AI Agent"
+  },
+  {
+   "fieldname": "number_of_topics",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Number Of Topics"
+  },
+  {
+   "fieldname": "last_generated_on",
+   "fieldtype": "Datetime",
+   "label": "Generated On ",
+   "read_only": 1
+  },
+  {
+   "fieldname": "source_summary",
+   "fieldtype": "Text Editor",
+   "label": "Source Summary"
+  },
+  {
+   "fieldname": "generated_topics",
+   "fieldtype": "Table",
+   "label": "Generated Topics",
+   "options": "Generated Topics"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-09-30 17:06:37.818343",
+ "modified_by": "Administrator",
+ "module": "Ai CRM",
+ "name": "Trending Topic Generator",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
