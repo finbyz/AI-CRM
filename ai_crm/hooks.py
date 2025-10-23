@@ -81,7 +81,8 @@ doc_events = {
 
 scheduler_events = {
 	"all": [
-		"ai_crm.tasks.hourly.reddit_post_generator.fetch_reddit_posts"
+		"ai_crm.tasks.hourly.reddit_post_generator.fetch_reddit_posts",
+        "ai_crm.scheduler_task.auto_comment_on_posts"
 	],
       
 	"daily": [

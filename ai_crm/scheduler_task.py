@@ -124,7 +124,7 @@ def auto_comment_on_posts():
                     'Reddit Post',
                     filters={
                         'subreddit': subreddit.name,
-                        'comment_status': 'Pending',
+                        'comment_status': 'Ready',
                         'created_utc': ['<=', delay_time]
                     },
                     fields=['name', 'post_id', 'title'],
