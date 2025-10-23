@@ -1,0 +1,84 @@
+{
+ "actions": [],
+ "creation": "2025-10-11 10:45:16.455738",
+ "default_view": "List",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_ai_agents",
+  "enable_check",
+  "dynamic_followup_generator",
+  "person_research",
+  "company_research",
+  "email_sending_schedule",
+  "mail_schedule"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_ai_agents",
+   "fieldtype": "Section Break",
+   "label": "AI Agents"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_check",
+   "fieldtype": "Check",
+   "label": "Enable"
+  },
+  {
+   "fieldname": "dynamic_followup_generator",
+   "fieldtype": "Link",
+   "label": "Dynamic Follow-Up Generator",
+   "options": "AI Agent"
+  },
+  {
+   "fieldname": "person_research",
+   "fieldtype": "Link",
+   "label": "Person Research",
+   "options": "AI Agent"
+  },
+  {
+   "fieldname": "company_research",
+   "fieldtype": "Link",
+   "label": "Company Research",
+   "options": "AI Agent"
+  },
+  {
+   "fieldname": "email_sending_schedule",
+   "fieldtype": "Table",
+   "label": "Email Sending Schedule",
+   "options": "Email Sending Schedule"
+  },
+  {
+   "fieldname": "mail_schedule",
+   "fieldtype": "Table",
+   "label": "Mail Schedule",
+   "options": "Mail Schedule"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2025-10-11 12:00:59.473309",
+ "modified_by": "Administrator",
+ "module": "Ai CRM",
+ "name": "Followup Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
