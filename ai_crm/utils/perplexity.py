@@ -1,4 +1,4 @@
-from ai_crm.ai.agent.agent_service import AgentService
+from finbyzai.ai.agent.agent_service import AgentService
 import frappe
 from pydantic import BaseModel,Field
 

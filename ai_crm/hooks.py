@@ -80,26 +80,23 @@ doc_events = {
 }
 
 scheduler_events = {
-	"all": [
-		"ai_crm.tasks.hourly.reddit_post_generator.fetch_reddit_posts",
-        "ai_crm.scheduler_task.auto_comment_on_posts"
-	],
+	# "all": [
+	# ],
       
 	"daily": [
-		"ai_crm.tasks.daily.smart_followup.run_followup_job"
+		"ai_crm.tasks.daily.smart_followup.run_followup_job",
+        "ai_crm.tasks.hourly.reddit_post_generator.reset_daily_counters"
     ],
      "hourly": [
         "ai_crm.tasks.hourly.reddit_post_generator.fetch_reddit_posts",
         "ai_crm.tasks.hourly.reddit_post_generator.process_pending_ai_comments"
     ],
     "cron": {
-       "0 0 * * *": [  
-            "ai_crm.tasks.hourly.reddit_post_generator.reset_daily_counters"
-        ],
         # Every 1 minute → check social media scheduled posts
         "*/10 * * * *": [
             "ai_crm.tasks.all.social_media_scheduler.schedule_social_media_posts",
-            "ai_crm.tasks.daily.email_sender.enqueue_scheduled_emails"
+            "ai_crm.tasks.daily.email_sender.enqueue_scheduled_emails",
+            "ai_crm.scheduler_task.auto_comment_on_posts"
         ]
     }
 }

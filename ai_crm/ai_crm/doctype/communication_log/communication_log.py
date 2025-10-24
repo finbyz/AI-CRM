@@ -1,5 +1,5 @@
 from typing import Dict
-from ai_crm.ai.agent.agent_service import AgentService
+from finbyzai.ai.agent.agent_service import AgentService
 import frappe
 from frappe.model.document import Document, Optional
 from frappe.utils import now_datetime, add_days, get_datetime

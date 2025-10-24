@@ -1,7 +1,7 @@
 # Copyright (c) 2025, Finbyz Tech Pvt Ltd and contributors
 # For license information, please see license.txt
 
-from ai_crm.ai.agent.agent_service import AgentService
+from finbyzai.ai.agent.agent_service import AgentService
 from frappe.model.document import Document
 
 

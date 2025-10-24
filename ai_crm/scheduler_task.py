@@ -97,7 +97,7 @@ def auto_comment_on_posts():
         # Get subreddits with auto_comment enabled
         subreddits = frappe.get_all(
             'Subreddit',
-            filters={'auto_comment': 1, 'is_active': 1},
+            filters={'auto_comment_enabled': 1, 'is_active': 1},
             fields=['name', 'subreddit_name', 'comment_template', 'comment_delay_minutes']
         )
         

@@ -2,7 +2,7 @@
 # For license information, please see license.txt
 
 import base64
-from ai_crm.ai.agent.agent_service import AgentService
+from finbyzai.ai.agent.agent_service import AgentService
 import frappe
 import requests
 from frappe.model.document import Document

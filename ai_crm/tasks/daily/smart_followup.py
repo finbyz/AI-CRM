@@ -1,4 +1,4 @@
-from ai_crm.ai.agent.agent_service import AgentService
+from finbyzai.ai.agent.agent_service import AgentService
 import frappe
 from ai_crm.utils.perplexity import research_company, research_person
 from frappe.core.doctype.communication.email import make
