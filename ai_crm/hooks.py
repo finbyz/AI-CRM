@@ -7,7 +7,7 @@ app_license = "MIT"
 
 # Installation / Uninstallation
 before_uninstall = "ai_crm.install.before_uninstall"
-
+required_apps = ["finbyz/finbyzai"]
 # Uninstallation
 # ------------
 
