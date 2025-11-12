@@ -12,7 +12,8 @@
   "helper_agent",
   "column_break_vgaa",
   "image_size",
-  "image_generation_meta_prompt"
+  "image_generation_meta_prompt",
+  "youtube_fetch_agent"
  ],
  "fields": [
   {
@@ -60,13 +61,19 @@
    "fieldtype": "Select",
    "label": "Image Size",
    "options": "\n256x256\n512x512\n1024x1024\n1024x1536\n1024x1792\n1536x1024\n1792x1024"
+  },
+  {
+   "fieldname": "youtube_fetch_agent",
+   "fieldtype": "Link",
+   "label": "YouTube Fetch Agent",
+   "options": "AI Agent"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-09-25 14:39:45.525032",
+ "modified": "2025-11-11 16:38:02.259618",
  "modified_by": "Administrator",
  "module": "Social Media",
  "name": "Content Hub Setting",

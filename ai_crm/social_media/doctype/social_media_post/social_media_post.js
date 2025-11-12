@@ -3,6 +3,13 @@
 
 frappe.ui.form.on('Social Media Post', {
 	refresh: function(frm) {
+		// Show "Generate with AI" button only for new (unsaved) documents
+		if (!frm.doc.content || frm.doc.status === 'Draft') {
+			frm.add_custom_button(__('Generate with AI'), function() {
+				show_ai_input_dialog(frm);
+			}).css({'background-color': '#000000ff', 'color': 'white'});
+		}
+
 		// Render preview for supported platforms
 		if (frm.doc.content && ['LinkedIn', 'X (Twitter)', 'Reddit'].includes(frm.doc.platform)) {
 			frm.trigger('render_preview');
@@ -220,6 +227,66 @@ frappe.ui.form.on('Social Media Post', {
 		dialog.show();
 	}
 });
+
+function show_ai_input_dialog(frm) {
+    let dialog = new frappe.ui.Dialog({
+        title: __('Generate Content with AI'),
+        fields: [
+            {
+                fieldname: 'user_input',
+                fieldtype: 'Small Text',
+                label: __('Your Input'),
+                reqd: 1,
+                description: __('Describe what you want to post about')
+            }
+        ],
+        primary_action_label: __('Generate'),
+        primary_action: function(values) {
+            dialog.hide();
+            
+            frappe.show_alert({
+                message: __('Generating content...'),
+                indicator: 'blue'
+            });
+            
+            // Call generate_content without saving the document first
+            frm.call({
+                method: 'generate_content',
+                doc: frm.doc,
+                args: {
+                    user_input: values.user_input // Pass input as 'query'
+                },
+                freeze: true,
+                freeze_message: __('AI is generating content...')
+            }).then(r => {
+                if (r.message && r.message.status === 'success') {
+                    frappe.msgprint({
+                        title: __('Success'),
+                        message: __('Content generated successfully!'),
+                        indicator: 'green'
+                    });
+                    // Set the generated values in the form fields
+                    frm.set_value('title', r.message.title);
+                    frm.set_value('content', r.message.content);
+                } else {
+                    frappe.msgprint({
+                        title: __('Error'),
+                        message: (r.message && (r.message.message || r.message.error)) || __('Failed to generate content'),
+                        indicator: 'red'
+                    });
+                }
+            }).catch(err => {
+                frappe.msgprint({
+                    title: __('Error'),
+                    message: __('An error occurred: {0}', [err.message || err]),
+                    indicator: 'red'
+                });
+            });
+        }
+    });
+    
+    dialog.show();
+}
 
 function post_to_social_media(frm) {
 

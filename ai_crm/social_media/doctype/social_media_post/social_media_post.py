@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import base64
+import json
 from finbyzai.ai.agent.agent_service import AgentService
 import frappe
 import requests
@@ -13,7 +14,7 @@ from frappe.utils import now_datetime
 
 
 class SocialMediaPost(Document):
-
+    pass
     def get_credentials(self):
         """Fetch credential document from either Content Hub or direct fields"""
         if self.content_hub:
@@ -476,3 +477,92 @@ class SocialMediaPost(Document):
                 "status": "error",
                 "error": str(e)
             }
+
+    @frappe.whitelist()
+    def generate_content(self, user_input: str):
+        """Generate content and title using an AI Agent without saving."""
+
+        # Step 1: Get Content Hub Setting
+        content_hub_setting = frappe.get_single("Content Hub Setting")
+
+        # Step 2: Get the AI Agent from Content Hub Setting
+        youtube_agent_name = content_hub_setting.youtube_fetch_agent
+        if not youtube_agent_name:
+            frappe.throw("YouTube Fetch Agent is not configured in Content Hub Setting")
+
+        ai_agent_doc = frappe.get_doc("AI Agent", youtube_agent_name)
+        content_generator_agent = ai_agent_doc.agent_service
+
+        if not content_generator_agent:
+            frappe.throw("Content Generator Agent service is not available")
+        
+        frappe.log_error(f"User Input for Content Generation: {user_input}", "Content Generation Input")
+
+        # Step 3: Prepare input data
+        ai_input_data = {
+            "user_says": user_input
+        }
+
+        # Step 4: Call AI agent
+        try:
+            result = content_generator_agent.invoke(**ai_input_data)
+        except Exception as e:
+            frappe.log_error(f"AI Agent Invoke Error: {str(e)}\n{frappe.get_traceback()}", "Generate Content Error")
+            frappe.throw(f"AI agent failed to generate content: {str(e)}")
+
+        # Step 5: Parse result
+        output = None
+        
+        if isinstance(result, dict):
+            output = result.get('output') or result.get('content') or result.get('text')
+        elif hasattr(result, 'output'):
+            output = result.output
+        elif hasattr(result, 'content'):
+            output = result.content
+        elif hasattr(result, 'text'):
+            output = result.text
+        else:
+            output = str(result)
+
+        if not output:
+            frappe.log_error(f"AI Response: {result}", "Empty AI Response")
+            frappe.throw("AI agent did not return any content")
+
+        # Step 6: Parse JSON response
+        title = ""
+        content = ""
+        
+        try:
+            output_str = str(output).strip()
+            
+            if output_str.startswith("```json"):
+                output_str = output_str.replace("```json", "").replace("```", "").strip()
+            elif output_str.startswith("```"):
+                output_str = output_str.replace("```", "").strip()
+            
+            parsed_result = frappe.parse_json(output_str)
+            title = parsed_result.get('title', '')
+            content = parsed_result.get('content', '')
+
+            if not content:
+                content = output_str
+                
+        except (json.JSONDecodeError, TypeError) as e:
+            frappe.log_error(f"JSON Parse Error: {str(e)}\nOutput: {output}", "JSON Parse Error")
+            
+            lines = str(output).strip().split('\n')
+            if lines:
+                title = lines.strip()
+                content = '\n'.join(lines[1:]).strip() if len(lines) > 1 else str(output)
+            else:
+                content = str(output)
+
+        if not content:
+            frappe.throw("AI agent returned empty content")
+
+        # Step 7: Return the generated data without saving
+        return {
+            "status": "success",
+            "title": title,
+            "content": content
+        }

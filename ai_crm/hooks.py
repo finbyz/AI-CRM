@@ -95,7 +95,6 @@ scheduler_events = {
         # Every 1 minute → check social media scheduled posts
         "*/10 * * * *": [
             "ai_crm.tasks.all.social_media_scheduler.schedule_social_media_posts",
-            "ai_crm.tasks.daily.email_sender.enqueue_scheduled_emails",
             "ai_crm.scheduler_task.auto_comment_on_posts"
         ]
     }
@@ -107,6 +106,7 @@ fixtures = [
     "LLM",
     "Lead Followup Setting",
     "Content Hub Setting",
+    "AI Tool",
     "AI Agent",
     {
         "doctype": "Role",
