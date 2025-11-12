@@ -1,0 +1,35 @@
+[
+ {
+  "description": "Extracts all text inside the &lt;main&gt; tag from the given website URL.",
+  "docstatus": 0,
+  "doctype": "AI Tool",
+  "from_package": "",
+  "is_custom": 1,
+  "modified": "2025-10-24 10:52:42.310809",
+  "module": "Ai CRM",
+  "name": "Extract main content from url",
+  "tool_function": null
+ },
+ {
+  "description": null,
+  "docstatus": 0,
+  "doctype": "AI Tool",
+  "from_package": "",
+  "is_custom": 1,
+  "modified": "2025-11-11 16:01:55.959488",
+  "module": "Social Media",
+  "name": "Get Youtube Video Transcription",
+  "tool_function": null
+ },
+ {
+  "description": "return sum of 2 numbers a and b",
+  "docstatus": 0,
+  "doctype": "AI Tool",
+  "from_package": "",
+  "is_custom": 1,
+  "modified": "2025-09-02 21:19:50.646192",
+  "module": "Ai CRM",
+  "name": "sum of 2 numbers",
+  "tool_function": null
+ }
+]

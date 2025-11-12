@@ -1,0 +1,14 @@
+[
+ {
+  "company_research_agent": "Company Research",
+  "days_since_last_activity": 4,
+  "docstatus": 0,
+  "doctype": "Lead Followup Setting",
+  "email_account": null,
+  "email_agent": "Lead Follow up",
+  "is_enable": 1,
+  "modified": "2025-10-09 10:25:14.680876",
+  "name": "Lead Followup Setting",
+  "person_research_agent": "Person Research"
+ }
+]
