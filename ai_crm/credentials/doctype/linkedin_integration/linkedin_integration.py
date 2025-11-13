@@ -1,3 +1,4 @@
+import re
 import frappe
 from frappe.apps import _
 from frappe.model.document import Document
@@ -65,6 +66,24 @@ class LinkedInHelper:
             "LinkedIn-Version": self.API_VERSION,  # Using the latest API version format
             "X-Restli-Protocol-Version": "2.0.0"
         }
+        
+    def _extract_urls_from_content(self, content):
+        """Extract URLs from content text"""
+        url_pattern = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+        urls = re.findall(url_pattern, content)
+        return urls if urls else None
+    
+    def _extract_youtube_video_id(self, url):
+        """Extract YouTube video ID from URL"""
+        patterns = [
+            r'(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\?\/\s]+)',
+            r'youtube\.com\/embed\/([^&\?\/\s]+)',
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, url)
+            if match:
+                return match.group(1)
+        return None
 
     def _upload_linkedin_image(self, author_urn, image_attachment) -> str:
         """
@@ -100,26 +119,71 @@ class LinkedInHelper:
         else:
             author_urn = f"urn:li:person:{self.person_id}"
 
-        post_data = {
-            "author": author_urn,
-            "commentary": content,
-            "visibility": "PUBLIC",
-            "distribution": {
-                "feedDistribution": "MAIN_FEED",
-            },
-            "lifecycleState": "PUBLISHED",
-            "isReshareDisabledByAuthor": False,
-        }
+        # Extract URLs from content
+        urls = self._extract_urls_from_content(content)
         
+        # If image exists, use current Posts API (image priority)
         if image_attachment:
             image_urn = self._upload_linkedin_image(author_urn, image_attachment)
-            post_data["content"] = {
-                "media": {
-                    "title": "Image from Frappe",
-                    "id": image_urn
+            post_data = {
+                "author": author_urn,
+                "commentary": content,  # URLs in commentary will be clickable
+                "visibility": "PUBLIC",
+                "distribution": {
+                    "feedDistribution": "MAIN_FEED",
+                },
+                "lifecycleState": "PUBLISHED",
+                "isReshareDisabledByAuthor": False,
+                "content": {
+                    "media": {
+                        "title": "Image from Frappe",
+                        "id": image_urn
+                    }
                 }
             }
-        return post_data
+            return post_data, "posts"  # Return API type
+        
+        # If URL exists but no image, use UGC Posts API for URL preview
+        elif urls:
+            first_url = urls[0]  # Use first URL for preview
+            
+            # Prepare UGC Post data structure
+            ugc_post_data = {
+                "author": author_urn,
+                "lifecycleState": "PUBLISHED",
+                "specificContent": {
+                    "com.linkedin.ugc.ShareContent": {
+                        "shareCommentary": {
+                            "text": content
+                        },
+                        "shareMediaCategory": "ARTICLE",
+                        "media": [
+                            {
+                                "status": "READY",
+                                "originalUrl": first_url,
+                            }
+                        ]
+                    }
+                },
+                "visibility": {
+                    "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"
+                }
+            }
+            return ugc_post_data, "ugcPosts"  # Return API type
+        
+        # Text-only post, use current Posts API
+        else:
+            post_data = {
+                "author": author_urn,
+                "commentary": content,
+                "visibility": "PUBLIC",
+                "distribution": {
+                    "feedDistribution": "MAIN_FEED",
+                },
+                "lifecycleState": "PUBLISHED",
+                "isReshareDisabledByAuthor": False,
+            }
+            return post_data, "posts"  # Return API type
 
     def _make_linkedin_api_request(self, method, url, **kwargs):
         """A centralized method for making API requests."""
@@ -127,12 +191,25 @@ class LinkedInHelper:
             response = requests.request(method, url, timeout=60, **kwargs)
             response.raise_for_status()
             
-            if response.status_code == 201: # Created
-                post_id = response.headers.get('x-restli-id')
-                post_link = f"https://www.linkedin.com/feed/update/{post_id}"
+            if response.status_code == 201:  # Created
+                # For Posts API
+                if '/rest/posts' in url:
+                    post_id = response.headers.get('x-restli-id')
+                    post_link = f"https://www.linkedin.com/feed/update/{post_id}"
+                # For UGC Posts API
+                else:
+                    post_id = response.headers.get('x-restli-id')
+                    if not post_id:
+                        # Sometimes UGC Posts returns ID in response body
+                        response_data = response.json()
+                        post_id = response_data.get('id', '')
+                    post_link = f"https://www.linkedin.com/feed/update/{post_id}"
+                
                 return {"status": "success", "post_id": post_id, "post_link": post_link}
-            elif response.status_code == 204: # No Content (for update/delete)
+                
+            elif response.status_code == 204:  # No Content (for update/delete)
                 return {"status": "success"}
+                
             return response.json()
 
         except requests.exceptions.RequestException as e:
@@ -141,13 +218,22 @@ class LinkedInHelper:
             return {"status": "error", "error": error_message}
 
     def post_to_linkedin(self, content, image_attachment=None):
-        """Post content to LinkedIn using the Posts API."""
+        """Post content to LinkedIn using the appropriate API."""
         if self.linkedin_doc.connection_status != "Connected":
             frappe.throw(_("LinkedIn account is not connected. Please reconnect your account."))
 
-        post_data = self._prepare_linkedin_post_data(content, image_attachment)
-        url = "https://api.linkedin.com/rest/posts"
-        headers = self._get_headers()
+        post_data, api_type = self._prepare_linkedin_post_data(content, image_attachment)
+        
+        # Choose the right API endpoint
+        if api_type == "ugcPosts":
+            url = "https://api.linkedin.com/v2/ugcPosts"
+            headers = self._get_headers()
+            # Remove LinkedIn-Version header for UGC Posts (it uses older format)
+            if "LinkedIn-Version" in headers:
+                del headers["LinkedIn-Version"]
+        else:
+            url = "https://api.linkedin.com/rest/posts"
+            headers = self._get_headers()
         
         return self._make_linkedin_api_request("POST", url, headers=headers, json=post_data)
 
@@ -179,7 +265,7 @@ class LinkedInHelper:
         if response.get("status") == "success":
             response["message"] = _("Post deleted successfully from LinkedIn")
         return response
-
+    
 
 @frappe.whitelist(allow_guest=True)
 def callback(code=None, state=None, error=None, *args, **kwargs):
