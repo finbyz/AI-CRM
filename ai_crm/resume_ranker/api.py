@@ -60,9 +60,7 @@ def process_applicant_background(applicant_name, job_title, resume_path):
 def process_new_applicant(doc, method=None):
     if not doc.resume_attachment or not doc.job_title:
         return
-
-    frappe.db.commit()
-
+    
     frappe.enqueue(
         'ai_crm.resume_ranker.api.process_applicant_background',
         queue='default',
@@ -92,3 +90,10 @@ def get_file_path(file_path):
 
     frappe.logger().error(f" Resume not found")
     return None
+
+@frappe.whitelist(methods=["POST"])
+def analyze_candidate(applicant_name, job_title, resume_path):
+    process_applicant_background(applicant_name, job_title, resume_path)
+    return {
+        "success": True
+    }
