@@ -76,6 +76,9 @@ doc_events = {
     },
     "Customer": {
         "after_insert": "ai_crm.ai_crm.doctype.communication_log.communication_log.generate_followups_on_party_activity"
+    },
+    "Job Applicant": {
+        "after_insert": "ai_crm.resume_ranker.api.process_new_applicant",
     }
 }
 
@@ -103,11 +106,8 @@ scheduler_events = {
 
 # Fixtures to export
 fixtures = [
-    "LLM",
     "Lead Followup Setting",
     "Content Hub Setting",
-    "AI Tool",
-    "AI Agent",
     {
         "doctype": "Role",
         "filters": {"name": ["in", ["AI Automation","Social Media Manager"]]}
