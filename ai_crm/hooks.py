@@ -30,6 +30,9 @@ required_apps = ["finbyz/finbyzai"]
 # before_app_uninstall = "ai_crm.utils.before_app_uninstall"
 # after_app_uninstall = "ai_crm.utils.after_app_uninstall"
 
+doctype_js = {
+    "Job Opening" : "public/doctype_js/job_opening.js",
+}
 # Desk Notifications
 # ------------------
 # See frappe.core.notifications.get_notification_config
@@ -106,20 +109,10 @@ scheduler_events = {
 
 # Fixtures to export
 fixtures = [
-    "Lead Followup Setting",
-    "Content Hub Setting",
-    {
-        "doctype": "Role",
-        "filters": {"name": ["in", ["AI Automation","Social Media Manager"]]}
-    },
-    {
-        "doctype": "Custom DocPerm", 
-        "filters": {"role": ["in", ["AI Automation"]]}
-    },
     {
         "doctype": "Custom Field",
         "filters": [
-            ["module", "=", "Ai CRM"]
+            ["module", "in", ["Ai CRM", 'Resume Ranker']]
         ]
     }
 ]
