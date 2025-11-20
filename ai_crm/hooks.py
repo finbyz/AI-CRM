@@ -111,9 +111,17 @@ scheduler_events = {
 # Fixtures to export
 fixtures = [
     {
+        "doctype": "Role",
+        "filters": {"name": ["in", ["AI Automation","Social Media Manager"]]}
+    },
+    {
+        "doctype": "Custom DocPerm", 
+        "filters": {"role": ["in", ["AI Automation"]]}
+    },
+    {
         "doctype": "Custom Field",
         "filters": [
-            ["module", "in", ["Ai CRM", 'Resume Ranker']]
+            ["module", "in", ["Ai CRM","Resume Ranker"]]
         ]
     }
 ]
