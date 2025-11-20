@@ -25,9 +25,9 @@ frappe.ui.form.on("Job Opening", {
                                 if (r.message && r.message.success) {
                                     // Success
                                     frappe.show_alert({
-                                        message: __('✅ ' + r.message.message + ' - Extracted: ' + (r.message.skills || []).join(', ')),
+                                        message: __('✅ {0}', [r.message.message]),
                                         indicator: 'green'
-                                    }, 10);
+                                    }, 7);
                                     frm.reload_doc();
                                 } else {
                                     // Failure
