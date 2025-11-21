@@ -306,7 +306,7 @@ class YouTubeTracker(Document):
                 video.transcript = current_transcript + transcript_result["transcript"]
                 success_count += 1
             
-            time.sleep(3)
+            time.sleep(60)
         
         self.save(ignore_permissions=True)
         frappe.db.commit()
