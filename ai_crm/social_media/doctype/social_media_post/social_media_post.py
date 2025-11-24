@@ -116,23 +116,26 @@ class SocialMediaPost(Document):
                 frappe.throw("No credential selected in this document or linked Content Hub")
             credential_doc = frappe.get_doc(self.credential_type, self.credential)
 
-        # Step 2: Decide which AI agent to use
+        # Step 2: Decide which AI agent to use (Unified Agent)
         if credential_doc.use_default_ai_agents == 1:
-            revise_agent = content_hub_setting.revise_agent
+            revise_agent = content_hub_setting.post_agent   # same unified agent
         else:
-            if getattr(credential_doc, "revise_generator_agent", None):
-                ai_agent_doc = frappe.get_doc("AI Agent", credential_doc.revise_generator_agent)
+            if getattr(credential_doc, "post_generator_agent", None):
+                ai_agent_doc = frappe.get_doc("AI Agent", credential_doc.post_generator_agent)
                 revise_agent = ai_agent_doc.agent_service
             else:
-                revise_agent = content_hub_setting.revise_agent
+                revise_agent = content_hub_setting.post_agent
 
-        # Step 3: Prepare input for AI
+        # Step 3: Prepare unified AI input
         ai_input_data = {
+            "action": "revise",
             "title": self.title,
             "social_media": self.platform,
-            "prevois_post": self.content,
-            "query": instruction,
-            "content_hub_name": self.content_hub or self.name,
+            "previous_post": self.content,
+            "instruction": instruction,
+            "target_audience": "None",
+            "idea_title": "None",
+            "idea_description": "None",
         }
 
         # Step 4: Call AI agent
