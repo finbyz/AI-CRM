@@ -48,14 +48,14 @@ class ContentHub(Document):
 
     @frappe.whitelist()
     def generate_post_from_idea(self, idea_title: str, idea_description: str):
-        # Get the credential record
+
         if not self.credential:
             frappe.throw("No credential selected in Content Hub")
             
         credential_doc = frappe.get_doc(self.credential_type, self.credential)
         content_hub_setting = frappe.get_single("Content Hub Setting")
 
-        # Determine which AI agent to use with fallback
+        # Choose unified agent
         if credential_doc.use_default_ai_agents == 1:
             post_agent = content_hub_setting.post_agent
         else:
@@ -64,26 +64,30 @@ class ContentHub(Document):
                 ai_agent_doc = frappe.get_doc("AI Agent", post_agent_name)
                 post_agent = ai_agent_doc.agent_service
             else:
-                # Fallback to content hub setting agent if credential agent is empty
                 post_agent = content_hub_setting.post_agent
 
-        # Prepare AI input data
+        # Prepare AI input data (Unified format)
         ai_input_data = {
+            "action": "generate",
             "title": self.title,
             "target_audience": self.target_audience,
             "social_media": self.platform,
             "idea_title": idea_title,
             "idea_description": idea_description,
-            "content_hub_name": self.name,
+            "previous_post": "None",
+            "instruction": "None",
         }
-
-        # Invoke AI agent
+        
+        # Invoke unified agent
         result = post_agent.invoke(**ai_input_data)
-        post_content = getattr(result, "content", None)
+
+        # ❗ FIXED HERE — correct field name
+        post_content = result.content
+
         if not post_content:
             frappe.throw("AI agent did not return post content")
 
-        # Create new Social Media Post
+        # Save to Social Media Post
         new_post = frappe.new_doc("Social Media Post")
         new_post.title = self.title
         new_post.status = "Draft"
