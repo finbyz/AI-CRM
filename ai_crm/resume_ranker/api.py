@@ -41,6 +41,7 @@ def extract_skills_from_job_opening(job_opening_name):
 
 
 def process_applicant_background(applicant_name, job_title, resume_path):
+    frappe.flags.ignore_permissions = True
     job_opening = frappe.get_doc("Job Opening", job_title)
     skills = [required_skill.skill for required_skill in job_opening.required_skills]
     agent = frappe.get_doc("AI Agent", "AI Resume Ranker")
@@ -60,6 +61,7 @@ def process_applicant_background(applicant_name, job_title, resume_path):
     result = ai_service.invoke(**ai_input)
 
     if not result:
+        frappe.flags.ignore_permissions = False
         frappe.throw("AI Agent returned empty response")
     
     skill_scores = result.skill_scores
@@ -82,23 +84,17 @@ def process_applicant_background(applicant_name, job_title, resume_path):
         applicant.score = total_score / valid_scores  
     else:  
         applicant.score = 0 
-        
+    frappe.flags.ignore_permissions = False
     applicant.save()
 
-def process_new_applicant(doc, method=None):
-    if not doc.resume_attachment or not doc.job_title:
-        return
-    
+
+def before_insert(doc, method=None):
     frappe.enqueue(
         'ai_crm.resume_ranker.api.process_applicant_background',
-        queue='default',
-        timeout=300,
         applicant_name=doc.name,
         job_title=doc.job_title,
         resume_path=doc.resume_attachment,
-        enqueue_after_commit=True
-    )
-
+    ) 
 def get_file_path(file_path):
     """Find resume file in different locations"""
     filename = os.path.basename(file_path)
