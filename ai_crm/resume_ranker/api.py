@@ -40,6 +40,38 @@ def extract_skills_from_job_opening(job_opening_name):
         }
 
 
+def exponential_weighted_score(
+    skill_scores,
+    required_skills_order,
+    decay: float = 0.95
+):
+    skill_priority = {
+        skill_name: index for index, skill_name in enumerate(required_skills_order)
+    }
+
+    total_weighted_score = 0.0
+    total_weight = 0.0
+
+    for skill_data in skill_scores:
+        skill_name = getattr(skill_data, "skill_name", None)
+        score = getattr(skill_data, "score", None)
+
+        if skill_name is None or score is None:
+            continue
+        position = skill_priority.get(skill_name, len(required_skills_order))
+
+        weight = decay ** position
+
+        total_weighted_score += score * weight
+        total_weight += weight
+
+    # Avoid division by zero
+    if total_weight == 0:
+        return 0.0
+
+    return total_weighted_score / total_weight
+
+    
 def process_applicant_background(applicant_name, job_title, resume_path):
     frappe.flags.ignore_permissions = True
     job_opening = frappe.get_doc("Job Opening", job_title)
@@ -80,21 +112,23 @@ def process_applicant_background(applicant_name, job_title, resume_path):
         total_score += score_value  
         valid_scores += 1  
     
-    if valid_scores > 0:  
-        applicant.score = total_score / valid_scores  
-    else:  
-        applicant.score = 0 
+    applicant.score = exponential_weighted_score(
+        skill_scores,
+        skills
+    )
     frappe.flags.ignore_permissions = False
     applicant.save()
 
 
-def before_insert(doc, method=None):
+def after_insert(doc, method=None):
     frappe.enqueue(
         'ai_crm.resume_ranker.api.process_applicant_background',
         applicant_name=doc.name,
         job_title=doc.job_title,
         resume_path=doc.resume_attachment,
-    ) 
+    )
+    
+    
 def get_file_path(file_path):
     """Find resume file in different locations"""
     filename = os.path.basename(file_path)

@@ -82,7 +82,7 @@ doc_events = {
         "after_insert": "ai_crm.ai_crm.doctype.communication_log.communication_log.generate_followups_on_party_activity"
     },
     "Job Applicant": {
-        "validate": "ai_crm.resume_ranker.api.before_insert",
+        "after_insert": "ai_crm.resume_ranker.api.after_insert",
     },
 }
 
