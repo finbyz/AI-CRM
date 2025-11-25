@@ -72,7 +72,7 @@ def exponential_weighted_score(
     return total_weighted_score / total_weight
 
     
-def process_applicant_background(applicant_name, job_title, resume_path):
+def process_applicant_background(applicant_name, job_title):
     frappe.flags.ignore_permissions = True
     job_opening = frappe.get_doc("Job Opening", job_title)
     skills = [required_skill.skill for required_skill in job_opening.required_skills]
@@ -125,7 +125,6 @@ def after_insert(doc, method=None):
         'ai_crm.resume_ranker.api.process_applicant_background',
         applicant_name=doc.name,
         job_title=doc.job_title,
-        resume_path=doc.resume_attachment,
     )
     
     
@@ -149,8 +148,8 @@ def get_file_path(file_path):
     return None
 
 @frappe.whitelist(methods=["POST"])
-def analyze_candidate(applicant_name, job_title, resume_path):
-    process_applicant_background(applicant_name, job_title, resume_path)
+def analyze_candidate(applicant_name, job_title):
+    process_applicant_background(applicant_name, job_title)
     return {
         "success": True
     }

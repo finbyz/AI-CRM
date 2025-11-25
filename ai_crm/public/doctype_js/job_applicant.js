@@ -10,8 +10,7 @@ frappe.ui.form.on("Job Applicant", {
                         method: 'ai_crm.resume_ranker.api.analyze_candidate',
                         args: {
                             applicant_name: frm.doc.name,
-                            job_title: frm.doc.job_title,
-                            resume_path: frm.doc.resume_attachment
+                            job_title: frm.doc.job_title
                         },
                         freeze: true,
                         freeze_message: __('🔍 Extracting skills with AI...'),
