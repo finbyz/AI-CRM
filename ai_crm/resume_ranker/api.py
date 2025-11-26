@@ -125,6 +125,7 @@ def after_insert(doc, method=None):
         'ai_crm.resume_ranker.api.process_applicant_background',
         applicant_name=doc.name,
         job_title=doc.job_title,
+        enqueue_after_commit=True
     )
     
     
