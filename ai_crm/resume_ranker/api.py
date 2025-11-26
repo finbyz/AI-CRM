@@ -78,7 +78,7 @@ def process_applicant_background(applicant_name, job_title):
     skills = [required_skill.skill for required_skill in job_opening.required_skills]
     agent = frappe.get_doc("AI Agent", "AI Resume Ranker")
     ai_service = agent.agent_service
-    applicant = frappe.get_doc("Job Applicant", applicant_name)
+    applicant = frappe.get_doc("Job Applicant", applicant_name, ignore_permissions = True)
 
     extraction_result = extract_text_from_source(applicant.resume_attachment, 'file')
     if not extraction_result.get("success"):
