@@ -116,8 +116,8 @@ def process_applicant_background(applicant_name, job_title):
         skill_scores,
         skills
     )
+    applicant.save(ignore_permissions=True)
     frappe.flags.ignore_permissions = False
-    applicant.save()
 
 
 def after_insert(doc, method=None):
