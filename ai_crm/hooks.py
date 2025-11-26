@@ -91,7 +91,6 @@ scheduler_events = {
 	# ],
       
 	"daily": [
-		"ai_crm.tasks.daily.youtube_videos_fetcher.bg_fetch_yt_videos",
         "ai_crm.tasks.hourly.reddit_post_generator.reset_daily_counters"
     ],
      "hourly": [
