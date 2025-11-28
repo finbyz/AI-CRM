@@ -40,7 +40,7 @@ def run_youtube_workflow(tracker_name = None):
                 "message": "No new videos based on frequency"
             }
         if tracker_name is None:
-            tracker = frappe.get_doc("YouTube Videos")
+            tracker = frappe.new_doc("YouTube Videos")
             tracker.save(ignore_permissions=True)
             tracker_name = tracker.name
         # Step 2: Save videos to tracker
