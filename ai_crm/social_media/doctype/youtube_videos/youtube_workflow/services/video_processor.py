@@ -109,7 +109,7 @@ def enqueue_video_processing(tracker_name):
     
     for video in unprocessed_videos:
         frappe.enqueue(
-            method='ai_crm.ai_crm.doctype.youtube_videos.youtube_workflow.services.video_processor.process_video_workflow',
+            method='ai_crm.social_media.doctype.youtube_videos.youtube_workflow.services.video_processor.process_video_workflow',
             queue='long',
             timeout=1800,
             is_async=True,

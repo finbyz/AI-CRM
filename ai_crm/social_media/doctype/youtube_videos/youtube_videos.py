@@ -3,7 +3,7 @@
 
 import frappe
 from frappe.model.document import Document
-from ai_crm.ai_crm.doctype.youtube_videos.youtube_workflow.services.background_jobs import enqueue_youtube_workflow
+from ai_crm.social_media.doctype.youtube_videos.youtube_workflow.services.background_jobs import enqueue_youtube_workflow
 
 
 class YouTubeVideos(Document):

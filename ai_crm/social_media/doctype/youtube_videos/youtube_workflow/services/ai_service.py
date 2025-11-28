@@ -96,18 +96,18 @@ def generate_social_post(agent_service, video_title, video_transcript):
         result = agent_service.invoke(**input_data)
         
         # Handle different result formats
-        if hasattr(result, 'linkedin_post'):
+        if hasattr(result, 'content'):
             # Object with attributes
             return {
                 'success': True,
-                'linkedin_post': str(result.linkedin_post)
+                'content': str(result.content)
             }
         
         elif isinstance(result, dict):
             # Dictionary result
             return {
                 'success': True,
-                'linkedin_post': str(result.get('linkedin_post', ''))
+                'content': str(result.get('content', ''))
             }
         
         else:
@@ -115,7 +115,7 @@ def generate_social_post(agent_service, video_title, video_transcript):
             parsed = json.loads(str(result))
             return {
                 'success': True,
-                'linkedin_post': str(parsed.get('linkedin_post', ''))
+                'content': str(parsed.get('content', ''))
             }
             
     except Exception as e:
@@ -125,7 +125,7 @@ def generate_social_post(agent_service, video_title, video_transcript):
         )
         return {
             'success': False,
-            'linkedin_post': ''
+            'content': ''
         }
 
 

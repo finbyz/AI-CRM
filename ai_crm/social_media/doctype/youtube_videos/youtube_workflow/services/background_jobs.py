@@ -86,12 +86,10 @@ def enqueue_youtube_workflow(tracker_name):
         tracker_name: Name of the YouTube Videos document
     """
     frappe.enqueue(
-        method='ai_crm.ai_crm.doctype.youtube_videos.youtube_workflow.services.background_jobs.run_youtube_workflow',
+        method='ai_crm.social_media.doctype.youtube_videos.youtube_workflow.services.background_jobs.run_youtube_workflow',
         queue='long',
         timeout=3600,
         is_async=True,
         tracker_name=tracker_name,
         enqueue_after_commit=True
     )
-# ai_crm.ai_crm.doctype.youtube_videos.youtube_workflow.services.background_jobs.run_youtube_workflow
-# ai_crm.ai_crm.doctype.youtube_tracker.youtube_workflow.services.background_jobs.run_youtube_workflow
