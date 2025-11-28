@@ -12,14 +12,15 @@
   {
    "fieldname": "videos",
    "fieldtype": "Table",
-   "label": "Details",
-   "options": "YouTube Video"
+   "label": "Videos",
+   "options": "YouTube Video",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-11-28 10:26:30.329475",
+ "modified": "2025-11-28 14:26:37.474853",
  "modified_by": "Administrator",
  "module": "Social Media",
  "name": "YouTube Videos",
