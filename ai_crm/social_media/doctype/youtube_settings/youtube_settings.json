@@ -1,0 +1,90 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-10-01 13:21:14.545925",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "transcript_io_api_token",
+  "api_key",
+  "column_break_xrey",
+  "post_generation_ai_agent",
+  "analysis_ai_agent",
+  "section_break_nnwe",
+  "channels"
+ ],
+ "fields": [
+  {
+   "fieldname": "api_key",
+   "fieldtype": "Password",
+   "label": "YouTube API Key"
+  },
+  {
+   "fieldname": "column_break_xrey",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_nnwe",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "transcript_io_api_token",
+   "fieldtype": "Password",
+   "label": "Transcript.io API token"
+  },
+  {
+   "description": "Enter the channel name in the correct format.\nExample: @Finbyz",
+   "fieldname": "channels",
+   "fieldtype": "Table",
+   "label": "Channels",
+   "options": "YouTube Channel"
+  },
+  {
+   "fieldname": "analysis_ai_agent",
+   "fieldtype": "Link",
+   "label": "Analysis Ai Agent",
+   "options": "AI Agent"
+  },
+  {
+   "fieldname": "post_generation_ai_agent",
+   "fieldtype": "Link",
+   "label": "Post Generation Agent",
+   "options": "AI Agent"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2025-11-12 13:04:47.646889",
+ "modified_by": "Administrator",
+ "module": "Social Media",
+ "name": "YouTube Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Social Media Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
