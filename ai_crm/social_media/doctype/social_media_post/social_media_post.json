@@ -9,9 +9,9 @@
   "title",
   "platform",
   "credential_type",
+  "credential",
   "status",
   "content_hub",
-  "credential",
   "image_attachment",
   "created_on",
   "post_on",
@@ -34,7 +34,8 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "Draft\nScheduled\nPosted\nFailed"
+   "options": "Draft\nScheduled\nPosted\nFailed",
+   "read_only": 1
   },
   {
    "fieldname": "preview_tab",
@@ -129,7 +130,7 @@
  "image_field": "image_attachment",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-27 23:16:04.086547",
+ "modified": "2025-11-27 17:21:52.931785",
  "modified_by": "Administrator",
  "module": "Social Media",
  "name": "Social Media Post",
