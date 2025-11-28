@@ -4,6 +4,7 @@
 frappe.ui.form.on('YouTube Videos', {
     refresh(frm) {
         // --- Button 1: Fetch channel videos ---
+        if(frm.is_new()) return;
         frm.add_custom_button('Fetch', function () {
             frm.call('fetch_videos_workflow').then(r => {
                 if (r.message) {
