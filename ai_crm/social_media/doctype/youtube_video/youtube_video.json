@@ -15,7 +15,8 @@
   "transcript",
   "is_related",
   "analysis_reasoning",
-  "social_media_post"
+  "social_media_post",
+  "last_analyzed_on"
  ],
  "fields": [
   {
@@ -75,13 +76,18 @@
    "fieldtype": "Link",
    "label": "Social Media Post",
    "options": "Social Media Post"
+  },
+  {
+   "fieldname": "last_analyzed_on",
+   "fieldtype": "Datetime",
+   "label": "Last Analyzed On"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-10-08 12:36:28.251840",
+ "modified": "2025-11-29 10:55:13.300064",
  "modified_by": "Administrator",
  "module": "Social Media",
  "name": "YouTube Video",
