@@ -29,5 +29,5 @@ def extract_main_content_from_url_tool(url: str) -> str:
         text = main_tag.get_text(separator="\n", strip=True)
         return text
     else:
-        return "No <main> tag found on this page."
-
+        body = soup.find("body")
+        return body.get_text(separator="\n", strip=True)
