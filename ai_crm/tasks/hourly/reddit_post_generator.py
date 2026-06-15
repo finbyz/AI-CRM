@@ -223,7 +223,7 @@ def process_pending_ai_comments():
         )
         
     except Exception as e:
-        frappe.log_error(f"Error in process_pending_ai_comments: {str(e)}")
+        pass
 
 def cleanup_old_posts():
     

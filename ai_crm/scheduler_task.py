@@ -187,10 +187,6 @@ def auto_comment_on_posts():
         frappe.logger().info(f"Completed auto_comment_on_posts - commented on {total_commented} posts")
         
     except Exception as e:
-        frappe.log_error(
-            message=str(e),
-            title="Error in auto_comment_on_posts scheduler task"
-        )
         frappe.logger().error(f"Critical error in auto_comment_on_posts: {str(e)}")
 
 def reset_daily_counters():

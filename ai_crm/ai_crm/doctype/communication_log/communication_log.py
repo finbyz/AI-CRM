@@ -354,12 +354,12 @@ class AIFollowupGenerator:
                 else:
                     company_text = str(company_data)
                 
-                if hasattr(self.party_doc, 'company_research'):
-                    self.party_doc.company_research = company_text
+                if hasattr(self.party_doc, 'company_details'):
+                    self.party_doc.company_details = company_text
                     doc_updated = True
-                    frappe.logger().info("Company research saved as text to company_research field")
+                    frappe.logger().info("Company research saved as text to company_details field")
                 else:
-                    frappe.logger().warning("company_research field not found")
+                    frappe.logger().warning("company_details field not found")
             
             if research_data.get("person"):
                 person_data = research_data["person"]

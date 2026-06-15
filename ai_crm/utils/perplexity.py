@@ -35,7 +35,7 @@ def research_company(party_type: str,party_name: str,**kwargs) -> str:
     result = company_research_service.invoke(**lead_info)
 
     if party_type == "Lead":
-        doc.company_research = result
+        doc.customer_details = result
     elif party_type == "Customer":
         doc.customer_details = result
     doc.save()
