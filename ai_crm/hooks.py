@@ -3,7 +3,7 @@ app_title = "Ai CRM"
 app_publisher = "Finbyz Tech Pvt Ltd"
 app_description = "this is ai powered crm system"
 app_email = "info@finbyz.tech"
-app_license = "MIT"
+app_license = "gpl-3.0"
 
 # Installation / Uninstallation
 before_uninstall = "ai_crm.install.before_uninstall"
