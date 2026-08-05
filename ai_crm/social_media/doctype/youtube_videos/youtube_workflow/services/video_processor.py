@@ -76,9 +76,6 @@ def process_video_workflow(tracker_name, video_id):
                     ch_doc.youtube_views = video.views or 0
                     ch_doc.youtube_video_link = video.video_link
                     ch_doc.youtube_transcript = video.transcript
-                    ch_doc.platform = settings.default_platform
-                    ch_doc.credential_type = settings.default_credential_type
-                    ch_doc.credential = settings.default_credential
                     ch_doc.insert(ignore_permissions=True)
                     video.content_hub = ch_doc.name
 
@@ -161,7 +158,6 @@ def _analyze_video_step(video, settings):
             agent_service=analysis_agent,
             video_title=video.title,
             video_transcript=video.transcript,
-            relevance_topics=settings.relevance_topics,
             relevance_prompt=settings.relevance_prompt,
         )
     except Exception as e:

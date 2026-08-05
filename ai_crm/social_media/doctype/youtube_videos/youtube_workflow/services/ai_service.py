@@ -14,7 +14,6 @@ def analyze_video(
     agent_service,
     video_title,
     video_transcript,
-    relevance_topics="",
     relevance_prompt="",
 ):
     """
@@ -36,7 +35,6 @@ def analyze_video(
         input_data = {
             "title": video_title or "",
             "transcript": video_transcript or "",
-            "relevance_topics": relevance_topics or "",
             "relevance_prompt": relevance_prompt or "",
         }
         
@@ -149,23 +147,6 @@ def get_analysis_agent():
     
     if not agent_name:
         frappe.throw("Analysis AI Agent not configured in YouTube Settings")
-    
-    agent_doc = frappe.get_doc("AI Agent", agent_name)
-    return agent_doc.agent_service
-
-
-def get_post_generation_agent():
-    """
-    Get the post generation AI agent from settings.
-    
-    Returns:
-        AI Agent Service instance
-    """
-    settings = frappe.get_single("YouTube Settings")
-    agent_name = settings.post_generation_ai_agent
-    
-    if not agent_name:
-        frappe.throw("Post Generation AI Agent not configured in YouTube Settings")
     
     agent_doc = frappe.get_doc("AI Agent", agent_name)
     return agent_doc.agent_service

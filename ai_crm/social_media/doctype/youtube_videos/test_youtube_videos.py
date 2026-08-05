@@ -25,12 +25,10 @@ class TestYouTubeVideos(FrappeTestCase):
             agent,
             "Frappe tutorial",
             "Video transcript",
-            relevance_topics="Frappe\nERPNext",
             relevance_prompt="Only include implementation tutorials",
         )
 
         self.assertEqual(result["is_related"], 1)
-        self.assertEqual(agent.input_data["relevance_topics"], "Frappe\nERPNext")
         self.assertEqual(
             agent.input_data["relevance_prompt"],
             "Only include implementation tutorials",

@@ -8,7 +8,6 @@ Handles fetching transcripts from YouTube videos
 
 import frappe
 import requests
-import time
 
 
 def fetch_transcript_single_attempt(video_id, api_token=None):
@@ -27,6 +26,8 @@ def fetch_transcript_single_attempt(video_id, api_token=None):
             'source': str
         }
     """
+    errors = []
+
     # 1. Primary: Try Transcript.io API if token is provided
     if api_token:
         try:
@@ -46,8 +47,12 @@ def fetch_transcript_single_attempt(video_id, api_token=None):
                     result["source"] = "transcript.io"
                     return result
             elif response.status_code == 429:
+                errors.append("Transcript.io rate limit reached")
                 frappe.log_error(f"Transcript.io rate limited for video {video_id}", "YouTube Transcript Rate Limit")
+            else:
+                errors.append(f"Transcript.io returned HTTP {response.status_code}")
         except Exception as e:
+            errors.append(f"Transcript.io: {e}")
             frappe.log_error(
                 f"Transcript.io API error ({video_id}): {str(e)}",
                 "YouTube Transcript API Error"
@@ -87,18 +92,16 @@ def fetch_transcript_single_attempt(video_id, api_token=None):
                     chosen_t = next(iter(t_list))
 
                 fetched = chosen_t.fetch()
-        except Exception:
-            pass
+        except Exception as e:
+            errors.append(f"YouTube track list: {e}")
 
-        # 2. Fallback to direct fetch() or get_transcript()
+        # 2. Fallback to direct fetch()
         if not fetched:
             try:
                 fetched = yt.fetch(video_id)
-            except Exception:
-                try:
-                    fetched = YouTubeTranscriptApi.get_transcript(video_id)
-                except Exception:
-                    fetched = None
+            except Exception as e:
+                errors.append(f"YouTube transcript fetch: {e}")
+                fetched = None
 
         if fetched:
             chunks = []
@@ -119,6 +122,7 @@ def fetch_transcript_single_attempt(video_id, api_token=None):
                     "source": "youtube_transcript_api"
                 }
     except Exception as e:
+        errors.append(f"YouTube transcript fallback: {e}")
         frappe.log_error(
             f"youtube_transcript_api fallback failed for {video_id}: {str(e)}",
             "YouTube Transcript Fallback Error"
@@ -128,7 +132,7 @@ def fetch_transcript_single_attempt(video_id, api_token=None):
         "success": False,
         "transcript": "",
         "status_code": 404,
-        "error": "No transcript available from transcript.io or youtube_transcript_api"
+        "error": "; ".join(errors) or "No captions are available for this video"
     }
 
 

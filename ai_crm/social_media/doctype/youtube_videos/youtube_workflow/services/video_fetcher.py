@@ -31,8 +31,9 @@ def fetch_videos_from_channels(channel_id=None, force=False, max_results=None):
         return []
     
     all_videos = []
+    settings_changed = False
     now = now_datetime()
-    
+
     for channel in channels:
         if channel_id and channel.channel_id != channel_id:
             continue
@@ -45,7 +46,8 @@ def fetch_videos_from_channels(channel_id=None, force=False, max_results=None):
             all_videos.extend(channel_videos)
             
             channel.last_fetched_on = now
-            
+            settings_changed = True
+
         except Exception as e:
             frappe.log_error(
                 f"Fetch error ({getattr(channel, 'channel_name', 'unknown')}): {str(e)}",
@@ -53,8 +55,9 @@ def fetch_videos_from_channels(channel_id=None, force=False, max_results=None):
             )
             continue
     
-    settings.save(ignore_permissions=True)
-    
+    if settings_changed:
+        settings.save(ignore_permissions=True)
+
     return all_videos
 
 
@@ -88,31 +91,22 @@ def _fetch_channel_videos(channel, api_key, now, max_results=None):
             "publishedAfter": published_after,
             "order": "viewCount" if is_weekly else "date",
             "type": "video",
-            "maxResults": 50
+            "maxResults": max(1, min(int(max_results), 50)) if max_results else 50,
         }
         
         if next_page_token:
             params["pageToken"] = next_page_token
         
-        try:
-            res = requests.get(
-                "https://www.googleapis.com/youtube/v3/search",
-                params=params,
-                timeout=30
-            ).json()
-        except Exception as e:
-            frappe.log_error(
-                f"YouTube API request failed for {channel.channel_name}: {str(e)}",
-                "YouTube API Error"
-            )
-            break
-        
+        response = requests.get(
+            "https://www.googleapis.com/youtube/v3/search",
+            params=params,
+            timeout=30,
+        )
+        response.raise_for_status()
+        res = response.json()
         if "error" in res:
-            frappe.log_error(
-                f"YouTube API Error ({channel.channel_name}): {res['error'].get('message', 'Unknown')}",
-                "YouTube Fetch Error"
-            )
-            break
+            message = res["error"].get("message", "Unknown YouTube API error")
+            raise RuntimeError(message)
         
         page_videos = _process_api_response(res, api_key, channel)
         all_videos.extend(page_videos)
@@ -121,7 +115,6 @@ def _fetch_channel_videos(channel, api_key, now, max_results=None):
             all_videos = all_videos[:int(max_results)]
             break
 
-        
         next_page_token = res.get("nextPageToken")
         if is_weekly or not next_page_token:
             break
@@ -196,10 +189,16 @@ def save_videos_to_tracker(tracker_name, videos_list):
         int: Number of videos added
     """
     tracker = frappe.get_doc("YouTube Videos", tracker_name)
+    incoming_ids = {row["video_id"] for row in videos_list}
+    existing_ids = set(frappe.get_all(
+        "YouTube Video",
+        filters={"video_id": ["in", list(incoming_ids)]},
+        pluck="video_id",
+    )) if incoming_ids else set()
     count = 0
-    
+
     for video_data in videos_list:
-        if any(v.video_id == video_data["video_id"] for v in tracker.videos):
+        if video_data["video_id"] in existing_ids:
             continue
         
         tracker.append("videos", {
@@ -217,6 +216,7 @@ def save_videos_to_tracker(tracker_name, videos_list):
             "last_analyzed_on": None
         })
         
+        existing_ids.add(video_data["video_id"])
         count += 1
     
     if count > 0:
