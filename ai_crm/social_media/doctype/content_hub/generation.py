@@ -1,13 +1,7 @@
 import frappe
 from frappe import _
-from frappe.utils import nowdate
 
-
-PLATFORM_BY_CREDENTIAL = {
-    "Twitter Integration": "X (Twitter)",
-    "LinkedIn Integration": "LinkedIn",
-    "Reddit Integration": "Reddit",
-}
+from ai_crm.social_media.platforms import PLATFORM_BY_CREDENTIAL, get_platform
 
 
 def queue_posts_for_idea(content_hub, idea_name, targets):
@@ -19,11 +13,10 @@ def queue_posts_for_idea(content_hub, idea_name, targets):
     if not idea:
         frappe.throw(_("The selected idea does not belong to this Content Hub"))
 
-    settings = frappe.get_single("Content Hub Setting")
     post_names = []
     seen_targets = set()
     for target in targets:
-        credential_type, credential, platform = _validate_target(target)
+        credential_type, credential, subreddit = _validate_target(target)
         target_key = (credential_type, credential)
         if target_key in seen_targets:
             continue
@@ -33,37 +26,14 @@ def queue_posts_for_idea(content_hub, idea_name, targets):
         post.title = idea.idea_title or content_hub.title
         post.status = "Draft"
         post.generation_status = "Queued"
-        post.platform = platform
         post.credential_type = credential_type
         post.credential = credential
+        post.subreddit = subreddit
         post.content_hub = content_hub.name
         post.reference_content_idea = idea.idea_title
         post.source_idea_row = idea.name
-        post.source_type = content_hub.source_type or "Manual Topic"
-        post.source_title = content_hub.title
-        post.source_channel = content_hub.channel_name
-        yt_doc = None
-        if content_hub.source_type == "YouTube Video":
-            yt_video_name = frappe.db.get_value("YouTube Video", {"content_hub": content_hub.name}, "name")
-            if yt_video_name:
-                yt_doc = frappe.get_doc("YouTube Video", yt_video_name)
-                
-        post.source_video_link = yt_doc.video_link if yt_doc else ""
-        post.source_views = yt_doc.views if yt_doc else 0
-        post.source_transcript = yt_doc.transcript if yt_doc else ""
-        post.target_audience = content_hub.target_audience
-        post.source_idea_description = idea.description
-        post.brand_voice_snapshot = settings.brand_voice
-        post.created_on = nowdate()
         post.insert()
         post_names.append(post.name)
-
-        # Update Content Hub with the generated post link
-        frappe.db.set_value("Content Hub", content_hub.name, "social_media_post", post.name)
-        
-        # Update YouTube Video child table with the generated post link
-        if yt_doc:
-            frappe.db.set_value("YouTube Video", yt_doc.name, "social_media_post", post.name)
 
         frappe.enqueue(
             generate_post_content,
@@ -116,9 +86,18 @@ def _validate_target(target):
     credential = target.get("credential")
     if credential_type not in PLATFORM_BY_CREDENTIAL or not isinstance(credential, str):
         frappe.throw(_("Invalid social media account"))
-    if not frappe.db.exists(credential_type, credential):
+    account = frappe.db.get_value(
+        credential_type,
+        credential,
+        ["name", "connection_status"],
+        as_dict=True,
+    )
+    if not account:
         frappe.throw(_("Social media account {0} does not exist").format(credential))
-    return credential_type, credential, PLATFORM_BY_CREDENTIAL[credential_type]
+    subreddit = (target.get("subreddit") or "").strip()
+    if credential_type == "Reddit Integration" and not subreddit:
+        frappe.throw(_("Select a subreddit for Reddit posts"))
+    return credential_type, credential, subreddit
 
 
 def _get_post_agent(hub, post):
@@ -136,22 +115,35 @@ def _get_post_agent(hub, post):
 
 
 def _build_agent_input(hub, post, idea):
-    brand_voice = post.brand_voice_snapshot or ""
+    settings = frappe.get_single("Content Hub Setting")
+    source = _get_source_context(hub)
+    brand_voice = settings.brand_voice or ""
     return {
         "action": "generate",
-        "title": post.source_title or hub.title,
-        "target_audience": post.target_audience or "",
-        "social_media": post.platform,
-        "idea_title": post.reference_content_idea or idea.idea_title,
-        "idea_description": post.source_idea_description or "",
+        "title": hub.title,
+        "target_audience": hub.target_audience or "",
+        "social_media": get_platform(post.credential_type),
+        "idea_title": idea.idea_title,
+        "idea_description": idea.description or "",
         "previous_post": "None",
         "instruction": f"Brand Voice / Tone: {brand_voice}" if brand_voice else "None",
-        "source_type": post.source_type or "Manual Topic",
-        "channel_name": post.source_channel or "",
-        "youtube_views": post.source_views or 0,
-        "youtube_video_link": post.source_video_link or "",
-        "transcript": (post.source_transcript or "")[:12000],
+        "source_type": hub.source_type or "Manual Topic",
+        "channel_name": source.get("channel_name") or hub.channel_name or "",
+        "youtube_views": source.get("views") or 0,
+        "youtube_video_link": source.get("video_link") or hub.source_url or "",
+        "transcript": (source.get("transcript") or "")[:12000],
     }
+
+
+def _get_source_context(hub):
+    if hub.source_type != "YouTube Video":
+        return frappe._dict()
+    return frappe.db.get_value(
+        "YouTube Video",
+        {"content_hub": hub.name},
+        ["channel_name", "views", "video_link", "transcript"],
+        as_dict=True,
+    ) or frappe._dict()
 
 
 def _mark_generation_failed(post, reason):

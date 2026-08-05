@@ -121,7 +121,21 @@ fixtures = [
     {
         "doctype": "Custom Field",
         "filters": [
-            ["module", "in", ["Ai CRM","Resume Ranker"]]
+            ["module", "in", ["Ai CRM", "Resume Ranker"]]
         ]
+    },
+    {
+        "doctype": "AI Agent",
+        "filters": {
+            "name": ["in", [
+                "LinkedIn Content Agent",
+                "Social Media Post Generator",
+                "Social Media Post Reviser",
+                "Social Media Image Generation Agent",
+                "Chat Agent",
+                "YouTube Video Idea Generator Agent",
+                "YouTube Video Post Generator Agent",
+            ]]
+        }
     }
 ]

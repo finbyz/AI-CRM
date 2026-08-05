@@ -6,10 +6,10 @@
   "doctype": "Role",
   "home_page": null,
   "is_custom": 0,
-  "modified": "2025-09-18 14:32:53.839650",
-  "name": "Social Media Manager",
+  "modified": "2025-08-20 15:11:50.508352",
+  "name": "AI Automation",
   "restrict_to_domain": null,
-  "role_name": "Social Media Manager",
+  "role_name": "AI Automation",
   "two_factor_auth": 0
  },
  {
@@ -19,10 +19,10 @@
   "doctype": "Role",
   "home_page": null,
   "is_custom": 0,
-  "modified": "2025-08-20 15:11:50.508352",
-  "name": "AI Automation",
+  "modified": "2025-09-18 14:32:53.839650",
+  "name": "Social Media Manager",
   "restrict_to_domain": null,
-  "role_name": "AI Automation",
+  "role_name": "Social Media Manager",
   "two_factor_auth": 0
  }
 ]

@@ -1,136 +1,137 @@
 frappe.ui.form.on("Content Hub", {
-    refresh: function (frm) {
-        if (frm.doc.source_type === "YouTube Video" && frm.doc.youtube_video) {
-            frappe.db.get_doc("YouTube Video", frm.doc.youtube_video).then(yt => {
-                if (yt) {
-                    if (yt.channel_name && !frm.doc.channel_name) frm.set_value("channel_name", yt.channel_name);
-                    if (yt.video_id && !frm.doc.youtube_video_id) frm.set_value("youtube_video_id", yt.video_id);
-                    if (yt.views && !frm.doc.youtube_views) frm.set_value("youtube_views", yt.views);
-                }
-            });
-        }
+	refresh(frm) {
+		const button = frm.add_custom_button(__("Generate Ideas"), () => generate_ideas(frm));
+		button.toggleClass("btn-primary", frm.doc.generation_status !== "Generating");
+		button.prop("disabled", frm.doc.generation_status === "Generating");
 
-        frm.add_custom_button("Generate Ideas", function () {
-            console.log("🚀 Calling generate_linkedin_ideas for doc:", frm.doc.name);
-
-            frm.call({
-                doc: frm.doc,
-                method: "generate_linkedin_ideas",
-                freeze: true,
-                freeze_message: "Generating ideas...",
-                callback: function (r) {
-                    console.log("📩 Response from generate_linkedin_ideas:", r);
-
-                    if (r.message?.status === "success") {
-                        frappe.show_alert({
-                            message: `✅ Ideas generated for ${r.message.docname}`,
-                            indicator: "green"
-                        });
-                        frm.reload_doc();
-                    } else {
-                        frappe.show_alert({
-                            message: `❌ Error: ${r.message?.error || "Unknown error"}`,
-                            indicator: "red"
-                        });
-                    }
-                }
-            });
-        });
-    },
-
-    // Auto-update platform when credential_type changes
-    credential_type: function (frm) {
-        if (frm.doc.credential_type === "Twitter Integration") {
-            frm.set_value("platform", "X (Twitter)");
-        }
-        else if (frm.doc.credential_type === "LinkedIn Integration") {
-            frm.set_value("platform", "LinkedIn");
-        }
-        else if (frm.doc.credential_type === "Reddit Integration") {
-            frm.set_value("platform", "Reddit");
-        }
-    },
-
-    youtube_video: function (frm) {
-        if (frm.doc.youtube_video) {
-            frappe.db.get_doc("YouTube Video", frm.doc.youtube_video).then(yt => {
-                if (yt) {
-                    if (yt.channel_name) frm.set_value("channel_name", yt.channel_name);
-                    if (yt.video_id) frm.set_value("youtube_video_id", yt.video_id);
-                    if (yt.views) frm.set_value("youtube_views", yt.views);
-                }
-            });
-        }
-    }
+		if (!frm.is_new() && frm.doc.ideas_child_table?.length) {
+			frm.add_custom_button(__("Generate Posts"), () => open_post_dialog(frm));
+		}
+	},
 });
 
-frappe.ui.form.on("Content Hub Idea", {
-    form_render: function (frm, cdt, cdn) {
-        let row = locals[cdt][cdn];
-        let $wrapper = frm.fields_dict["ideas_child_table"]
-            .grid.grid_rows_by_docname[cdn]
-            .grid_form.fields_dict.description.$wrapper;
+async function generate_ideas(frm) {
+	if (frm.is_new() || frm.is_dirty()) {
+		await frm.save();
+	}
 
-        // Avoid duplicate button
-        if ($wrapper.find(".btn-generate-idea-" + cdn).length) return;
+	const response = await frm.call({
+		doc: frm.doc,
+		method: "generate_ideas",
+		freeze: true,
+		freeze_message: __("Generating ideas..."),
+	});
+	await frm.reload_doc();
 
-        let btn = $(`<button class="btn btn-xs btn-primary btn-generate-idea-${cdn}" style="margin-top:5px;">
-            <i class="fa fa-magic"></i> Research and Generate Content
-        </button>`);
+	if (response.message?.status === "success") {
+		frappe.show_alert({
+			message: __("Ideas generated successfully"),
+			indicator: "green",
+		});
+		return;
+	}
 
-        $wrapper.append(btn);
+	frappe.msgprint({
+		title: __("Idea Generation Failed"),
+		message: response.message?.error || __("Unable to generate ideas."),
+		indicator: "red",
+	});
+}
 
-        btn.on("click", function () {
-            if (btn.data("running")) return;
-            btn.data("running", true);
-            btn.prop("disabled", true);
+function open_post_dialog(frm) {
+	const dialog = new frappe.ui.Dialog({
+		title: __("Generate Posts"),
+		fields: get_post_dialog_fields(frm),
+		primary_action_label: __("Generate Posts"),
+		primary_action: async (values) => generate_posts(frm, dialog, values),
+	});
+	dialog.show();
+}
 
-            const $icon = btn.find("i.fa");
-            $icon.addClass("fa-spinner fa-pulse");
+function get_post_dialog_fields(frm) {
+	return [
+		{
+			fieldname: "idea_names",
+			fieldtype: "MultiCheck",
+			label: __("Content Ideas"),
+			options: frm.doc.ideas_child_table.map((idea) => ({
+				label: frappe.utils.escape_html(idea.idea_title),
+				value: idea.name,
+			})),
+			columns: 1,
+		},
+		{ fieldname: "accounts_section", fieldtype: "Section Break", label: __("Accounts") },
+		{
+			fieldname: "linkedin_account",
+			fieldtype: "Link",
+			label: __("LinkedIn Account"),
+			options: "LinkedIn Integration",
+		},
+		{
+			fieldname: "twitter_account",
+			fieldtype: "Link",
+			label: __("X (Twitter) Account"),
+			options: "Twitter Integration",
+		},
+		{
+			fieldname: "reddit_account",
+			fieldtype: "Link",
+			label: __("Reddit Account"),
+			options: "Reddit Integration",
+		},
+		{
+			fieldname: "subreddit",
+			fieldtype: "Data",
+			label: __("Subreddit"),
+			depends_on: "eval:doc.reddit_account",
+			mandatory_depends_on: "eval:doc.reddit_account",
+		},
+	];
+}
 
-            const freeze_message = row.idea_title
-                ? `Generating post from: ${row.idea_title}...`
-                : "Generating post content...";
-            frappe.dom.freeze(freeze_message);
+async function generate_posts(frm, dialog, values) {
+	if (!values.idea_names?.length) {
+		frappe.msgprint(__("Select at least one content idea."));
+		return;
+	}
 
-            const savePromise = frm.is_dirty() ? frm.save() : Promise.resolve();
+	const targets = get_selected_targets(values);
+	if (!targets.length) {
+		frappe.msgprint(__("Select at least one social media account."));
+		return;
+	}
 
-            savePromise.then(() => {
-                return frm.call({
-                    doc: frm.doc,
-                    method: "generate_post_from_idea",
-                    args: {
-                        idea_title: row.idea_title,
-                        idea_description: row.description
-                    }
-                });
-            }).then((r) => {
-                if (r && r.message && r.message.status === "success") {
-                    const post_name = r.message.post_name;
-                    frappe.msgprint({
-                        title: __("Success"),
-                        message: __(`<a href="/app/social-media-post/${post_name}" target="_blank">✅ Post created: ${post_name}</a>`),
-                        indicator: "green"
-                    });
-                    frm.reload_doc();
-                } else {
-                    frappe.show_alert({
-                        message: `❌ Error: ${r?.message?.error || "Unknown error"}`,
-                        indicator: "red"
-                    });
-                }
-            }).catch((err) => {
-                console.error("generate_post_from_idea error:", err);
-                frappe.show_alert({
-                    message: "❌ Something went wrong. Check browser console for details.",
-                    indicator: "red"
-                });
-            }).finally(() => {
-                frappe.dom.unfreeze();
-                btn.data("running", false);
-                btn.prop("disabled", false);
-                $icon.removeClass("fa-spinner fa-pulse");
-            });
-        });
-    }
-});
+	dialog.disable_primary_action();
+	frappe.dom.freeze(__("Queueing post generation..."));
+	let post_count = 0;
+	try {
+		for (const idea_name of values.idea_names) {
+			const response = await frm.call({
+				doc: frm.doc,
+				method: "generate_posts_from_idea",
+				args: { idea_name, targets },
+			});
+			post_count += response.message?.posts?.length || 0;
+		}
+		dialog.hide();
+		frappe.show_alert({
+			message: __("{0} post(s) queued", [post_count]),
+			indicator: "green",
+		});
+	} finally {
+		frappe.dom.unfreeze();
+		dialog.enable_primary_action();
+	}
+}
+
+function get_selected_targets(values) {
+	return [
+		{ credential_type: "LinkedIn Integration", credential: values.linkedin_account },
+		{ credential_type: "Twitter Integration", credential: values.twitter_account },
+		{
+			credential_type: "Reddit Integration",
+			credential: values.reddit_account,
+			subreddit: values.subreddit?.trim(),
+		},
+	].filter((target) => target.credential);
+}

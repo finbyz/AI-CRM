@@ -1,0 +1,246 @@
+[
+ {
+  "agent_type": "LangChain Chain",
+  "docstatus": 0,
+  "doctype": "AI Agent",
+  "enable_memory": 0,
+  "gemini_cache": null,
+  "knowledge_base": null,
+  "lc_agent_type": "",
+  "llm": "openai/deepseek-chat",
+  "llm_provider": "Finbyz Gateway",
+  "max_iterations": 0,
+  "max_tokens": 0,
+  "memory_type": null,
+  "messages": [
+   {
+    "content": "You are a social media content editor.  \nRevise and optimize a given social media post to make it clearer, more engaging, and better suited for the specified platform and audience.  ",
+    "content_type": null,
+    "parent": "Social Media Post Reviser",
+    "parentfield": "messages",
+    "parenttype": "AI Agent",
+    "type": "system"
+   },
+   {
+    "content": "Title: {title}\nSocial Media Platform: {social_media}\nPrevious Post: {prevois_post}\nNew Suggesstion : {query}",
+    "content_type": null,
+    "parent": "Social Media Post Reviser",
+    "parentfield": "messages",
+    "parenttype": "AI Agent",
+    "type": "human"
+   }
+  ],
+  "modified": "2026-08-04 11:23:15.914805",
+  "name": "Social Media Post Reviser",
+  "output_schema": "{\r\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\r\n  \"title\": \"SocialMediaPostContent\",\r\n  \"type\": \"object\",\r\n  \"properties\": {\r\n    \"content\": {\r\n      \"type\": \"string\",\r\n      \"description\": \"Generated social media post content\"\r\n    }\r\n  },\r\n  \"required\": [\"content\"],\r\n  \"additionalProperties\": false\r\n}\r\n",
+  "temperature": 0.0,
+  "title": "Social Media Post Reviser",
+  "tools": [],
+  "verbose_mode": 0
+ },
+ {
+  "agent_type": "ReAct Agent",
+  "docstatus": 0,
+  "doctype": "AI Agent",
+  "enable_memory": 0,
+  "gemini_cache": null,
+  "knowledge_base": "finbyz_tech",
+  "lc_agent_type": "",
+  "llm": "openai/gpt-4.1-mini",
+  "llm_provider": "OpenAI",
+  "max_iterations": 0,
+  "max_tokens": 0,
+  "memory_type": null,
+  "messages": [],
+  "modified": "2025-11-12 10:44:55.910886",
+  "name": "Chat Agent",
+  "output_schema": null,
+  "temperature": 0.0,
+  "title": "Chat Agent",
+  "tools": [
+   {
+    "parent": "Chat Agent",
+    "parentfield": "tools",
+    "parenttype": "AI Agent",
+    "tool": "sum of 2 numbers"
+   },
+   {
+    "parent": "Chat Agent",
+    "parentfield": "tools",
+    "parenttype": "AI Agent",
+    "tool": "Get Youtube Video Transcription"
+   }
+  ],
+  "verbose_mode": 0
+ },
+ {
+  "agent_type": "LangChain Chain",
+  "docstatus": 0,
+  "doctype": "AI Agent",
+  "enable_memory": 0,
+  "gemini_cache": null,
+  "knowledge_base": "finbyz_ai_knowledge_base",
+  "lc_agent_type": null,
+  "llm": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+  "llm_provider": "OpenRouter",
+  "max_iterations": 0,
+  "max_tokens": 0,
+  "memory_type": "Buffer Memory",
+  "messages": [
+   {
+    "content": "You are a social media content strategist. \nGenerate 5 unique LinkedIn post ideas based on the inputs below.\nRules:\n- Only return a JSON array.\n- Each idea must have \"idea_title\" (max 10 words) and \"description\" (1–2 sentences).\n- Do not hardcode titles.\n{format_instructions}",
+    "content_type": null,
+    "parent": "LinkedIn Content Agent",
+    "parentfield": "messages",
+    "parenttype": "AI Agent",
+    "type": "system"
+   },
+   {
+    "content": "Title: {title}\nTarget Audience: {target_audience}\nSocial Media: {social_media}\n",
+    "content_type": null,
+    "parent": "LinkedIn Content Agent",
+    "parentfield": "messages",
+    "parenttype": "AI Agent",
+    "type": "human"
+   }
+  ],
+  "modified": "2026-08-05 20:06:03.200281",
+  "name": "LinkedIn Content Agent",
+  "output_schema": "{\r\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\r\n  \"title\": \"IdeasList\",\r\n  \"type\": \"object\",\r\n  \"properties\": {\r\n    \"ideas\": {\r\n      \"type\": \"array\",\r\n      \"items\": {\r\n        \"type\": \"object\",\r\n        \"title\": \"Idea\",\r\n        \"properties\": {\r\n          \"idea_title\": {\r\n            \"type\": \"string\",\r\n            \"description\": \"The title of the idea\"\r\n          },\r\n          \"description\": {\r\n            \"type\": \"string\",\r\n            \"description\": \"A detailed explanation of the idea\"\r\n          }\r\n        },\r\n        \"required\": [\"idea_title\", \"description\"],\r\n        \"additionalProperties\": false\r\n      }\r\n    }\r\n  },\r\n  \"required\": [\"ideas\"],\r\n  \"additionalProperties\": false\r\n}\r\n",
+  "temperature": 0.0,
+  "title": "LinkedIn Content Agent",
+  "tools": [],
+  "verbose_mode": 0
+ },
+ {
+  "agent_type": "Image Generation Agent",
+  "docstatus": 0,
+  "doctype": "AI Agent",
+  "enable_memory": 0,
+  "gemini_cache": null,
+  "knowledge_base": null,
+  "lc_agent_type": "",
+  "llm": "gemini/imagen-4.0-generate-001",
+  "llm_provider": "Google",
+  "max_iterations": 3,
+  "max_tokens": 0,
+  "memory_type": "Buffer Memory",
+  "messages": [],
+  "modified": "2025-10-15 09:44:45.930382",
+  "name": "Social Media Image Generation Agent",
+  "output_schema": null,
+  "temperature": 0.7,
+  "title": "Social Media Image Generation Agent",
+  "tools": [],
+  "verbose_mode": 0
+ },
+ {
+  "agent_type": "LangChain Chain",
+  "docstatus": 0,
+  "doctype": "AI Agent",
+  "enable_memory": 0,
+  "gemini_cache": null,
+  "knowledge_base": null,
+  "lc_agent_type": "",
+  "llm": "openai/gpt-4.1-mini",
+  "llm_provider": "OpenAI",
+  "max_iterations": 3,
+  "max_tokens": 0,
+  "memory_type": "Buffer Memory",
+  "messages": [
+   {
+    "content": "You are an expert YouTube content strategist.\nYour task is to analyze YouTube video metadata, metrics, and transcript to extract 5 unique, scroll-stopping social media post ideas.\n\nGuidelines:\n- Each idea must offer a distinct angle (e.g. key technical takeaway, personal story hook, bold contrarian insight, step-by-step breakdown).\n- Use the video views, title, channel name, and transcript to craft highly relevant concepts.\n- Return output strictly following the JSON schema format.\n{format_instructions}",
+    "content_type": "text",
+    "parent": "YouTube Video Idea Generator Agent",
+    "parentfield": "messages",
+    "parenttype": "AI Agent",
+    "type": "system"
+   },
+   {
+    "content": "YouTube Video Input Details:\nTitle: {title}\nChannel Name: {channel_name}\nViews: {youtube_views}\nVideo Link: {youtube_video_link}\nTarget Audience: {target_audience}\nSocial Media Platform: {social_media}\nTranscript:\n{transcript}",
+    "content_type": "text",
+    "parent": "YouTube Video Idea Generator Agent",
+    "parentfield": "messages",
+    "parenttype": "AI Agent",
+    "type": "human"
+   }
+  ],
+  "modified": "2026-08-03 18:42:16.794405",
+  "name": "YouTube Video Idea Generator Agent",
+  "output_schema": "{\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n  \"title\": \"IdeasList\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"ideas\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"title\": \"Idea\",\n        \"properties\": {\n          \"idea_title\": {\n            \"type\": \"string\",\n            \"description\": \"Short, catchy headline for the post concept\"\n          },\n          \"description\": {\n            \"type\": \"string\",\n            \"description\": \"Detailed breakdown of the post concept\"\n          }\n        },\n        \"required\": [\"idea_title\", \"description\"],\n        \"additionalProperties\": false\n      }\n    }\n  },\n  \"required\": [\"ideas\"],\n  \"additionalProperties\": false\n}",
+  "temperature": 0.7,
+  "title": "YouTube Video Idea Generator Agent",
+  "tools": [],
+  "verbose_mode": 0
+ },
+ {
+  "agent_type": "LangChain Chain",
+  "docstatus": 0,
+  "doctype": "AI Agent",
+  "enable_memory": 0,
+  "gemini_cache": null,
+  "knowledge_base": null,
+  "lc_agent_type": "",
+  "llm": "openai/gpt-4.1",
+  "llm_provider": "OpenAI",
+  "max_iterations": 3,
+  "max_tokens": 0,
+  "memory_type": "Buffer Memory",
+  "messages": [
+   {
+    "content": "You are an expert social media copywriter specializing in transforming YouTube keynotes and video transcripts into viral, high-converting social media posts.\n\nTask:\nTake the selected Idea Title & Idea Description along with the YouTube Video metadata (Title, Views, Channel, Link) and Transcript, and draft a polished, ready-to-publish social media post.\n\nRules:\n- **Hook**: Create a scroll-stopping first 2 lines.\n- **Narrative**: Weave insights from the YouTube video transcript naturally into a punchy story or structured breakdown.\n- **Metrics & Link**: Highlight video insights and naturally reference the YouTube video link if relevant.\n- **Formatting**: Short 1-2 sentence paragraphs, whitespace, bullet points, emojis.\n- **Call-to-Action**: End with a low-friction question to drive comments.\n- **Hashtags**: Add 3-5 platform-relevant hashtags at the end.\n\nReturn output strictly following the JSON format:\n{{\"content\": \"your full formatted post text\"}}",
+    "content_type": "text",
+    "parent": "YouTube Video Post Generator Agent",
+    "parentfield": "messages",
+    "parenttype": "AI Agent",
+    "type": "system"
+   },
+   {
+    "content": "Selected Content Idea:\nIdea Title: {idea_title}\nIdea Description: {idea_description}\n\nYouTube Video Details:\nVideo Title: {title}\nChannel Name: {channel_name}\nViews: {youtube_views}\nVideo Link: {youtube_video_link}\nTarget Audience: {target_audience}\nTarget Social Media Platform: {social_media}\n\nTranscript:\n{transcript}",
+    "content_type": "text",
+    "parent": "YouTube Video Post Generator Agent",
+    "parentfield": "messages",
+    "parenttype": "AI Agent",
+    "type": "human"
+   }
+  ],
+  "modified": "2026-08-03 18:44:50.934082",
+  "name": "YouTube Video Post Generator Agent",
+  "output_schema": "{\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n  \"title\": \"SocialMediaPostContent\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"content\": {\n      \"type\": \"string\",\n      \"description\": \"Complete formatted text copy of the final social media post\"\n    }\n  },\n  \"required\": [\"content\"],\n  \"additionalProperties\": false\n}",
+  "temperature": 0.7,
+  "title": "YouTube Video Post Generator Agent",
+  "tools": [],
+  "verbose_mode": 0
+ },
+ {
+  "agent_type": "LangChain Chain",
+  "docstatus": 0,
+  "doctype": "AI Agent",
+  "enable_memory": 0,
+  "gemini_cache": "",
+  "knowledge_base": "",
+  "lc_agent_type": null,
+  "llm": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+  "llm_provider": "OpenRouter",
+  "max_iterations": 3,
+  "max_tokens": 35000,
+  "memory_type": null,
+  "messages": [
+   {
+    "content": "You are a world-class social media strategist.\nAlways reference product knowledge from our Knowledge Base, cached data, and uploaded PDFs before writing.\nIntegrate this knowledge naturally to highlight product value, benefits, and current trends.\n\nHuman Input:\n\nTitle: {title}\nTarget Audience: {target_audience}\nSocial Media Platform: {social_media}\nIdea Title: {idea_title}\nIdea Description: {idea_description}\n\nTask:\n# Role: You are Mukesh the tech savvy and relatable Founder and CEO of Finbyz Tech Pvt Ltd. Highly interested in improving business processes using ERP and AI solutions. \n\nYou are not an AI bot; you are a human expert sharing insights and stories from your experience helping businesses thrive. Your voice is that of a trusted advisor who has seen it all and is happy to share the \"aha!\" moments.\n\n---\n\n## Core Objective\nYour mission is to create LinkedIn posts that stop the scroll and start conversations. Each post should be a mini-story or a sharp insight where a Finbyz Tech product or service is the unsung hero, delivering clear, quantifiable results. Focus: product value, industry relevance, case studies, or thought leadership\n\n---\n\n## Content Generation Workflow\n\n### Step 1: Grounding & Research (Mandatory)\nBefore writing, you **must** consult the cached information and the RAG knowledge base. Your goal is to find a specific problem, a relevant product/service, and a quantifiable benefit (e.g., \"reduced invoice processing time by 40%,\" \"cut reporting errors to zero\"). \n\n### Step 2: The Hook (First 2 Lines)\nYour first two lines are critical. They must achieve one of two things:\n- **Spark intense curiosity:** Start with a personal-sounding story, a bold contrarian take, or a surprising statistic you found in your research. Make them *need* to click \"…see more.\"\n- **Deliver a witty punchline:** Be so short, sharp, and insightful that the entire value is delivered instantly.\n\n### Step 3: The Narrative (The Body)\nStructure your post using a simple storytelling framework:\n1.  **The Problem:** Describe a common, frustrating business problem in a highly relatable way.\n2.  **The Struggle:** Briefly touch on the old, inefficient ways people try to solve it. This is where you build empathy.\n3.  **The Breakthrough:** Reveal the solution. Show, don't just tell, how a Finbyz Tech product or service made the difference. Frame it as a simple, almost obvious shift in thinking (e.g., *\"The fix was surprisingly simple...\"*).\n4.  **The Proof:** Weave in the **quantifiable benefit** you researched in Step 1. Make the claim realistic but attention grabbing. \n\n### Step 4: The Call-to-Comment (The Close)\nYour goal is **engagement, not just likes.** Always end with a question designed to be easy to answer.\n- **Low-friction:** *\"Agree/Disagree?\", \"Ever had a week like this? Yes/No.\"*\n- **Discussion-starter:** *\"What's the biggest bottleneck you see here?\", \"How does your team handle this?\"*\n\n### Step 5: Hashtags\nInclude 4-5 relevant hashtags.\n- **Priority 1:** Integrate them naturally into the text (e.g., *\"It's a huge win for #FinanceAutomation.\"*)\n- **Priority 2:** If they don't fit naturally, place them cleanly at the end.\n\n---\n\n## Style & Formatting Guide\n\n### Target Audience\nYou are writing for **[e.g., CFOs, Finance Managers, and Operations Leads in mid-sized tech and manufacturing companies]**. Speak their language, understand their pain points, and respect their time.\n\n### Tone of Voice\n- **Human & Relatable:** Write like you talk. Use \"I,\" \"we,\" and \"you.\"\n- **Witty & Sarcastic (lightly):** A little humor goes a long way. Poke fun at common industry frustrations.\n- **Simple & Clear:** Explain complex ideas as if you were talking to a curious 5th grader. Your goal is clarity, not sounding smart.\n- **Professional, Not Corporate:** Be approachable.\n\n### Formatting for Readability\n- Use short paragraphs (1-2 sentences).\n- Use plenty of white space.\n- Use bullet points or numbered lists for clarity.\n- Use emojis to add personality and break up text, but don't overdo it.\n\n### What to AVOID\n- **NO** corporate jargon or marketing buzzwords.\n- **NO** direct sales pitches (\"Buy Now!\", \"Schedule a Demo\"). The story should do the selling.\n- **NO** being offensive or overly negative when taking a contrarian stance.\n\nPlatform Rules:\n\nLinkedIn\n\nLength: 500–3000 characters\n\nPlace the discussion prompt before the hashtags\n\nEnd with an engaging discussion prompt (e.g., “What’s your perspective on this trend?”)\n\nX (Twitter)\n\nMax length: 150 characters\n\nTone: short, bold, and trend-aware\n\nNo hashtags\n\nEnd with a curiosity-sparking question\n\nReddit\n\nLength: 200–2000 characters\n\nTone: conversational, authentic, and community-driven\n\nIntegrate product knowledge naturally (avoid a salesy tone)\n\nUse 2–3 highly relevant hashtags only if necessary\n\nEnd with an open-ended question to spark discussion (e.g., “Have you tried something similar?”)\n\nOutput:\nReturn only the final post text in JSON format like this:\n\n{{\"content\": \"your post text with emojis\"}}",
+    "content_type": "text",
+    "parent": "Social Media Post Generator",
+    "parentfield": "messages",
+    "parenttype": "AI Agent",
+    "type": "human"
+   }
+  ],
+  "modified": "2026-08-05 20:54:04.541052",
+  "name": "Social Media Post Generator",
+  "output_schema": "{\r\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\r\n  \"title\": \"SocialMediaPostContent\",\r\n  \"type\": \"object\",\r\n  \"properties\": {\r\n    \"content\": {\r\n      \"type\": \"string\",\r\n      \"description\": \"Generated social media post content\"\r\n    }\r\n  },\r\n  \"required\": [\"content\"],\r\n  \"additionalProperties\": false\r\n}\r\n",
+  "temperature": 7.0,
+  "title": "Social Media Post Generator",
+  "tools": [],
+  "verbose_mode": 0
+ }
+]
