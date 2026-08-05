@@ -64,18 +64,13 @@ def process_video_workflow(tracker_name, video_id):
         if video.is_related:
             try:
                 # Find or create Content Hub for this video
-                existing_ch = frappe.db.get_value("Content Hub", {"youtube_video_id": video.video_id}, "name")
-                if existing_ch:
-                    video.content_hub = existing_ch
+                if video.content_hub and frappe.db.exists("Content Hub", video.content_hub):
+                    pass # Keep existing link
                 else:
                     ch_doc = frappe.new_doc("Content Hub")
                     ch_doc.title = video.title
                     ch_doc.source_type = "YouTube Video"
                     ch_doc.channel_name = getattr(video, "channel_name", "") or ""
-                    ch_doc.youtube_video_id = video.video_id
-                    ch_doc.youtube_views = video.views or 0
-                    ch_doc.youtube_video_link = video.video_link
-                    ch_doc.youtube_transcript = video.transcript
                     ch_doc.insert(ignore_permissions=True)
                     video.content_hub = ch_doc.name
 

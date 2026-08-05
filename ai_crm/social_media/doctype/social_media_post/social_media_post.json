@@ -11,11 +11,29 @@
   "credential_type",
   "credential",
   "status",
+  "generation_status",
   "content_hub",
+  "reference_content_idea",
+  "source_idea_row",
+  "source_type",
+  "source_title",
+  "source_channel",
+  "source_video_link",
+  "source_views",
+  "source_transcript",
+  "target_audience",
+  "source_idea_description",
+  "brand_voice_snapshot",
   "image_attachment",
   "created_on",
   "post_on",
   "posted_on",
+  "failure_reason",
+  "rejection_reason",
+  "approved_on",
+  "approved_by",
+  "submitted_on",
+  "submitted_by",
   "post_link",
   "column_break_nnmu",
   "content",
@@ -35,8 +53,9 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "Draft\nScheduled\nPosted\nFailed",
-   "read_only": 1
+   "options": "Draft\nPending Approval\nApproved\nScheduled\nPublishing\nPosted\nFailed",
+   "read_only": 1,
+   "default": "Draft"
   },
   {
    "fieldname": "preview_tab",
@@ -69,7 +88,8 @@
    "in_list_view": 1,
    "label": "Platform",
    "options": "\nLinkedIn\nReddit\nX (Twitter)",
-   "read_only": 1
+   "read_only": 1,
+   "hidden": 1
   },
   {
    "fieldname": "content_hub",
@@ -120,7 +140,6 @@
    "label": "User Instructions"
   },
   {
-   "depends_on": "eval:!doc.content_hub",
    "fieldname": "credential_type",
    "fieldtype": "Link",
    "label": "Credential Type",
@@ -128,11 +147,125 @@
    "options": "DocType"
   },
   {
-   "depends_on": "eval:!doc.content_hub",
    "fieldname": "credential",
    "fieldtype": "Dynamic Link",
    "label": "Credential",
    "options": "credential_type"
+  },
+  {
+   "default": "Ready",
+   "fieldname": "generation_status",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Generation Status",
+   "options": "Queued\nGenerating\nReady\nFailed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reference_content_idea",
+   "fieldtype": "Data",
+   "label": "Content Idea",
+   "read_only": 1
+  },
+  {
+   "fieldname": "submitted_by",
+   "fieldtype": "Link",
+   "label": "Submitted By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "submitted_on",
+   "fieldtype": "Datetime",
+   "label": "Submitted On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "approved_by",
+   "fieldtype": "Link",
+   "label": "Approved By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "approved_on",
+   "fieldtype": "Datetime",
+   "label": "Approved On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "rejection_reason",
+   "fieldtype": "Small Text",
+   "label": "Rejection Reason",
+   "read_only": 1
+  },
+  {
+   "fieldname": "failure_reason",
+   "fieldtype": "Small Text",
+   "label": "Failure Reason",
+   "read_only": 1
+  },
+  {
+   "fieldname": "source_type",
+   "fieldtype": "Select",
+   "label": "Source Type",
+   "read_only": 1,
+   "options": "Manual Topic\nYouTube Video"
+  },
+  {
+   "fieldname": "source_title",
+   "fieldtype": "Data",
+   "label": "Source Title",
+   "read_only": 1
+  },
+  {
+   "fieldname": "source_channel",
+   "fieldtype": "Data",
+   "label": "Source Channel",
+   "read_only": 1
+  },
+  {
+   "fieldname": "source_video_link",
+   "fieldtype": "Data",
+   "label": "Source Video Link",
+   "read_only": 1
+  },
+  {
+   "fieldname": "source_views",
+   "fieldtype": "Int",
+   "label": "Source Views",
+   "read_only": 1
+  },
+  {
+   "fieldname": "source_transcript",
+   "fieldtype": "Long Text",
+   "label": "Source Transcript",
+   "read_only": 1
+  },
+  {
+   "fieldname": "target_audience",
+   "fieldtype": "Data",
+   "label": "Target Audience",
+   "read_only": 1
+  },
+  {
+   "fieldname": "source_idea_description",
+   "fieldtype": "Small Text",
+   "label": "Idea Description",
+   "read_only": 1
+  },
+  {
+   "fieldname": "brand_voice_snapshot",
+   "fieldtype": "Long Text",
+   "label": "Brand Voice Snapshot",
+   "read_only": 1
+  },
+  {
+   "fieldname": "source_idea_row",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Source Idea Row",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
@@ -168,6 +301,13 @@
    "report": 1,
    "role": "Social Media Manager",
    "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AI Automation",
    "write": 1
   }
  ],
