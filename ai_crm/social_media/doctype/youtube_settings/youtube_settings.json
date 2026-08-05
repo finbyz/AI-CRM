@@ -10,6 +10,11 @@
   "column_break_xrey",
   "post_generation_ai_agent",
   "analysis_ai_agent",
+  "relevance_topics",
+  "relevance_prompt",
+  "default_platform",
+  "default_credential_type",
+  "default_credential",
   "section_break_nnwe",
   "channels"
  ],
@@ -50,6 +55,36 @@
    "fieldtype": "Link",
    "label": "Post Generation Agent",
    "options": "AI Agent"
+  },
+  {
+   "description": "One topic per line. Videos are considered related when they match these topics.",
+   "fieldname": "relevance_topics",
+   "fieldtype": "Small Text",
+   "label": "Relevance Topics"
+  },
+  {
+   "description": "Additional instructions for deciding whether a video is relevant.",
+   "fieldname": "relevance_prompt",
+   "fieldtype": "Long Text",
+   "label": "Relevance Prompt"
+  },
+  {
+   "fieldname": "default_platform",
+   "fieldtype": "Select",
+   "label": "Default Post Platform",
+   "options": "\nLinkedIn\nReddit\nX (Twitter)"
+  },
+  {
+   "fieldname": "default_credential_type",
+   "fieldtype": "Link",
+   "label": "Default Credential Type",
+   "options": "DocType"
+  },
+  {
+   "fieldname": "default_credential",
+   "fieldtype": "Dynamic Link",
+   "label": "Default Credential",
+   "options": "default_credential_type"
   }
  ],
  "grid_page_length": 50,

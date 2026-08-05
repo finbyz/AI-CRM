@@ -1,5 +1,15 @@
 frappe.ui.form.on("Content Hub", {
     refresh: function (frm) {
+        if (frm.doc.source_type === "YouTube Video" && frm.doc.youtube_video) {
+            frappe.db.get_doc("YouTube Video", frm.doc.youtube_video).then(yt => {
+                if (yt) {
+                    if (yt.channel_name && !frm.doc.channel_name) frm.set_value("channel_name", yt.channel_name);
+                    if (yt.video_id && !frm.doc.youtube_video_id) frm.set_value("youtube_video_id", yt.video_id);
+                    if (yt.views && !frm.doc.youtube_views) frm.set_value("youtube_views", yt.views);
+                }
+            });
+        }
+
         frm.add_custom_button("Generate Ideas", function () {
             console.log("🚀 Calling generate_linkedin_ideas for doc:", frm.doc.name);
 
@@ -29,15 +39,27 @@ frappe.ui.form.on("Content Hub", {
     },
 
     // Auto-update platform when credential_type changes
-    credential_type: function(frm) {
+    credential_type: function (frm) {
         if (frm.doc.credential_type === "Twitter Integration") {
             frm.set_value("platform", "X (Twitter)");
-        } 
+        }
         else if (frm.doc.credential_type === "LinkedIn Integration") {
             frm.set_value("platform", "LinkedIn");
-        } 
+        }
         else if (frm.doc.credential_type === "Reddit Integration") {
             frm.set_value("platform", "Reddit");
+        }
+    },
+
+    youtube_video: function (frm) {
+        if (frm.doc.youtube_video) {
+            frappe.db.get_doc("YouTube Video", frm.doc.youtube_video).then(yt => {
+                if (yt) {
+                    if (yt.channel_name) frm.set_value("channel_name", yt.channel_name);
+                    if (yt.video_id) frm.set_value("youtube_video_id", yt.video_id);
+                    if (yt.views) frm.set_value("youtube_views", yt.views);
+                }
+            });
         }
     }
 });
@@ -53,7 +75,7 @@ frappe.ui.form.on("Content Hub Idea", {
         if ($wrapper.find(".btn-generate-idea-" + cdn).length) return;
 
         let btn = $(`<button class="btn btn-xs btn-primary btn-generate-idea-${cdn}" style="margin-top:5px;">
-            <i class="fa fa-magic"></i> Generate Post From This Idea
+            <i class="fa fa-magic"></i> Research and Generate Content
         </button>`);
 
         $wrapper.append(btn);

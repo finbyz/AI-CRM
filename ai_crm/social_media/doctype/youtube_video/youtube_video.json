@@ -6,23 +6,39 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "section_break_yt_details",
+  "channel_name",
   "channel_id",
   "video_id",
   "title",
   "published_on",
   "views",
+  "column_break_yt_right",
+  "content_hub",
   "video_link",
-  "transcript",
   "is_related",
-  "analysis_reasoning",
   "social_media_post",
-  "last_analyzed_on"
+  "analysis_reasoning",
+  "last_analyzed_on",
+  "section_break_transcript",
+  "transcript"
  ],
  "fields": [
   {
-   "fieldname": "channel_id",
+   "fieldname": "section_break_yt_details",
+   "fieldtype": "Section Break",
+   "label": "Video Details"
+  },
+  {
+   "columns": 2,
+   "fieldname": "channel_name",
    "fieldtype": "Data",
    "in_list_view": 1,
+   "label": "Channel Name"
+  },
+  {
+   "fieldname": "channel_id",
+   "fieldtype": "Data",
    "label": "Channel ID"
   },
   {
@@ -31,6 +47,7 @@
    "label": "Video ID"
   },
   {
+   "columns": 3,
    "fieldname": "title",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -39,27 +56,34 @@
   {
    "fieldname": "published_on",
    "fieldtype": "Data",
-   "in_list_view": 1,
    "label": "Published On"
   },
   {
+   "columns": 1,
    "fieldname": "views",
    "fieldtype": "Int",
    "in_list_view": 1,
-   "label": "views"
+   "label": "Views"
+  },
+  {
+   "fieldname": "column_break_yt_right",
+   "fieldtype": "Column Break"
+  },
+  {
+   "columns": 2,
+   "fieldname": "content_hub",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Content Hub",
+   "options": "Content Hub"
   },
   {
    "fieldname": "video_link",
    "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "video link"
+   "label": "Video Link"
   },
   {
-   "fieldname": "transcript",
-   "fieldtype": "Long Text",
-   "label": "Transcript"
-  },
-  {
+   "columns": 1,
    "default": "0",
    "fieldname": "is_related",
    "fieldtype": "Check",
@@ -81,13 +105,24 @@
    "fieldname": "last_analyzed_on",
    "fieldtype": "Datetime",
    "label": "Last Analyzed On"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_transcript",
+   "fieldtype": "Section Break",
+   "label": "Transcript"
+  },
+  {
+   "fieldname": "transcript",
+   "fieldtype": "Long Text",
+   "label": "Transcript"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-11-29 10:55:13.300064",
+ "modified": "2026-07-30 10:50:00.000000",
  "modified_by": "Administrator",
  "module": "Social Media",
  "name": "YouTube Video",

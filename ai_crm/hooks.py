@@ -95,7 +95,8 @@ scheduler_events = {
     ],
      "hourly": [
         "ai_crm.tasks.hourly.reddit_post_generator.fetch_reddit_posts",
-        "ai_crm.tasks.hourly.reddit_post_generator.process_pending_ai_comments"
+        "ai_crm.tasks.hourly.reddit_post_generator.process_pending_ai_comments",
+        "ai_crm.social_media.doctype.youtube_videos.youtube_workflow.services.background_jobs.run_youtube_workflow"
     ],
     "cron": {
         # Every 1 minute → check social media scheduled posts

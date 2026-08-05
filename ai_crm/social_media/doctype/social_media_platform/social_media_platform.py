@@ -13,7 +13,7 @@ class SocialMediaPlatform(Document):
 	
 	@property
 	def post_agent(self):
-		ai_agent = frappe.get_doc("AI Agent", self.idea_generator_agent)
+		ai_agent = frappe.get_doc("AI Agent", self.post_generator_agent)
 		return ai_agent
 	
 	@property

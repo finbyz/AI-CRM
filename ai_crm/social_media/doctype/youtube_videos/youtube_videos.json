@@ -13,14 +13,13 @@
    "fieldname": "videos",
    "fieldtype": "Table",
    "label": "Videos",
-   "options": "YouTube Video",
-   "read_only": 1
+   "options": "YouTube Video"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-11-28 14:26:37.474853",
+ "modified": "2026-08-03 15:51:58.550219",
  "modified_by": "Administrator",
  "module": "Social Media",
  "name": "YouTube Videos",

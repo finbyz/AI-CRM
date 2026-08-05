@@ -10,7 +10,13 @@ import frappe
 import json
 
 
-def analyze_video(agent_service, video_title, video_transcript):
+def analyze_video(
+    agent_service,
+    video_title,
+    video_transcript,
+    relevance_topics="",
+    relevance_prompt="",
+):
     """
     Analyze a video using the AI agent to determine if it's related.
     
@@ -29,7 +35,9 @@ def analyze_video(agent_service, video_title, video_transcript):
     try:
         input_data = {
             "title": video_title or "",
-            "transcript": video_transcript or ""
+            "transcript": video_transcript or "",
+            "relevance_topics": relevance_topics or "",
+            "relevance_prompt": relevance_prompt or "",
         }
         
         result = agent_service.invoke(**input_data)

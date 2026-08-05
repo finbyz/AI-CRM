@@ -11,7 +11,12 @@ from .video_fetcher import fetch_videos_from_channels, save_videos_to_tracker
 from .video_processor import enqueue_video_processing
 
 
-def run_youtube_workflow(tracker_name = None):
+def run_youtube_workflow(
+    tracker_name=None,
+    channel_id=None,
+    force=False,
+    max_results=None,
+):
     """
     Complete YouTube workflow:
     1. Fetch videos from all channels
@@ -25,19 +30,20 @@ def run_youtube_workflow(tracker_name = None):
     """
     try:
         # Step 1: Fetch videos from YouTube
-        videos_list = fetch_videos_from_channels()
+        videos_list = fetch_videos_from_channels(
+            channel_id=channel_id,
+            force=force,
+            max_results=max_results,
+        )
         
         if not videos_list:
-            frappe.log_error(
-                f"No videos fetched for tracker {tracker_name}",
-                "YouTube Workflow"
-            )
+            videos_enqueued = enqueue_video_processing(tracker_name) if tracker_name else 0
             return {
                 "success": True,
                 "videos_fetched": 0,
                 "videos_added": 0,
-                "videos_enqueued": 0,
-                "message": "No new videos based on frequency"
+                "videos_enqueued": videos_enqueued,
+                "message": "No new videos; retried pending videos" if videos_enqueued else "No new videos based on frequency",
             }
         if tracker_name is None:
             tracker = frappe.new_doc("YouTube Videos")
@@ -47,12 +53,13 @@ def run_youtube_workflow(tracker_name = None):
         videos_added = save_videos_to_tracker(tracker_name, videos_list)
         
         if videos_added == 0:
+            videos_enqueued = enqueue_video_processing(tracker_name)
             return {
                 "success": True,
                 "videos_fetched": len(videos_list),
                 "videos_added": 0,
-                "videos_enqueued": 0,
-                "message": "All fetched videos already exist in tracker"
+                "videos_enqueued": videos_enqueued,
+                "message": "Existing pending videos queued for retry",
             }
         
         # Step 3: Enqueue processing jobs
@@ -78,7 +85,12 @@ def run_youtube_workflow(tracker_name = None):
         }
 
 
-def enqueue_youtube_workflow(tracker_name):
+def enqueue_youtube_workflow(
+    tracker_name=None,
+    channel_id=None,
+    force=False,
+    max_results=None,
+):
     """
     Enqueue the complete YouTube workflow as a background job.
     
@@ -91,5 +103,8 @@ def enqueue_youtube_workflow(tracker_name):
         timeout=3600,
         is_async=True,
         tracker_name=tracker_name,
+        channel_id=channel_id,
+        force=force,
+        max_results=max_results,
         enqueue_after_commit=True
     )

@@ -12,7 +12,7 @@ from datetime import timedelta
 from frappe.utils import now_datetime
 
 
-def fetch_videos_from_channels():
+def fetch_videos_from_channels(channel_id=None, force=False, max_results=None):
     """
     Fetch videos from all configured YouTube channels.
     Returns list of video data dictionaries.
@@ -34,11 +34,14 @@ def fetch_videos_from_channels():
     now = now_datetime()
     
     for channel in channels:
+        if channel_id and channel.channel_id != channel_id:
+            continue
+
         try:
-            if not _should_fetch_channel(channel, now):
+            if not force and not _should_fetch_channel(channel, now):
                 continue
             
-            channel_videos = _fetch_channel_videos(channel, api_key, now)
+            channel_videos = _fetch_channel_videos(channel, api_key, now, max_results)
             all_videos.extend(channel_videos)
             
             channel.last_fetched_on = now
@@ -50,9 +53,7 @@ def fetch_videos_from_channels():
             )
             continue
     
-    if all_videos:
-        settings.save(ignore_permissions=True)
-        frappe.db.commit()
+    settings.save(ignore_permissions=True)
     
     return all_videos
 
@@ -68,7 +69,7 @@ def _should_fetch_channel(channel, current_time):
     return current_time >= last_fetched_on + timedelta(days=frequency_days)
 
 
-def _fetch_channel_videos(channel, api_key, now):
+def _fetch_channel_videos(channel, api_key, now, max_results=None):
     """Fetch videos from a specific YouTube channel."""
     frequency_days = max(int(channel.fetch_frequency or 5), 1)
     is_weekly = frequency_days == 7
@@ -115,6 +116,11 @@ def _fetch_channel_videos(channel, api_key, now):
         
         page_videos = _process_api_response(res, api_key, channel)
         all_videos.extend(page_videos)
+
+        if max_results and len(all_videos) >= int(max_results):
+            all_videos = all_videos[:int(max_results)]
+            break
+
         
         next_page_token = res.get("nextPageToken")
         if is_weekly or not next_page_token:
@@ -198,6 +204,7 @@ def save_videos_to_tracker(tracker_name, videos_list):
         
         tracker.append("videos", {
             "channel_id": video_data["channel_id"],
+            "channel_name": video_data.get("channel_name"),
             "video_id": video_data["video_id"],
             "title": video_data["title"],
             "published_on": video_data["published_on"],
@@ -214,6 +221,5 @@ def save_videos_to_tracker(tracker_name, videos_list):
     
     if count > 0:
         tracker.save(ignore_permissions=True)
-        frappe.db.commit()
     
     return count

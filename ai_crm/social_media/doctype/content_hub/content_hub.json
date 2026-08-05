@@ -7,11 +7,18 @@
  "engine": "InnoDB",
  "field_order": [
   "title",
-  "target_audience",
-  "platform",
+  "source_type",
+  "youtube_video",
+  "channel_name",
   "column_break_akfh",
+  "target_audience",
+  "youtube_video_id",
+  "youtube_views",
+  "youtube_video_link",
+  "youtube_transcript",
   "credential_type",
   "credential",
+  "platform",
   "section_break_tbde",
   "ideas_child_table"
  ],
@@ -24,31 +31,60 @@
    "label": "Title"
   },
   {
-   "fieldname": "target_audience",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Target Audience"
+   "default": "Manual Topic",
+   "fieldname": "source_type",
+   "fieldtype": "Select",
+   "label": "Source Type",
+   "options": "Manual Topic\nYouTube Video"
   },
   {
-   "fieldname": "ideas_child_table",
-   "fieldtype": "Table",
-   "label": "Ideas",
-   "options": "Content Hub Idea"
+   "depends_on": "eval:doc.source_type=='YouTube Video'",
+   "fieldname": "youtube_video",
+   "fieldtype": "Link",
+   "label": "YouTube Video",
+   "options": "YouTube Video"
+  },
+  {
+   "depends_on": "eval:doc.source_type=='YouTube Video'",
+   "fieldname": "channel_name",
+   "fieldtype": "Data",
+   "label": "Channel Name"
   },
   {
    "fieldname": "column_break_akfh",
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "section_break_tbde",
-   "fieldtype": "Section Break"
+   "fieldname": "target_audience",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Target Audience"
   },
   {
-   "fieldname": "platform",
-   "fieldtype": "Select",
-   "hidden": 1,
-   "label": "Platform",
-   "options": "\nLinkedIn\nReddit\nX (Twitter)"
+   "depends_on": "eval:doc.source_type=='YouTube Video'",
+   "fieldname": "youtube_video_id",
+   "fieldtype": "Data",
+   "label": "YouTube Video ID"
+  },
+  {
+   "depends_on": "eval:doc.source_type=='YouTube Video'",
+   "fieldname": "youtube_views",
+   "fieldtype": "Int",
+   "label": "Views"
+  },
+  {
+   "depends_on": "eval:doc.source_type=='YouTube Video'",
+   "fieldname": "youtube_video_link",
+   "fieldtype": "Data",
+   "label": "YouTube Video Link",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.source_type=='YouTube Video'",
+   "fieldname": "youtube_transcript",
+   "fieldtype": "Long Text",
+   "label": "YouTube Transcript",
+   "read_only": 1
   },
   {
    "fieldname": "credential_type",
@@ -62,12 +98,30 @@
    "fieldtype": "Dynamic Link",
    "label": "Credential",
    "options": "credential_type"
+  },
+  {
+   "fieldname": "platform",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Platform",
+   "options": "\nLinkedIn\nReddit\nX (Twitter)"
+  },
+  {
+   "fieldname": "section_break_tbde",
+   "fieldtype": "Section Break",
+   "label": "Generated Content Ideas"
+  },
+  {
+   "fieldname": "ideas_child_table",
+   "fieldtype": "Table",
+   "label": "Ideas",
+   "options": "Content Hub Idea"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-27 11:01:42.613299",
+ "modified": "2026-07-30 10:50:00.000000",
  "modified_by": "Administrator",
  "module": "Social Media",
  "name": "Content Hub",

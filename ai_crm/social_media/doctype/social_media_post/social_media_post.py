@@ -13,6 +13,9 @@ from urllib.parse import urlencode
 from frappe.utils import now_datetime 
 
 
+
+
+
 class SocialMediaPost(Document):
     pass
     def get_credentials(self):
@@ -116,15 +119,18 @@ class SocialMediaPost(Document):
                 frappe.throw("No credential selected in this document or linked Content Hub")
             credential_doc = frappe.get_doc(self.credential_type, self.credential)
 
-        # Step 2: Decide which AI agent to use (Unified Agent)
-        if credential_doc.use_default_ai_agents == 1:
-            revise_agent = content_hub_setting.post_agent   # same unified agent
-        else:
-            if getattr(credential_doc, "post_generator_agent", None):
-                ai_agent_doc = frappe.get_doc("AI Agent", credential_doc.post_generator_agent)
-                revise_agent = ai_agent_doc.agent_service
-            else:
-                revise_agent = content_hub_setting.post_agent
+        # Step 2: Decide which AI agent to use
+        agent_name = None
+        if credential_doc and not credential_doc.use_default_ai_agents:
+            agent_name = credential_doc.post_generator_agent
+
+        if not agent_name:
+            agent_name = content_hub_setting.post_generator_agent
+
+        if not agent_name:
+            frappe.throw("No Post Generator Agent configured in Content Hub Setting")
+
+        revise_agent = frappe.get_doc("AI Agent", agent_name).agent_service
 
         # Step 3: Prepare unified AI input
         ai_input_data = {
@@ -157,8 +163,7 @@ class SocialMediaPost(Document):
     def post_to_linkedin(self):
         """Bridge method to post content to LinkedIn using LinkedInIntegration"""
         try:
-            if not self.content:
-                frappe.throw(_("Content is required for posting"))
+            self.validate_linkedin_content()
 
             linkedin_doc = self.get_credentials()
 
@@ -172,6 +177,7 @@ class SocialMediaPost(Document):
             
             if result.get("status") == "success":
                 self.status = "Posted"
+                self.posted_on = frappe.utils.now_datetime()
                 self.social_media_post_id = result.get("post_id")
                 self.social_media_post_link = result.get("post_link")
                 self.post_link = result.get("post_link")
@@ -267,8 +273,7 @@ class SocialMediaPost(Document):
     def post_to_twitter(self):
         """Post content to Twitter using OAuth 2.0"""
         try: 
-            if not self.content:
-                frappe.throw(_("Content is required for posting"))
+            self.validate_twitter_content()
 
             twitter_doc = self.get_credentials()
             
@@ -284,6 +289,7 @@ class SocialMediaPost(Document):
             
             if result.get("status") == "success":
                 self.status = "Posted"
+                self.posted_on = frappe.utils.now_datetime()
                 self.social_media_post_id = result.get("tweet_id")
                 self.social_media_post_link = result.get("tweet_url")
                 self.post_link = result.get("tweet_url")
@@ -364,6 +370,7 @@ class SocialMediaPost(Document):
         
             if result.get("status") == "success":
                 self.status = "Posted"
+                self.posted_on = frappe.utils.now_datetime()
                 self.social_media_post_id = result.get("id", "")
                 self.social_media_post_link = result.get("url", "")
                 self.post_link = result.get("url", "")
@@ -413,20 +420,21 @@ class SocialMediaPost(Document):
             self.save(ignore_permissions=True)
 
         # Determine which image agent to use
-        if credential_doc.use_default_ai_agents == 1:
-            image_agent = setting.image_agent
-            meta_prompt = setting.image_generation_meta_prompt
-        else:
-            image_agent_name = getattr(credential_doc, "image_generation_agent", None)
-            meta_prompt_cred = getattr(credential_doc, "image_generation_meta_prompt", None)
-            if image_agent_name:
-                ai_agent_doc = frappe.get_doc("AI Agent", image_agent_name)
-                image_agent = ai_agent_doc.agent_service
-            else:
-                image_agent = setting.image_agent  # fallback
+        agent_name = None
+        meta_prompt = setting.image_generation_meta_prompt or ""
 
-            # Meta prompt fallback
-            meta_prompt = meta_prompt_cred or setting.image_generation_meta_prompt
+        if credential_doc and not credential_doc.use_default_ai_agents:
+            agent_name = credential_doc.image_generation_agent
+            if credential_doc.image_generation_meta_prompt:
+                meta_prompt = credential_doc.image_generation_meta_prompt
+
+        if not agent_name:
+            agent_name = setting.image_generation_agent
+
+        if not agent_name:
+            frappe.throw("No Image Generation Agent configured in Content Hub Setting")
+
+        image_agent = frappe.get_doc("AI Agent", agent_name).agent_service
 
         if not self.image_generation_prompt:
             helper_agent = AgentService(setting.helper_agent)

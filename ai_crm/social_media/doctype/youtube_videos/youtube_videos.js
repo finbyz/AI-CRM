@@ -14,22 +14,22 @@ frappe.ui.form.on('YouTube Videos', {
             });
         });
 
-        // --- Button 2: View Social Media Posts ---
-        frm.add_custom_button('View Generated Posts', function () {
+        // --- Button 2: View generated Content Hubs ---
+        frm.add_custom_button('View Content Hubs', function () {
             if (frm.doc.videos && frm.doc.videos.length > 0) {
-                const postIds = frm.doc.videos
-                    .map(row => row.social_media_post)
+                const hubIds = frm.doc.videos
+                    .map(row => row.content_hub)
                     .filter(Boolean);
 
-                if (postIds.length === 0) {
-                    frappe.msgprint(__('No related Social Media Posts found.'));
+                if (hubIds.length === 0) {
+                    frappe.msgprint(__('No related Content Hubs found.'));
                     return;
                 }
 
                 frappe.route_options = {
-                    "name": ["in", postIds]
+                    "name": ["in", hubIds]
                 };
-                frappe.set_route("List", "Social Media Post");
+                frappe.set_route("List", "Content Hub");
             } else {
                 frappe.msgprint(__('No videos found in this tracker.'));
             }

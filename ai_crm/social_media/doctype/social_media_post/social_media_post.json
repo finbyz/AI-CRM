@@ -15,6 +15,7 @@
   "image_attachment",
   "created_on",
   "post_on",
+  "posted_on",
   "post_link",
   "column_break_nnmu",
   "content",
@@ -97,6 +98,14 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Post On"
+  },
+  {
+   "fieldname": "posted_on",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Posted On",
+   "read_only": 1
   },
   {
    "fieldname": "post_link",

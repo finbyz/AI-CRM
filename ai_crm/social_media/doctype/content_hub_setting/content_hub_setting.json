@@ -7,37 +7,65 @@
  "field_order": [
   "idea_generator_agent",
   "post_generator_agent",
+  "youtube_idea_generator_agent",
+  "youtube_post_generator_agent",
   "revise_post_agent",
   "image_generation_agent",
   "helper_agent",
   "column_break_vgaa",
   "image_size",
   "image_generation_meta_prompt",
-  "youtube_fetch_agent"
+  "youtube_fetch_agent",
+  "brand_voice"
  ],
  "fields": [
   {
+   "description": "Default AI Agent used to generate content ideas from topics and video transcripts.",
    "fieldname": "idea_generator_agent",
    "fieldtype": "Link",
    "label": "Idea Generator Agent",
    "options": "AI Agent"
   },
   {
+   "description": "Default AI Agent used to draft platform-specific copy from selected ideas.",
    "fieldname": "post_generator_agent",
    "fieldtype": "Link",
    "label": "Post Generator Agent",
    "options": "AI Agent"
   },
   {
+   "description": "Specialized AI Agent used to generate ideas specifically from YouTube videos & transcripts.",
+   "fieldname": "youtube_idea_generator_agent",
+   "fieldtype": "Link",
+   "label": "YouTube Idea Generator Agent",
+   "options": "AI Agent"
+  },
+  {
+   "description": "Specialized AI Agent used to draft final social media posts from YouTube video ideas & transcripts.",
+   "fieldname": "youtube_post_generator_agent",
+   "fieldtype": "Link",
+   "label": "YouTube Post Generator Agent",
+   "options": "AI Agent"
+  },
+  {
+   "description": "Default AI Agent used to revise, shorten, expand, or translate post drafts.",
    "fieldname": "revise_post_agent",
    "fieldtype": "Link",
    "label": "Revise Post Agent",
    "options": "AI Agent"
   },
   {
+   "description": "AI Agent service used to render PNG images for social media posts.",
    "fieldname": "image_generation_agent",
    "fieldtype": "Link",
    "label": "Image Generation Agent",
+   "options": "AI Agent"
+  },
+  {
+   "description": "AI Agent used to convert post copy into image generation prompts.",
+   "fieldname": "helper_agent",
+   "fieldtype": "Link",
+   "label": "Helper Agent",
    "options": "AI Agent"
   },
   {
@@ -45,28 +73,31 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "image_generation_meta_prompt",
-   "fieldtype": "Small Text",
-   "label": "Image Generation Meta Prompt"
-  },
-  {
-   "fieldname": "helper_agent",
-   "fieldtype": "Link",
-   "label": "Helper Agent",
-   "options": "AI Agent"
-  },
-  {
    "default": "1536x1024",
+   "description": "Default resolution dimensions for generated social post graphics.",
    "fieldname": "image_size",
    "fieldtype": "Select",
    "label": "Image Size",
    "options": "\n256x256\n512x512\n1024x1024\n1024x1536\n1024x1792\n1536x1024\n1792x1024"
   },
   {
+   "description": "System prompt instructions for converting post text into an image prompt.",
+   "fieldname": "image_generation_meta_prompt",
+   "fieldtype": "Small Text",
+   "label": "Image Generation Meta Prompt"
+  },
+  {
+   "description": "Default AI Agent used to summarize YouTube videos into post concepts.",
    "fieldname": "youtube_fetch_agent",
    "fieldtype": "Link",
    "label": "YouTube Fetch Agent",
    "options": "AI Agent"
+  },
+  {
+   "description": "Persistent brand tone of voice and style rules automatically applied to all generated copy.",
+   "fieldname": "brand_voice",
+   "fieldtype": "Long Text",
+   "label": "Brand Voice"
   }
  ],
  "grid_page_length": 50,
