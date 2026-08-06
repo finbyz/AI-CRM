@@ -17,9 +17,9 @@ def schedule_social_media_posts():
         "Social Media Post",
         filters={
             "status": "Scheduled",
-            "post_on": ["<=", current_time]
+            "post_on": ["<=", current_time],
         },
-        fields=["name"]
+        fields=["name"],
     )
 
     # If no posts are found, return early
@@ -29,29 +29,29 @@ def schedule_social_media_posts():
 
     processed_posts = []
     failed_posts = []
-    
+
     for post_meta in posts_to_publish:
         try:
             post_doc = frappe.get_doc("Social Media Post", post_meta.name)
             result = post_doc.post()
-            
+
             if result and result.get("status") == "success":
                 processed_posts.append(post_meta.name)
                 frappe.logger().info(f"Successfully published scheduled post: {post_meta.name}")
             else:
                 failed_posts.append(post_meta.name)
                 frappe.logger().error(f"Failed to publish post {post_meta.name}: {result}")
-                
-        except Exception as e:
+
+        except Exception:
             failed_posts.append(post_meta.name)
             frappe.log_error(
                 f"Failed to publish scheduled post: {post_meta.name}\n{frappe.get_traceback()}",
-                "Scheduled Social Media Post Error"
+                "Scheduled Social Media Post Error",
             )
 
     # Return summary
     summary = f"Processed: {len(processed_posts)} posts successfully"
     if failed_posts:
         summary += f", Failed: {len(failed_posts)} posts"
-    
+
     return summary

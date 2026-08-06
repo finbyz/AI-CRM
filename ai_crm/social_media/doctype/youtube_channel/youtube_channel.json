@@ -16,24 +16,27 @@
    "fieldname": "channel_id",
    "fieldtype": "Data",
    "label": "Channel ID",
-   "read_only": 1
+   "reqd": 1
   },
   {
    "fieldname": "channel_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Channel Name"
+   "label": "Channel Name",
+   "reqd": 1
   },
   {
    "fieldname": "last_fetched_on",
    "fieldtype": "Datetime",
-   "label": "Last Fetched On"
+   "label": "Last Fetched On",
+   "read_only": 1
   },
   {
    "default": "1",
    "fieldname": "fetch_frequency",
    "fieldtype": "Int",
-   "label": "Fetch Frequency"
+   "label": "Fetch Frequency",
+   "description": "Fetch interval in days."
   }
  ],
  "grid_page_length": 50,

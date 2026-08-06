@@ -14,7 +14,8 @@
    "fieldname": "idea_title",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Idea Title"
+   "label": "Idea Title",
+   "reqd": 1
   },
   {
    "columns": 6,

@@ -17,7 +17,6 @@
   "content_hub",
   "video_link",
   "is_related",
-  "social_media_post",
   "analysis_reasoning",
   "last_analyzed_on",
   "section_break_transcript",
@@ -34,36 +33,45 @@
    "fieldname": "channel_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Channel Name"
+   "label": "Channel Name",
+   "read_only": 1
   },
   {
    "fieldname": "channel_id",
    "fieldtype": "Data",
-   "label": "Channel ID"
+   "label": "Channel ID",
+   "reqd": 1,
+   "read_only": 1
   },
   {
    "fieldname": "video_id",
    "fieldtype": "Data",
-   "label": "Video ID"
+   "label": "Video ID",
+   "reqd": 1,
+   "read_only": 1
   },
   {
    "columns": 3,
    "fieldname": "title",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Title"
+   "label": "Title",
+   "reqd": 1,
+   "read_only": 1
   },
   {
    "fieldname": "published_on",
    "fieldtype": "Data",
-   "label": "Published On"
+   "label": "Published On",
+   "read_only": 1
   },
   {
    "columns": 1,
    "fieldname": "views",
    "fieldtype": "Int",
    "in_list_view": 1,
-   "label": "Views"
+   "label": "Views",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_yt_right",
@@ -75,12 +83,15 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Content Hub",
-   "options": "Content Hub"
+   "options": "Content Hub",
+   "read_only": 1
   },
   {
    "fieldname": "video_link",
    "fieldtype": "Data",
-   "label": "Video Link"
+   "label": "Video Link",
+   "reqd": 1,
+   "read_only": 1
   },
   {
    "columns": 1,
@@ -88,23 +99,20 @@
    "fieldname": "is_related",
    "fieldtype": "Check",
    "in_list_view": 1,
-   "label": "Is Related?"
+   "label": "Is Related?",
+   "read_only": 1
   },
   {
    "fieldname": "analysis_reasoning",
    "fieldtype": "Small Text",
-   "label": "Analysis Reasoning"
-  },
-  {
-   "fieldname": "social_media_post",
-   "fieldtype": "Link",
-   "label": "Social Media Post",
-   "options": "Social Media Post"
+   "label": "Analysis Reasoning",
+   "read_only": 1
   },
   {
    "fieldname": "last_analyzed_on",
    "fieldtype": "Datetime",
-   "label": "Last Analyzed On"
+   "label": "Last Analyzed On",
+   "read_only": 1
   },
   {
    "collapsible": 1,
@@ -115,7 +123,8 @@
   {
    "fieldname": "transcript",
    "fieldtype": "Long Text",
-   "label": "Transcript"
+   "label": "Transcript",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,

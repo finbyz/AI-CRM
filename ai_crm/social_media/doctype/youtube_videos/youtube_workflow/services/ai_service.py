@@ -78,63 +78,6 @@ def analyze_video(
         }
 
 
-def generate_social_post(agent_service, video_title, video_transcript):
-    """
-    Generate a social media post using the AI agent.
-    
-    Args:
-        agent_service: AI Agent Service instance
-        video_title: Video title
-        video_transcript: Video transcript text
-        
-    Returns:
-        dict: {
-            'success': bool,
-            'linkedin_post': str
-        }
-    """
-    try:
-        input_data = {
-            "title": video_title or "",
-            "transcript": video_transcript or ""
-        }
-        
-        result = agent_service.invoke(**input_data)
-        
-        # Handle different result formats
-        if hasattr(result, 'content'):
-            # Object with attributes
-            return {
-                'success': True,
-                'content': str(result.content)
-            }
-        
-        elif isinstance(result, dict):
-            # Dictionary result
-            return {
-                'success': True,
-                'content': str(result.get('content', ''))
-            }
-        
-        else:
-            # Try to parse as JSON string
-            parsed = json.loads(str(result))
-            return {
-                'success': True,
-                'content': str(parsed.get('content', ''))
-            }
-            
-    except Exception as e:
-        frappe.log_error(
-            f"Post generation error: {str(e)}",
-            "YouTube AI Post Generation"
-        )
-        return {
-            'success': False,
-            'content': ''
-        }
-
-
 def get_analysis_agent():
     """
     Get the analysis AI agent from settings.

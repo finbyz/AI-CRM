@@ -46,7 +46,8 @@ def process_video_workflow(tracker_name, video_id):
             frappe.db.set_value("YouTube Video", video.name, "transcript", video.transcript)
         else:
             error = transcript_result.get("error") or "No captions are available"
-            _update_video_status(video, f"Transcript unavailable: {error}", mark_processed=False)
+            _update_video_status(video, f"Transcript unavailable: {error}", mark_processed=True)
+            check_and_update_tracker_completion(tracker_name)
             return
 
         # Step 2: Analyze video
@@ -54,6 +55,7 @@ def process_video_workflow(tracker_name, video_id):
 
         if not analysis_result.get("success"):
             _update_video_status(video, "Analysis failed", mark_processed=True)
+            check_and_update_tracker_completion(tracker_name)
             return
 
         video.is_related = analysis_result.get("is_related", 0)
@@ -71,6 +73,7 @@ def process_video_workflow(tracker_name, video_id):
                     ch_doc.title = video.title
                     ch_doc.source_type = "YouTube Video"
                     ch_doc.channel_name = getattr(video, "channel_name", "") or ""
+                    ch_doc.source_url = video.video_link
                     ch_doc.insert(ignore_permissions=True)
                     video.content_hub = ch_doc.name
 
@@ -83,12 +86,97 @@ def process_video_workflow(tracker_name, video_id):
                 frappe.log_error(f"Error creating Content Hub for video {video_id}: {str(ch_e)}")
 
         _save_video_result(video)
+        check_and_update_tracker_completion(tracker_name)
 
     except Exception as e:
         frappe.log_error(
             f"Error processing video {video_id}: {str(e)}",
             "YouTube Video Workflow"
         )
+        check_and_update_tracker_completion(tracker_name)
+
+
+def check_and_update_tracker_completion(tracker_name):
+    """
+    Check if all videos in the tracker document have completed processing,
+    and update parent YouTube Videos workflow_status and workflow_message accordingly.
+    """
+    if not tracker_name or not frappe.db.exists("YouTube Videos", tracker_name):
+        return
+
+    tracker = frappe.get_doc("YouTube Videos", tracker_name)
+    if not tracker.videos:
+        # Find most recent previous tracker record with videos
+        prev = frappe.db.sql("""
+            SELECT t.name 
+            FROM `tabYouTube Videos` t
+            JOIN `tabYouTube Video` v ON v.parent = t.name
+            WHERE t.name != %s
+            ORDER BY t.creation DESC
+            LIMIT 1
+        """, (tracker_name,), as_dict=True)
+
+        prev_id = prev[0].name if prev else ""
+        if prev_id:
+            msg = f"Completed: No new videos found. Previously fetched in {prev_id}"
+        else:
+            msg = "Completed: No new videos found (channel already fetched recently or videos already imported)"
+
+        frappe.db.set_value(
+            "YouTube Videos",
+            tracker_name,
+            {"workflow_status": "Completed", "workflow_message": str(msg)[:500]}
+        )
+        return
+
+    # Check if all videos have been analyzed / processed
+    unprocessed = [
+        v for v in tracker.videos
+        if not v.last_analyzed_on and not (v.analysis_reasoning and len((v.analysis_reasoning or "").strip()) > 0)
+    ]
+    if unprocessed:
+        # Still some videos pending
+        return
+
+    # All videos processed!
+    related_videos = [v for v in tracker.videos if v.is_related]
+    failed_videos = [v for v in tracker.videos if not v.is_related and ("unavailable" in (v.analysis_reasoning or "").lower() or "failed" in (v.analysis_reasoning or "").lower())]
+    not_related_videos = [v for v in tracker.videos if not v.is_related and v not in failed_videos]
+    total_videos = len(tracker.videos)
+
+    if total_videos == 1:
+        single_video = tracker.videos[0]
+        if single_video.is_related:
+            status = "Completed"
+            message = "Completed: Video is relevant. Content Hub created successfully."
+        elif single_video in failed_videos:
+            status = "Completed"
+            message = f"Completed: Video processing failed. Reason: {single_video.analysis_reasoning}"
+        else:
+            reason = single_video.analysis_reasoning or "Not relevant to criteria"
+            status = "Completed"
+            message = f"Completed: Video analyzed but not relevant (Content Hub skipped). Reason: {reason}"
+    else:
+        status = "Completed"
+        parts = []
+        if related_videos:
+            parts.append(f"{len(related_videos)} relevant")
+        if not_related_videos:
+            parts.append(f"{len(not_related_videos)} not relevant")
+        if failed_videos:
+            parts.append(f"{len(failed_videos)} failed")
+        
+        summary = ", ".join(parts) if parts else "0 videos processed"
+        message = f"Completed: {total_videos} video(s) analyzed ({summary})."
+
+    frappe.db.set_value(
+        "YouTube Videos",
+        tracker_name,
+        {
+            "workflow_status": status,
+            "workflow_message": str(message)[:500]
+        }
+    )
 
 
 def enqueue_video_processing(tracker_name):
@@ -104,6 +192,10 @@ def enqueue_video_processing(tracker_name):
     tracker = frappe.get_doc("YouTube Videos", tracker_name)
 
     unprocessed_videos = [v for v in tracker.videos if not v.last_analyzed_on]
+
+    if not unprocessed_videos:
+        check_and_update_tracker_completion(tracker_name)
+        return 0
 
     for video in unprocessed_videos:
         frappe.enqueue(
@@ -165,3 +257,4 @@ def _analyze_video_step(video, settings):
             "is_related": 0,
             "reasoning": f"Analysis error: {str(e)}"
         }
+

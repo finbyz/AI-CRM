@@ -13,6 +13,8 @@
   "auto_comment_enabled",
   "ai_comment_agent",
   "comment_revise_agent",
+  "comment_template",
+  "comment_delay_minutes",
   "post_type",
   "section_break_8",
   "sort_type",
@@ -69,6 +71,21 @@
    "fieldtype": "Link",
    "label": "Comment Revise Agent",
    "options": "AI Agent"
+  },
+  {
+   "depends_on": "eval:doc.auto_comment_enabled ",
+   "description": "Template for automated comments (use {title} for post title)",
+   "fieldname": "comment_template",
+   "fieldtype": "Text",
+   "label": "Comment Template"
+  },
+  {
+   "depends_on": "eval:doc.auto_comment_enabled ",
+   "default": "30",
+   "description": "Delay in minutes before commenting on new posts",
+   "fieldname": "comment_delay_minutes",
+   "fieldtype": "Int",
+   "label": "Comment Delay (Minutes)"
   },
   {
    "fieldname": "post_type",

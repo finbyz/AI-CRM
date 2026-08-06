@@ -15,7 +15,6 @@
   "column_break_vgaa",
   "image_size",
   "image_generation_meta_prompt",
-  "youtube_fetch_agent",
   "brand_voice"
  ],
  "fields": [
@@ -85,13 +84,6 @@
    "fieldname": "image_generation_meta_prompt",
    "fieldtype": "Small Text",
    "label": "Image Generation Meta Prompt"
-  },
-  {
-   "description": "Default AI Agent used to summarize YouTube videos into post concepts.",
-   "fieldname": "youtube_fetch_agent",
-   "fieldtype": "Link",
-   "label": "YouTube Fetch Agent",
-   "options": "AI Agent"
   },
   {
    "description": "Persistent brand tone of voice and style rules automatically applied to all generated copy.",

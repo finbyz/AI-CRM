@@ -212,7 +212,6 @@ def save_videos_to_tracker(tracker_name, videos_list):
             "transcript": video_data.get("description", ""),
             "is_related": 0,
             "analysis_reasoning": "",
-            "social_media_post": None,
             "last_analyzed_on": None
         })
         
