@@ -15,7 +15,10 @@
   "column_break_vgaa",
   "image_size",
   "image_generation_meta_prompt",
-  "brand_voice"
+  "brand_voice",
+  "resume_ranker_tab",
+  "resume_ranker_agent",
+  "job_skills_extractor_agent"
  ],
  "fields": [
   {
@@ -90,13 +93,32 @@
    "fieldname": "brand_voice",
    "fieldtype": "Long Text",
    "label": "Brand Voice"
+  },
+  {
+   "fieldname": "resume_ranker_tab",
+   "fieldtype": "Tab Break",
+   "label": "Resume Ranker"
+  },
+  {
+   "description": "AI Agent used to score a Job Applicant's resume against the Job Opening's required skills.",
+   "fieldname": "resume_ranker_agent",
+   "fieldtype": "Link",
+   "label": "Resume Ranker Agent",
+   "options": "AI Agent"
+  },
+  {
+   "description": "AI Agent used to extract the required skills from a Job Opening's description.",
+   "fieldname": "job_skills_extractor_agent",
+   "fieldtype": "Link",
+   "label": "Job Skills Extractor Agent",
+   "options": "AI Agent"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-11-11 16:38:02.259618",
+ "modified": "2026-09-16 12:30:00.000000",
  "modified_by": "Administrator",
  "module": "Social Media",
  "name": "Content Hub Setting",
