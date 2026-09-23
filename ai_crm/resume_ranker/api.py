@@ -261,20 +261,13 @@ def _enqueue_ranking(applicant_name):
 # ---------------------------------------------------------------------------
 
 def on_update_enqueue_if_resume_added(doc, method=None):
-    """Enqueue ranking exactly once when resume_attachment is first set.
-
-    The careers portal inserts the applicant and attaches the resume in two
-    separate commits, so after_insert fires before the resume exists.
-    Listening to on_update and comparing with get_doc_before_save() means
-    ranking is triggered on the commit that actually carries the resume,
-    eliminating the race condition entirely.
-    """
+    """Enqueue ranking when a resume is first added to a Job Applicant."""
     if not doc.resume_attachment or not doc.job_title:
         return
 
     before = doc.get_doc_before_save()
     if before and before.resume_attachment:
-        return  # resume was already present; don't re-rank on every save
+        return
 
     _enqueue_ranking(doc.name)
 
