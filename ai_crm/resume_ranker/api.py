@@ -1,6 +1,9 @@
 from urllib.parse import urlencode
 
+from finbyzai.ai.utils.knowledge_base_utils import extract_text_from_source
+
 import frappe
+import re
 from frappe import _
 
 
@@ -137,33 +140,56 @@ def set_ai_summary(applicant, result):
     applicant.matched_skills_count = getattr(result, "matched_skills_count", None)
     applicant.total_required_skills = getattr(result, "total_required_skills", None)
 
+    # ERPNext/Frappe experience is treated as distinct from generic ERP experience:
+    # a candidate who only knows SAP is not an ERPNext hire, and vice versa.
+    applicant.erpnext_experiance = 1 if getattr(result, "has_erpnext_experience", False) else 0
+    applicant.erp_experiance = 1 if getattr(result, "has_erp_experience", False) else 0
+
 
 def get_verified_resume_file(applicant):
-    """Return the File name only when it is attached to this applicant.
+    """Return the File name only when that File is attached to this applicant.
 
     The worker runs as Administrator, so an arbitrary path in resume_attachment
     would otherwise be read and shipped to the AI provider. The portal endpoints
     that set this field are Guest-callable, so the value is untrusted input.
-    Several File rows can share a file_url, hence filtering on the attachment
-    rather than reading back whichever row matches the url first.
+
+    Two url shapes exist. Local storage stores '/private/files/<name>', while
+    DFP External Storage (S3) rewrites file_url to '/file/<File name>/<filename>'.
+    Matching only on file_url therefore fails on S3 sites, so the File name is
+    also read out of the DFP url. Either way the attachment is still verified,
+    which is what actually makes this safe.
     """
     resume_url = applicant.resume_attachment
     if not resume_url:
         return None
 
-    file_name = frappe.db.exists("File", {
-        "file_url": resume_url,
-        "attached_to_doctype": "Job Applicant",
-        "attached_to_name": applicant.name,
-    })
-    if not file_name:
-        frappe.log_error(
-            "Resume Ranker: resume not attached to this applicant",
-            f"{applicant.name} points at {resume_url}, which is not attached to it. Refusing to read.",
-        )
-        return None
+    candidates = frappe.get_all(
+        "File",
+        filters={"file_url": resume_url},
+        pluck="name",
+    )
 
-    return file_name
+    # DFP external storage: /file/<File name>/<filename>
+    dfp_match = re.match(r"^/file/([^/]+)/", resume_url)
+    if dfp_match:
+        candidates.append(dfp_match.group(1))
+
+    for file_name in candidates:
+        attached = frappe.db.get_value(
+            "File", file_name, ["attached_to_doctype", "attached_to_name"], as_dict=True
+        )
+        if (
+            attached
+            and attached.attached_to_doctype == "Job Applicant"
+            and attached.attached_to_name == applicant.name
+        ):
+            return file_name
+
+    frappe.log_error(
+        "Resume Ranker: resume not attached to this applicant",
+        f"{applicant.name} points at {resume_url}, which is not attached to it. Refusing to read.",
+    )
+    return None
 
 
 def create_resume_share_url(applicant, file_name):
@@ -250,10 +276,19 @@ def _rank_applicant(applicant_name):
     agent = get_agent("resume_ranker_agent", "Resume Ranker Agent")
     ai_service = agent.agent_service
 
-    resume_share_url = create_resume_share_url(applicant, resume_file_name)
+    # The agent is a plain chain with no fetch tool, so it must be given the
+    # resume text itself. Handing it only a URL makes it fabricate a candidate.
+    file_doc = frappe.get_doc("File", resume_file_name)
+    extraction_result = extract_text_from_source(file_doc.file_url, 'file')
+    if not extraction_result.get("success"):
+        frappe.log_error(
+            "Resume Ranker: could not read resume",
+            f"{applicant.name}: {file_doc.file_name} could not be read ({extraction_result.get('error')}).",
+        )
+        return
+
     ai_input = {
-        "resume_url": resume_share_url,
-        "resume_text": f"Download and analyze the resume from this temporary URL: {resume_share_url}",
+        "resume_text": extraction_result.get("content"),
         "skills": ','.join(skills)
     }
     
