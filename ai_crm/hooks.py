@@ -5,8 +5,7 @@ app_description = "this is ai powered crm system"
 app_email = "info@finbyz.tech"
 app_license = "gpl-3.0"
 
-# Installation / Uninstallation
-before_uninstall = "ai_crm.install.before_uninstall"
+# Installation
 required_apps = ["finbyz/finbyzai"]
 # Uninstallation
 # ------------
@@ -110,14 +109,10 @@ scheduler_events = {
 
 # Fixtures to export
 fixtures = [
-    {
-        "doctype": "Role",
-        "filters": {"name": ["in", ["AI Automation","Social Media Manager"]]}
-    },
-    {
-        "doctype": "Custom DocPerm", 
-        "filters": {"role": ["in", ["AI Automation"]]}
-    },
+   {
+       "doctype": "Role",
+        "filters": {"name": ["in", ["Social Media Manager"]]}
+   },
     {
         "doctype": "Custom Field",
         "filters": [
