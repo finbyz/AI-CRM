@@ -34,42 +34,40 @@ def get_agent(fieldname, label):
 
 
 def get_verified_resume_file(applicant):
-    """Return the File name only when that File is confirmed attached to this applicant.
-
-    The worker runs as Administrator, so an arbitrary path in resume_attachment
-    would otherwise be read and shipped to the AI provider — the portal endpoints
-    that set this field are Guest-callable, making it untrusted input.
-
-    Two URL shapes exist:
-      Local storage:         /private/files/<filename>
-      DFP External Storage:  /file/<File name>/<filename>
-    """
-    resume_url = applicant.resume_attachment
-    if not resume_url:
+    if not applicant.resume_attachment:
         return None
 
-    candidates = frappe.get_all("File", filters={"file_url": resume_url}, pluck="name")
+    files = frappe.get_all(
+        "File",
+        filters={
+            "attached_to_doctype": "Job Applicant",
+            "attached_to_name": applicant.name,
+        },
+        fields=["name", "file_name"],
+    )
 
-    # DFP / S3 external storage rewrites file_url to /file/<File name>/<filename>
-    dfp_match = re.match(r"^/file/([^/]+)/", resume_url)
-    if dfp_match:
-        candidates.append(dfp_match.group(1))
-
-    for file_name in candidates:
-        attached = frappe.db.get_value(
-            "File", file_name, ["attached_to_doctype", "attached_to_name"], as_dict=True
+    if not files:
+        frappe.log_error(
+            "Resume Ranker: no files attached to applicant",
+            f"{applicant.name} points at {applicant.resume_attachment!r}, "
+            "but no files are attached to it.",
         )
-        if (
-            attached
-            and attached.attached_to_doctype == "Job Applicant"
-            and attached.attached_to_name == applicant.name
-        ):
-            return file_name
+        return None
+
+    if len(files) == 1:
+        return files[0].name
+
+    filename = applicant.resume_attachment.rsplit("/", 1)[-1]
+    for f in files:
+        if f.file_name == filename:
+            return f.name
 
     frappe.log_error(
-        "Resume Ranker: resume not attached to this applicant",
-        f"{applicant.name} points at {resume_url!r}, which is not attached to it.",
+        "Resume Ranker: could not identify resume among attachments",
+        f"{applicant.name} points at {applicant.resume_attachment!r}, "
+        f"but it did not match any of: {[f.file_name for f in files]}",
     )
+
     return None
 
 
