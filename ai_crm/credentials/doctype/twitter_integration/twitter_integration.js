@@ -206,7 +206,7 @@ frappe.ui.form.on('Twitter Integration', {
     onload: function(frm) {
         // Set default redirect URI for new records
         if (frm.is_new() && !frm.doc.redirect_uri) {
-            const callback_url = `${window.location.origin}/api/method/ai_crm.ai_crm.doctype.twitter_integration.twitter_integration.callback`;
+            const callback_url = `${window.location.origin}/api/method/ai_crm.credentials.doctype.twitter_integration.twitter_integration.callback`;
             frm.set_value('redirect_uri', callback_url);
         }
         

@@ -2,8 +2,11 @@
 // For license information, please see license.txt
 // your_app/public/js/linkedin_integration.js
 
+const LINKEDIN_CALLBACK = "/api/method/ai_crm.credentials.doctype.linkedin_integration.linkedin_integration.callback";
+
 frappe.ui.form.on('LinkedIn Integration', {
     refresh: function(frm) {
+        check_redirect_uri(frm);
         if (!frm.is_new()) {
             frm.add_custom_button(__('Connect to LinkedIn'), () => {
                 if (!frm.doc.client_id || !frm.doc.redirect_uri) {
@@ -53,3 +56,23 @@ frappe.ui.form.on('LinkedIn Integration', {
         }
     }
 });
+
+// The Redirect URI must match this site and the URL registered in the LinkedIn developer app.
+function check_redirect_uri(frm) {
+    const expected = window.location.origin + LINKEDIN_CALLBACK;
+    if (frm.is_new() && !frm.doc.redirect_uri) {
+        frm.set_value('redirect_uri', expected);
+        return;
+    }
+    if (frm.doc.redirect_uri && frm.doc.redirect_uri !== expected) {
+        frm.dashboard.set_headline_alert(
+            __("Redirect URI does not match this site. Expected: {0}", [frappe.utils.escape_html(expected)]),
+            "orange"
+        );
+        frm.add_custom_button(__('Use This Site\'s Redirect URI'), () => {
+            frm.set_value('redirect_uri', expected);
+            frm.save();
+        });
+    }
+}
+

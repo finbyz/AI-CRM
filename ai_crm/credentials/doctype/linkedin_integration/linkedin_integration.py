@@ -1,4 +1,7 @@
 import re
+import time
+from urllib.parse import quote
+
 import frappe
 from frappe.apps import _
 from frappe.model.document import Document
@@ -24,11 +27,11 @@ class LinkedInIntegration(Document):
         if len(content) > 3000:
             frappe.throw(_("LinkedIn post content cannot exceed 3000 characters"))
 
-    def post_to_linkedin(self, content, image_attachment=None):
+    def post_to_linkedin(self, content, image_attachment=None, document=None, document_title=None):
         """Post content to LinkedIn using the Posts API"""
         self.validate_linkedin_content(content)
         helper = self.get_linkedin_helper()
-        return helper.post_to_linkedin(content, image_attachment)
+        return helper.post_to_linkedin(content, image_attachment, document, document_title)
 
     def update_linkedin_post(self, post_id, content):
         """Update an existing LinkedIn post"""
@@ -45,8 +48,9 @@ class LinkedInIntegration(Document):
 class LinkedInHelper:
     """Helper class for LinkedIn API operations"""
     
-    # Updated to the latest active LinkedIn API version (September 2025)
-    API_VERSION = "202509"
+    # LinkedIn sunsets each monthly version after about a year; keep this current.
+    API_VERSION = "202609"
+    DOCUMENT_READY_TIMEOUT = 90  # seconds to wait for LinkedIn to process an uploaded PDF
 
     def __init__(self, linkedin_doc):
         self.linkedin_doc = linkedin_doc
@@ -112,7 +116,43 @@ class LinkedInHelper:
 
         return image_urn
 
-    def _prepare_linkedin_post_data(self, content, image_attachment=None):
+    def _upload_linkedin_document(self, author_urn, file_url) -> str:
+        """Upload a PDF to LinkedIn, wait until it is processed, and return its document URN."""
+        reg_res = requests.post(
+            "https://api.linkedin.com/rest/documents?action=initializeUpload",
+            headers=self._get_headers(),
+            json={"initializeUploadRequest": {"owner": author_urn}},
+            timeout=60,
+        )
+        reg_res.raise_for_status()
+        reg_data = reg_res.json()["value"]
+        document_urn = reg_data["document"]
+
+        file_path = frappe.get_doc("File", {"file_url": file_url}).get_full_path()
+        with open(file_path, "rb") as f:
+            up_res = requests.put(
+                reg_data["uploadUrl"],
+                headers={"Authorization": f"Bearer {self.access_token}"},
+                data=f.read(),
+                timeout=120,
+            )
+        up_res.raise_for_status()
+
+        status_url = f"https://api.linkedin.com/rest/documents/{quote(document_urn, safe='')}"
+        deadline = time.monotonic() + self.DOCUMENT_READY_TIMEOUT
+        status = None
+        while time.monotonic() < deadline:
+            res = requests.get(status_url, headers=self._get_headers(), timeout=30)
+            res.raise_for_status()
+            status = res.json().get("status")
+            if status == "AVAILABLE":
+                return document_urn
+            if status == "PROCESSING_FAILED":
+                frappe.throw(_("LinkedIn could not process the PDF"))
+            time.sleep(3)
+        frappe.throw(_("LinkedIn is still processing the PDF (status {0}); retry the publish shortly").format(status))
+
+    def _prepare_linkedin_post_data(self, content, image_attachment=None, document=None, document_title=None):
         """Prepare the post data according to LinkedIn Posts API schema."""
         if self.organization_support and self.organization_id:
             author_urn = f"urn:li:organization:{self.organization_id}"
@@ -121,7 +161,30 @@ class LinkedInHelper:
 
         # Extract URLs from content
         urls = self._extract_urls_from_content(content)
-        
+
+        # A PDF becomes a swipeable document (carousel) post and takes priority.
+        if document:
+            document_urn = self._upload_linkedin_document(author_urn, document)
+            post_data = {
+                "author": author_urn,
+                "commentary": content,
+                "visibility": "PUBLIC",
+                "distribution": {
+                    "feedDistribution": "MAIN_FEED",
+                    "targetEntities": [],
+                    "thirdPartyDistributionChannels": [],
+                },
+                "content": {
+                    "media": {
+                        "title": (document_title or "Document")[:200],
+                        "id": document_urn,
+                    }
+                },
+                "lifecycleState": "PUBLISHED",
+                "isReshareDisabledByAuthor": False,
+            }
+            return post_data, "posts"
+
         # If image exists, use current Posts API (image priority)
         if image_attachment:
             image_urn = self._upload_linkedin_image(author_urn, image_attachment)
@@ -213,16 +276,19 @@ class LinkedInHelper:
             return response.json()
 
         except requests.exceptions.RequestException as e:
-            error_message = f"LinkedIn API Error: {e.response.status_code} - {e.response.text if e.response else str(e)}"
+            if e.response is not None:
+                error_message = f"LinkedIn API Error: {e.response.status_code} - {e.response.text}"
+            else:
+                error_message = f"LinkedIn API Error: {e}"
             frappe.log_error(error_message, "LinkedIn API Request")
             return {"status": "error", "error": error_message}
 
-    def post_to_linkedin(self, content, image_attachment=None):
+    def post_to_linkedin(self, content, image_attachment=None, document=None, document_title=None):
         """Post content to LinkedIn using the appropriate API."""
         if self.linkedin_doc.connection_status != "Connected":
             frappe.throw(_("LinkedIn account is not connected. Please reconnect your account."))
 
-        post_data, api_type = self._prepare_linkedin_post_data(content, image_attachment)
+        post_data, api_type = self._prepare_linkedin_post_data(content, image_attachment, document, document_title)
         
         # Choose the right API endpoint
         if api_type == "ugcPosts":

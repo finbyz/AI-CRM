@@ -40,7 +40,7 @@ class TwitterIntegration(Document):
         # Set a default redirect URI if one is not provided.
         if not self.redirect_uri:
             site_url = frappe.utils.get_url()
-            self.redirect_uri = f"{site_url}/api/method/ai_crm.ai_crm.doctype.twitter_integration.twitter_integration.callback"
+            self.redirect_uri = f"{site_url}/api/method/ai_crm.credentials.doctype.twitter_integration.twitter_integration.callback"
 
     def _generate_code_challenge(self):
         """Generates a code challenge from the code verifier for the PKCE flow."""

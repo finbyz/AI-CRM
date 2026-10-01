@@ -101,7 +101,7 @@ frappe.ui.form.on('Reddit Integration', {
     
     onload: function(frm) {
         if (frm.is_new() && !frm.doc.redirect_uri) {
-            const callback_url = `${window.location.origin}/api/method/ai_crm.credentials.doctype.reddit_integration.reddit_integration.reddit_callback`;
+            const callback_url = `${window.location.origin}/api/method/ai_crm.credentials.doctype.reddit_integration.reddit_integration.callback`;
             frm.set_value('redirect_uri', callback_url);
         }
         if (frm.is_new() && !frm.doc.user_agent) {
