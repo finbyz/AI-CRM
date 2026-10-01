@@ -4,4 +4,5 @@
 
 [post_model_sync]
 ai_crm.patches.migrate_resume_ranker_fields
+ai_crm.patches.create_default_creative_templates
 # Patches added in this section will be executed after doctypes are migrated

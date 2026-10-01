@@ -16,6 +16,10 @@
   "image_size",
   "image_generation_meta_prompt",
   "brand_voice",
+  "approval_section",
+  "approver_roles",
+  "creative_tab",
+  "creative_skill",
   "resume_ranker_tab",
   "resume_ranker_agent",
   "job_skills_extractor_agent"
@@ -95,6 +99,29 @@
    "label": "Brand Voice"
   },
   {
+   "fieldname": "approval_section",
+   "fieldtype": "Section Break",
+   "label": "Post Approval"
+  },
+  {
+   "fieldname": "approver_roles",
+   "fieldtype": "Table MultiSelect",
+   "label": "Approver Roles",
+   "options": "Has Role",
+   "description": "Only users with one of these roles see Approve and Reject on Social Media Posts. Anyone who can open a post can Submit for Approval."
+  },
+  {
+   "fieldname": "creative_tab",
+   "fieldtype": "Tab Break",
+   "label": "Creative Skill"
+  },
+  {
+   "fieldname": "creative_skill",
+   "fieldtype": "Markdown Editor",
+   "label": "Creative Skill (Markdown)",
+   "description": "Paste the full FinByz style skill here. It is sent to the model with every Generate Creative request, on top of the Brand Voice and the chosen Creative Template's instructions. Colours, fonts, logo and layouts are enforced by the built-in templates, so the model applies the skill's tone and writing rules to the text."
+  },
+  {
    "fieldname": "resume_ranker_tab",
    "fieldtype": "Tab Break",
    "label": "Resume Ranker"
@@ -118,7 +145,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-09-16 12:30:00.000000",
+ "modified": "2026-10-01 18:30:00.000000",
  "modified_by": "Administrator",
  "module": "Social Media",
  "name": "Content Hub Setting",

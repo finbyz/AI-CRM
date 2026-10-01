@@ -1,0 +1,29 @@
+{
+ "slides": [
+  {"layout": "cover", "eyebrow": "ERPNext for Finance Teams", "title": "Close your books in", "title_emphasis": "3 days, not 3 weeks.", "subtitle": "Five changes we make in every ERPNext rollout that take the pain out of month-end.", "icon": "calendar"},
+  {"layout": "compare", "eyebrow": "The Problem", "title": "Where month-end", "title_emphasis": "really goes.", "left_label": "Today", "right_label": "With ERPNext", "rows": [
+    {"left": "Bank entries matched by hand in Excel", "right": "Auto bank reconciliation with rules"},
+    {"left": "Stock value differs from the ledger", "right": "Perpetual inventory, always in sync"},
+    {"left": "Accruals chased over email", "right": "Scheduled journal entries"},
+    {"left": "Reports rebuilt every month", "right": "Live P&L and balance sheet"}
+  ]},
+  {"layout": "points", "eyebrow": "What We Change", "title": "Three fixes that", "title_emphasis": "save the most time.", "items": [
+    {"icon": "link", "title": "Bank feeds, not bank statements", "text": "Transactions flow in daily and match themselves against invoices and payments."},
+    {"icon": "layers", "title": "One source of stock truth", "text": "Every receipt and delivery posts to the ledger, so there is nothing to reconcile at close."},
+    {"icon": "clock", "title": "Close checklist inside ERP", "text": "Owners, due dates and status for every close task, visible to the whole team."}
+  ]},
+  {"layout": "stats", "eyebrow": "The Result", "title": "What our clients", "title_emphasis": "see in 90 days.", "items": [
+    {"value": "70", "suffix": "%", "label": "Less time on close"},
+    {"value": "3", "suffix": "d", "label": "Average close cycle"},
+    {"value": "0", "label": "Spreadsheet reconciliations"}
+  ], "caption": "Measured across finance teams we moved onto ERPNext in the last year.", "icon": "trend"},
+  {"layout": "steps", "eyebrow": "How We Do It", "title": "A rollout your team", "title_emphasis": "can actually run.", "items": [
+    {"title": "Map", "text": "We document your current close, step by step."},
+    {"title": "Configure", "text": "Chart of accounts, rules and automations in ERPNext."},
+    {"title": "Migrate", "text": "Clean opening balances, verified by accountants."},
+    {"title": "Train and support", "text": "Your team runs the first close with us beside them."}
+  ]},
+  {"layout": "quote", "eyebrow": "From a Client CFO", "quote": "We stopped living in spreadsheets.", "quote_emphasis": "Month-end is now just another week.", "attribution": "CFO, Manufacturing Client", "icon": "check"},
+  {"layout": "cta", "eyebrow": "Your Next Step", "title": "Want a faster close?", "title_emphasis": "Let's map yours.", "text": "Book a free 30-minute finance process review with our ERPNext accountants.", "button": "Book a review", "icon": "rocket"}
+ ]
+}

@@ -1,0 +1,121 @@
+{% extends "_base.html" %}
+{% macro icon(name, cls="ic") %}<svg class="{{ cls }}" viewBox="0 0 24 24">{{ icons[name]|safe }}</svg>{% endmacro %}
+
+{% block styles %}
+.page{--s:1;padding:56px 56px 38px;}
+.lh{display:flex;justify-content:space-between;align-items:center;padding-bottom:14px;border-bottom:1.5px solid var(--line);margin-bottom:30px;}
+.lh img{height:38px;width:auto;align-self:center;}
+.lh span{font-family:'Plex';font-size:8.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-faint);}
+.page .fitbox>.inner{min-height:100%;justify-content:space-between;gap:2.2em;}
+.intro .eyebrow{font-size:.95em;margin-bottom:1.2em;}
+.intro .title{font-size:4.4em;}
+.intro .lede{font-size:1.35em;line-height:1.6;color:var(--ink-soft);margin-top:1em;max-width:44em;}
+
+.divlabel{display:flex;align-items:center;gap:1.4em;margin-bottom:1.2em;}
+.divlabel span{font-family:'Plex';font-size:.9em;letter-spacing:.28em;text-transform:uppercase;color:var(--ink-faint);white-space:nowrap;}
+.divlabel .ln{flex:1;height:1px;background:var(--line);}
+
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2em;}
+.cards.n2,.cards.n4{grid-template-columns:repeat(2,1fr);}
+.card{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:13px;padding:1.6em 1.7em;background:linear-gradient(180deg,#fff,var(--paper-2));}
+.card>*{position:relative;z-index:1;}
+.card .cwm{position:absolute;z-index:0;right:-1em;bottom:-1.4em;width:9.6em;height:9.6em;fill:none;stroke:var(--ink);stroke-width:1.2;opacity:.09;}
+.card.am .cwm{stroke:var(--amber);opacity:.11;}
+.ibox{width:4.2em;height:4.2em;border-radius:1.1em;display:flex;align-items:center;justify-content:center;background:var(--azure-soft);color:var(--blue-deep);}
+.ibox .ic{font-size:2em;}
+.card.am .ibox{background:var(--amber-soft);color:#c8770a;}
+.card h4{font-size:1.4em;font-weight:700;margin:.85em 0 .35em;}
+.card p{font-size:1.08em;line-height:1.5;color:var(--ink-soft);}
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
+.stats.n2{grid-template-columns:repeat(2,1fr);} .stats.n3{grid-template-columns:repeat(3,1fr);}
+.stat{padding:2em 2.2em;border-right:1px solid var(--line);}
+.stat:last-child{border-right:none;}
+.stat .v{font-family:'Fraunces';font-size:3.4em;color:var(--ink);line-height:1;white-space:nowrap;}
+.stat .v sup{color:var(--amber);font-size:.5em;}
+.stat .k{font-family:'Plex';font-size:.82em;letter-spacing:.16em;text-transform:uppercase;color:var(--blue-deep);margin-top:.7em;line-height:1.4;}
+
+.steps{display:flex;justify-content:space-between;position:relative;gap:1.2em;}
+.steps::before{content:"";position:absolute;left:2.2em;right:2.2em;top:2.2em;height:1px;background:var(--line);}
+.step{flex:1;position:relative;}
+.step .dot{width:4.4em;height:4.4em;border-radius:50%;background:var(--navy-3);color:#fff;display:flex;align-items:center;justify-content:center;}
+.step:last-child .dot{background:var(--amber);}
+.step .dot span{font-family:'Plex';font-weight:600;font-size:1.3em;}
+.step h4{font-size:1.3em;font-weight:700;margin:.8em 0 .3em;}
+.step p{font-size:1.05em;line-height:1.45;color:var(--ink-soft);}
+
+.band{background:linear-gradient(120deg,#0b1c30,#122b45);border-radius:14px;padding:1.9em 2.4em;}
+.band .be{font-family:'Plex';font-size:.85em;letter-spacing:.24em;text-transform:uppercase;color:var(--amber-2);margin-bottom:.8em;}
+.band h3{font-family:'Fraunces';font-size:2.1em;font-weight:500;color:#fff;line-height:1.15;}
+.band h3 i{font-style:italic;color:var(--azure-2);}
+
+.callout{display:flex;align-items:center;gap:1.4em;border:1px solid #f2d09a;background:linear-gradient(120deg,#fdf5e8,#fdf0dc);border-radius:12px;padding:1.5em 2em;}
+.callout .ci{width:3.8em;height:3.8em;border-radius:1em;flex:none;background:var(--amber);color:#fff;display:flex;align-items:center;justify-content:center;}
+.callout .ci .ic{font-size:1.8em;}
+.callout p{font-size:1.15em;line-height:1.5;color:#6b4c17;}
+
+.pfoot{display:flex;justify-content:space-between;align-items:center;margin-top:18px;padding-top:11px;border-top:1px solid var(--line);
+  font-family:'Plex';font-size:8.4px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint);position:relative;z-index:1;}
+.pfoot .l{display:flex;align-items:center;gap:7px;}
+.pfoot .l img{height:13px;width:auto;}
+.pfoot .pg{color:var(--amber);font-weight:600;}
+{% endblock %}
+
+{% block body %}
+<section class="frame page">
+  <header class="lh">
+    <img src="{{ asset }}/logo_light.png" alt="">
+    <span>{{ brand.website }}</span>
+  </header>
+
+  <div class="fitbox"><div class="inner">
+    <div class="intro">
+      {% if doc.eyebrow %}<div class="eyebrow">{{ doc.eyebrow }}</div>{% endif %}
+      <div class="title">{{ doc.title }}{% if doc.title_emphasis %} <i>{{ doc.title_emphasis }}</i>{% endif %}</div>
+      {% if doc.lede %}<p class="lede">{{ doc.lede }}</p>{% endif %}
+    </div>
+
+    {% for b in doc.blocks %}
+    <div class="block">
+      {% if b.label %}<div class="divlabel"><span>{{ b.label }}</span><div class="ln"></div></div>{% endif %}
+      {% if b.type == "cards" %}
+        <div class="cards n{{ b['items']|length }}">
+        {% for it in b["items"] %}
+          <div class="card{{ ' am' if loop.index is even }}">
+            <svg class="cwm" viewBox="0 0 24 24">{{ icons[it.icon]|safe }}</svg>
+            <div class="ibox">{{ icon(it.icon) }}</div>
+            <h4>{{ it.title }}</h4>{% if it.text %}<p>{{ it.text }}</p>{% endif %}
+          </div>
+        {% endfor %}
+        </div>
+      {% elif b.type == "stats" %}
+        <div class="stats n{{ b['items']|length }}">
+        {% for it in b["items"] %}
+          <div class="stat"><div class="v">{{ it.value }}{% if it.suffix %}<sup>{{ it.suffix }}</sup>{% endif %}</div><div class="k">{{ it.label }}</div></div>
+        {% endfor %}
+        </div>
+      {% elif b.type == "steps" %}
+        <div class="steps">
+        {% for it in b["items"] %}
+          <div class="step"><div class="dot"><span>{{ '%02d' % loop.index }}</span></div><h4>{{ it.title }}</h4>{% if it.text %}<p>{{ it.text }}</p>{% endif %}</div>
+        {% endfor %}
+        </div>
+      {% elif b.type == "band" %}
+        <div class="band">
+          {% if b.eyebrow %}<div class="be">{{ b.eyebrow }}</div>{% endif %}
+          <h3>{{ b.text }}{% if b.emphasis %} <i>{{ b.emphasis }}</i>{% endif %}</h3>
+        </div>
+      {% elif b.type == "callout" %}
+        <div class="callout"><div class="ci">{{ icon('bulb') }}</div><p>{{ b.text }}</p></div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div></div>
+
+  <footer class="pfoot">
+    <span class="l"><img src="{{ asset }}/logo_mark.png" alt="">{{ brand.company }}</span>
+    <span>{{ brand.tagline }} &middot; {{ brand.website }}</span>
+    <span class="pg">{{ brand.email }}</span>
+  </footer>
+</section>
+{% endblock %}

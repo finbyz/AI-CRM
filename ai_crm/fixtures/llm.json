@@ -516,5 +516,19 @@
   "supports_image_generation": 0,
   "supports_vision": 0,
   "title": "OpenAI Text Embedding 3 Large"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "LLM",
+  "enabled": 1,
+  "is_embedding_model": 0,
+  "is_reasoning": 0,
+  "modified": "2026-09-29 12:00:00.000000",
+  "name": "openrouter/anthropic/claude-sonnet-5.5",
+  "provider": "OpenRouter",
+  "size": "Large",
+  "supports_image_generation": 0,
+  "supports_vision": 1,
+  "title": "Claude Sonnet 5.5 (OpenRouter)"
  }
 ]

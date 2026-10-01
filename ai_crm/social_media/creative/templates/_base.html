@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+{# FinByz creative base. Every text size is in em off the slide/page root, whose
+   font-size is 10px x --s (canvas scale) x --k (fit factor), so fitAll() can
+   shrink a crowded slide proportionally. Palette: navy/amber/azure only, no green. #}
+<style>
+@font-face{font-family:'Fraunces';src:url('{{ asset }}/fonts/fraunces-latin-full-normal.woff2') format('woff2');font-weight:100 900;font-style:normal;font-display:block;}
+@font-face{font-family:'Fraunces';src:url('{{ asset }}/fonts/fraunces-latin-full-italic.woff2') format('woff2');font-weight:100 900;font-style:italic;font-display:block;}
+@font-face{font-family:'Inter';src:url('{{ asset }}/fonts/inter-latin-wght-normal.woff2') format('woff2');font-weight:100 900;font-style:normal;font-display:block;}
+@font-face{font-family:'Inter';src:url('{{ asset }}/fonts/inter-latin-wght-italic.woff2') format('woff2');font-weight:100 900;font-style:italic;font-display:block;}
+@font-face{font-family:'Plex';src:url('{{ asset }}/fonts/ibm-plex-mono-latin-400-normal.woff2') format('woff2');font-weight:400;font-style:normal;font-display:block;}
+@font-face{font-family:'Plex';src:url('{{ asset }}/fonts/ibm-plex-mono-latin-500-normal.woff2') format('woff2');font-weight:500;font-style:normal;font-display:block;}
+@font-face{font-family:'Plex';src:url('{{ asset }}/fonts/ibm-plex-mono-latin-600-normal.woff2') format('woff2');font-weight:600;font-style:normal;font-display:block;}
+
+:root{
+  --navy:#0a1726;--navy-2:#0d1f33;--navy-3:#11283f;
+  --amber:#f29316;--amber-2:#f4a52e;--amber-soft:#fdf0dc;
+  --azure:#2f9bd4;--azure-2:#5bb4e5;--azure-soft:#e8f3fb;
+  --blue-deep:#1a4971;
+  --ink:#152538;--ink-soft:#41556b;--ink-faint:#7286a0;
+  --paper:#ffffff;--paper-2:#f6f8fb;--line:#e2e8f1;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+body{font-family:'Inter',sans-serif;color:var(--ink);background:var(--paper);}
+@page{size:{{ width }}px {{ height }}px;margin:0;}
+
+.frame{--k:1;width:{{ width }}px;height:{{ height }}px;position:relative;overflow:hidden;
+  display:flex;flex-direction:column;background:var(--paper);page-break-after:always;
+  font-size:calc(10px * var(--s) * var(--k));}
+.frame:last-child{page-break-after:auto;}
+.frame.dark{color:#fff;background:radial-gradient(120% 90% at 100% 0%,#12335a 0%,transparent 55%),
+  linear-gradient(155deg,var(--navy),#0d2137);}
+.fitbox{flex:1;min-height:0;display:flex;flex-direction:column;position:relative;z-index:1;}
+.fitbox>.inner{display:flex;flex-direction:column;}
+
+.ic{width:1em;height:1em;stroke-width:1.7;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;flex:none;}
+.wm{position:absolute;fill:none;stroke-width:.9;stroke-linecap:round;stroke-linejoin:round;pointer-events:none;z-index:0;}
+.eyebrow{font-family:'Plex';font-weight:500;letter-spacing:.3em;text-transform:uppercase;color:var(--amber);}
+.title{font-family:'Fraunces';font-weight:400;line-height:1.02;letter-spacing:-.025em;color:var(--ink);}
+.title i{font-style:italic;color:var(--azure);}
+.dark .title{color:#fff;} .dark .title i{color:var(--azure-2);}
+.muted{color:var(--ink-soft);} .dark .muted{color:#b7c6da;}
+{% block styles %}{% endblock %}
+</style>
+</head>
+<body>
+{% block body %}{% endblock %}
+<script>
+// Shrink each frame's type until its content fits, down to 62% of design size.
+window.fitAll = function () {
+  const stuck = [];
+  document.querySelectorAll('.frame').forEach((frame, index) => {
+    const box = frame.querySelector('.fitbox');
+    const inner = box && box.querySelector('.inner');
+    if (!inner) return;
+    const over = () => inner.scrollHeight > box.clientHeight + 1 || inner.scrollWidth > box.clientWidth + 1;
+    let k = 1;
+    while (over() && k > 0.62) {
+      k = Math.round((k - 0.03) * 100) / 100;
+      frame.style.setProperty('--k', k);
+    }
+    if (over()) stuck.push(index);
+  });
+  return stuck;
+};
+</script>
+</body>
+</html>

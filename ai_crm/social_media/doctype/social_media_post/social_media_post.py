@@ -9,12 +9,12 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import get_datetime, now_datetime
 
-from ai_crm.social_media.platforms import get_platform
+from ai_crm.social_media.platforms import PLATFORM_BY_CREDENTIAL, get_platform
 
 
 class SocialMediaPost(Document):
     APPROVAL_FIELDS = {
-        "title", "content", "image_attachment",
+        "title", "content", "image_attachment", "creative_pdf",
         "credential_type", "credential", "subreddit", "post_on",
     }
     SOURCE_FIELDS = {
@@ -30,12 +30,16 @@ class SocialMediaPost(Document):
         return get_platform(self.credential_type)
 
     def validate(self):
+        if self.is_new():
+            self._prepare_manual_post()
         previous = self.get_doc_before_save()
         if not previous:
             return
 
+        # Schedule/unschedule legitimately move post_on without touching the content.
+        protected = self.APPROVAL_FIELDS - {"post_on"} if self.flags.scheduling else self.APPROVAL_FIELDS
         protected_content_changed = any(
-            previous.get(field) != self.get(field) for field in self.APPROVAL_FIELDS
+            previous.get(field) != self.get(field) for field in protected
         )
         source_context_changed = any(
             previous.get(field) != self.get(field) for field in self.SOURCE_FIELDS
@@ -62,6 +66,66 @@ class SocialMediaPost(Document):
         if workflow_changed and not self.flags.skip_approval_reset:
             frappe.throw(_("Use a Content Studio workflow action to change workflow fields"))
 
+    def _prepare_manual_post(self):
+        """Posts written by hand (no Content Hub) skip AI generation."""
+        if self.content_hub:
+            return
+        if not self.credential_type or not self.credential:
+            frappe.throw(_("Select the Credential Type and Credential to post from"))
+        if self.credential_type not in PLATFORM_BY_CREDENTIAL:
+            frappe.throw(_("Credential Type must be one of {0}").format(", ".join(PLATFORM_BY_CREDENTIAL)))
+        if not (self.title or "").strip():
+            frappe.throw(_("Title is required"))
+        if not (self.content or "").strip():
+            frappe.throw(_("Content is required"))
+        self.status = "Draft"
+        self.generation_status = "Ready"
+
+    def get_group_names(self):
+        """Drafts generated from the same Content Hub idea, used to share a creative."""
+        if not (self.content_hub and self.source_idea_row):
+            return [self.name]
+        return frappe.get_all(
+            self.doctype,
+            filters={"content_hub": self.content_hub, "source_idea_row": self.source_idea_row},
+            order_by="creation asc",
+            pluck="name",
+        )
+
+    @frappe.whitelist(methods=["POST"])
+    def copy_to_account(self, credential_type: str, credential: str):
+        """Create a new Draft of this post for another account. It is not submitted."""
+        self.check_permission("read")
+        frappe.has_permission(self.doctype, "create", throw=True)
+        if credential_type not in PLATFORM_BY_CREDENTIAL:
+            frappe.throw(_("Credential Type must be one of {0}").format(", ".join(PLATFORM_BY_CREDENTIAL)))
+        if not frappe.db.exists(credential_type, credential):
+            frappe.throw(_("{0} {1} does not exist").format(credential_type, credential))
+        if (credential_type, credential) == (self.credential_type, self.credential):
+            frappe.throw(_("This post already uses that account"))
+
+        from ai_crm.social_media.creative.generation import copy_creative
+
+        copy = frappe.get_doc({
+            "doctype": self.doctype,
+            "title": self.title,
+            "content": self.content,
+            "image_attachment": self.image_attachment,
+            "image_generation_prompt": self.image_generation_prompt,
+            "credential_type": credential_type,
+            "credential": credential,
+            "subreddit": self.subreddit if credential_type == self.credential_type else None,
+            "content_hub": self.content_hub,
+            "reference_content_idea": self.reference_content_idea,
+            "source_idea_row": self.source_idea_row,
+            "status": "Draft",
+            "generation_status": "Ready",
+        })
+        copy.insert()
+        if self.creative_status == "Ready":
+            copy_creative(self, copy)
+        return copy.name
+
     def get_credentials(self):
         """Return the connected account selected when this draft was created."""
         if not self.credential_type or not self.credential:
@@ -84,7 +148,8 @@ class SocialMediaPost(Document):
 
     @frappe.whitelist(methods=["POST"])
     def submit_for_approval(self):
-        self.check_permission("write")
+        # Anyone who can see the post may send it for approval.
+        self.check_permission("read")
         if self.generation_status != "Ready":
             frappe.throw("Wait for content generation to finish")
         if self.status != "Draft":
@@ -98,25 +163,51 @@ class SocialMediaPost(Document):
         self.submitted_on = now_datetime()
         self.rejection_reason = None
         self.flags.skip_approval_reset = True
-        self.save()
+        self.save(ignore_permissions=True)
         return self.as_studio_dict()
 
     @frappe.whitelist(methods=["POST"])
     def approve(self):
-        self._require_manager()
+        """Approve, then publish now (no Post On, or it has passed) or schedule for Post On."""
+        self._require_approver()
         if self.status != "Pending Approval":
             frappe.throw("Only pending posts can be approved")
-        self.status = "Approved"
         self.approved_by = frappe.session.user
         self.approved_on = now_datetime()
         self.rejection_reason = None
         self.flags.skip_approval_reset = True
-        self.save()
+        publish_now = not self.post_on or get_datetime(self.post_on) <= now_datetime()
+        if publish_now:
+            self.status = "Approved"
+            self.post_on = None
+        else:
+            self.status = "Scheduled"
+        self.flags.scheduling = True
+        self.save(ignore_permissions=True)
+        account = f"{self.platform} ({self.credential})"
+        if publish_now:
+            frappe.msgprint(_("Approved. Posting to {0} now.").format(account), title=_("Approved"), indicator="green")
+        else:
+            frappe.msgprint(
+                _("Approved. Will be posted to {0} on {1}.").format(account, frappe.utils.format_datetime(self.post_on)),
+                title=_("Scheduled"),
+                indicator="blue",
+            )
+        if publish_now:
+            frappe.enqueue(
+                publish_approved_post,
+                queue="long",
+                timeout=900,
+                enqueue_after_commit=True,
+                job_id=f"publish:{self.name}",
+                deduplicate=True,
+                post_name=self.name,
+            )
         return self.as_studio_dict()
 
     @frappe.whitelist(methods=["POST"])
     def reject(self, reason: str):
-        self._require_manager()
+        self._require_approver()
         reason = (reason or "").strip()
         if self.status != "Pending Approval":
             frappe.throw("Only pending posts can be rejected")
@@ -139,6 +230,7 @@ class SocialMediaPost(Document):
         self.status = "Scheduled"
         self.post_on = scheduled_for
         self.flags.skip_approval_reset = True
+        self.flags.scheduling = True
         self.save()
         return self.as_studio_dict()
 
@@ -150,6 +242,7 @@ class SocialMediaPost(Document):
         self.status = "Approved"
         self.post_on = None
         self.flags.skip_approval_reset = True
+        self.flags.scheduling = True
         self.save()
         return self.as_studio_dict()
 
@@ -182,6 +275,28 @@ class SocialMediaPost(Document):
         return self.as_studio_dict()
 
     @frappe.whitelist(methods=["POST"])
+    def generate_creative(self, template: str, brief: str = "", llm: str | None = None, share_with_siblings: int = 1):
+        self._require_editable_draft()
+        from ai_crm.social_media.creative.generation import queue_creative
+
+        return queue_creative(self, template, brief, llm, frappe.utils.cint(share_with_siblings))
+
+    @frappe.whitelist(methods=["POST"])
+    def rerender_creative(self):
+        self._require_editable_draft()
+        if self.creative_status in {"Queued", "Generating"}:
+            frappe.throw(_("The creative is still being generated"))
+        from ai_crm.social_media.creative.generation import rerender_creative
+
+        rerender_creative(self)
+        return {"status": "success"}
+
+    def _require_editable_draft(self):
+        self.check_permission("write")
+        if self.status != "Draft":
+            frappe.throw(_("Return the post to Draft before changing its creative"))
+
+    @frappe.whitelist(methods=["POST"])
     def retry_publish(self):
         self._require_manager()
         if self.status != "Failed" or self.generation_status != "Ready":
@@ -204,9 +319,26 @@ class SocialMediaPost(Document):
         self.check_permission("write")
 
     def _is_manager(self):
-        return frappe.session.user == "Administrator" or bool(
+        return self._is_approver() or bool(
             {"System Manager", "Social Media Manager"}.intersection(frappe.get_roles())
         )
+
+    def _is_approver(self):
+        if frappe.session.user == "Administrator":
+            return True
+        roles = frappe.get_all(
+            "Has Role",
+            filters={"parent": "Content Hub Setting", "parenttype": "Content Hub Setting", "parentfield": "approver_roles"},
+            pluck="role",
+        ) or ["System Manager"]
+        return bool(set(roles).intersection(frappe.get_roles()))
+
+    def _require_approver(self):
+        if not self._is_approver():
+            frappe.throw(_("You are not allowed to approve or reject social media posts"), frappe.PermissionError)
+
+    def onload(self):
+        self.set_onload("can_approve", self._is_approver())
 
     def as_studio_dict(self):
         fields = (
@@ -375,7 +507,13 @@ class SocialMediaPost(Document):
             if linkedin_doc.connection_status != "Connected":
                 frappe.throw(_("LinkedIn account is not connected. Please reconnect your account."))
 
-            result = linkedin_doc.post_to_linkedin(self.content, self.image_attachment)
+            document = self.get_linkedin_document()
+            result = linkedin_doc.post_to_linkedin(
+                self.content,
+                None if document else self.image_attachment,
+                document=document,
+                document_title=self.title,
+            )
             
             if result.get("status") == "success":
                 self.status = "Posted"
@@ -402,6 +540,13 @@ class SocialMediaPost(Document):
                 "status": "error",
                 "message": str(e)
             }
+
+    def get_linkedin_document(self):
+        """PDF to post as a LinkedIn document (carousel), or None to post the image."""
+        if not self.creative_pdf or self.creative_status != "Ready":
+            return None
+        fmt = frappe.db.get_value("Creative Template", self.creative_template, "format")
+        return self.creative_pdf if fmt in {"Carousel", "One Pager"} else None
 
     def post_to_twitter(self):
         """Post content to Twitter using OAuth 2.0"""
@@ -599,3 +744,10 @@ class SocialMediaPost(Document):
                 "status": "error",
                 "error": str(e)
             }
+
+
+def publish_approved_post(post_name):
+    """Background publish right after approval; post() records success or failure on the post."""
+    doc = frappe.get_doc("Social Media Post", post_name)
+    if doc.status == "Approved":
+        doc.post()

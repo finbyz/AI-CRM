@@ -1,0 +1,58 @@
+{
+ "actions": [],
+ "creation": "2026-09-29 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "slide_no",
+  "layout",
+  "image",
+  "slide_json"
+ ],
+ "fields": [
+  {
+   "fieldname": "slide_no",
+   "fieldtype": "Int",
+   "label": "Slide",
+   "in_list_view": 1,
+   "read_only": 1,
+   "columns": 1
+  },
+  {
+   "fieldname": "layout",
+   "fieldtype": "Data",
+   "label": "Layout",
+   "in_list_view": 1,
+   "read_only": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "image",
+   "fieldtype": "Attach Image",
+   "label": "Image",
+   "in_list_view": 1,
+   "read_only": 1,
+   "columns": 4
+  },
+  {
+   "fieldname": "slide_json",
+   "fieldtype": "Code",
+   "label": "Slide Content (JSON)",
+   "options": "JSON",
+   "description": "Edit the text here, then use Creative > Re-render Slides. No AI call is made."
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-09-29 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Social Media",
+ "name": "Social Media Post Slide",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "istable": 1,
+ "editable_grid": 0
+}

@@ -1,0 +1,24 @@
+{
+ "eyebrow": "ERPNext + Applied AI",
+ "title": "An ERP that works",
+ "title_emphasis": "while you sleep.",
+ "lede": "FinByz builds AI agents directly into ERPNext, so routine finance, sales and HR work happens automatically, with a person approving only what matters.",
+ "blocks": [
+  {"type": "cards", "label": "What the agents do", "items": [
+   {"icon": "invoice", "title": "Read purchase invoices", "text": "PDF and email invoices become draft entries, matched to POs."},
+   {"icon": "users", "title": "Follow up with leads", "text": "Every lead gets a timely, personal next step."},
+   {"icon": "search", "title": "Rank candidates", "text": "Resumes scored against the job's real skill needs."}
+  ]},
+  {"type": "stats", "label": "Typical impact", "items": [
+   {"value": "80", "suffix": "%", "label": "Less data entry"},
+   {"value": "24", "suffix": "x7", "label": "Always on"},
+   {"value": "2", "suffix": "wk", "label": "To go live"}
+  ]},
+  {"type": "steps", "label": "How it starts", "items": [
+   {"title": "Discover", "text": "Pick the one process that costs the most hours."},
+   {"title": "Pilot", "text": "An agent runs it in ERPNext with approvals on."},
+   {"title": "Scale", "text": "Roll out to more teams once the numbers hold."}
+  ]},
+  {"type": "band", "eyebrow": "Why FinByz", "text": "Accountants and engineers in one team,", "emphasis": "not two vendors."}
+ ]
+}

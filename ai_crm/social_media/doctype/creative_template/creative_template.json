@@ -1,0 +1,147 @@
+{
+ "actions": [],
+ "creation": "2026-09-29 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "template_name",
+  "format",
+  "size",
+  "theme",
+  "column_break_1",
+  "enabled",
+  "llm",
+  "min_slides",
+  "max_slides",
+  "instructions_section",
+  "instructions",
+  "example_json"
+ ],
+ "fields": [
+  {
+   "fieldname": "template_name",
+   "fieldtype": "Data",
+   "label": "Template Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "format",
+   "fieldtype": "Select",
+   "label": "Format",
+   "options": "Carousel\nSingle Image\nOne Pager",
+   "reqd": 1,
+   "default": "Carousel",
+   "in_list_view": 1,
+   "description": "Carousel: multi-slide PDF plus one PNG per slide. Single Image: one PNG. One Pager: A4 PDF plus a PNG preview."
+  },
+  {
+   "fieldname": "size",
+   "fieldtype": "Select",
+   "label": "Size",
+   "options": "portrait\nsquare\nlandscape",
+   "default": "portrait",
+   "depends_on": "eval:doc.format!='One Pager'",
+   "description": "portrait 1080x1350 (best for LinkedIn), square 1080x1080, landscape 1200x627"
+  },
+  {
+   "fieldname": "theme",
+   "fieldtype": "Select",
+   "label": "Slide Colour",
+   "options": "Navy\nMixed\nLight",
+   "default": "Navy",
+   "depends_on": "eval:doc.format!='One Pager'",
+   "description": "Navy: every slide on the navy background. Light: every slide white. Mixed: cover, stats, quote and closing slides navy, the rest white."
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Enabled",
+   "default": "1",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "llm",
+   "fieldtype": "Link",
+   "label": "Default Model",
+   "options": "LLM",
+   "in_list_view": 1,
+   "description": "Model that writes the slide text. Can be overridden per post."
+  },
+  {
+   "fieldname": "min_slides",
+   "fieldtype": "Int",
+   "label": "Min Slides",
+   "default": "5",
+   "depends_on": "eval:doc.format=='Carousel'"
+  },
+  {
+   "fieldname": "max_slides",
+   "fieldtype": "Int",
+   "label": "Max Slides",
+   "default": "8",
+   "depends_on": "eval:doc.format=='Carousel'"
+  },
+  {
+   "fieldname": "instructions_section",
+   "fieldtype": "Section Break",
+   "label": "Writing Instructions"
+  },
+  {
+   "fieldname": "instructions",
+   "fieldtype": "Long Text",
+   "label": "Instructions",
+   "description": "The writing skill for this template: audience, tone, structure, dos and don'ts. The visual design is fixed by the FinByz brand templates and cannot be changed from here."
+  },
+  {
+   "fieldname": "example_json",
+   "fieldtype": "Code",
+   "label": "Example Output (JSON)",
+   "options": "JSON",
+   "description": "Optional. A model answer the AI copies the structure of. Leave empty to use the built-in example."
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-10-01 18:30:00.000000",
+ "modified_by": "Administrator",
+ "module": "Social Media",
+ "name": "Creative Template",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Social Media Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "autoname": "field:template_name",
+ "naming_rule": "By fieldname",
+ "title_field": "template_name"
+}

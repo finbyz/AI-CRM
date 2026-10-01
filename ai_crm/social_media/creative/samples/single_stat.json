@@ -1,0 +1,10 @@
+{
+ "slides": [
+  {"layout": "stats", "tone": "dark", "eyebrow": "ERPNext by FinByz", "title": "A decade of", "title_emphasis": "ERPNext rollouts.", "items": [
+    {"value": "300", "suffix": "+", "label": "Implementations"},
+    {"value": "12", "suffix": "+", "label": "Years on Frappe"},
+    {"value": "20", "suffix": "+", "label": "Countries served"},
+    {"value": "98", "suffix": "%", "label": "Client retention"}
+  ], "icon": "globe"}
+ ]
+}

@@ -1,0 +1,203 @@
+{% extends "_base.html" %}
+{% set scale = {"portrait": 1, "square": 0.86, "landscape": 0.56}[size] %}
+{% macro icon(name, cls="ic") %}<svg class="{{ cls }}" viewBox="0 0 24 24">{{ icons[name]|safe }}</svg>{% endmacro %}
+{% macro heading(s, cls="title") %}<div class="{{ cls }}">{{ s.title }}{% if s.title_emphasis %} <i>{{ s.title_emphasis }}</i>{% endif %}</div>{% endmacro %}
+{% macro head(s) %}
+<div class="head">
+  {% if s.eyebrow %}<div class="eyebrow">{{ s.eyebrow }}</div>{% endif %}
+  {{ heading(s) }}
+</div>
+{% endmacro %}
+
+{% block styles %}
+.slide{padding:calc(80px*var(--s)) calc(84px*var(--s)) calc(58px*var(--s));}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:calc(52px*var(--s));position:relative;z-index:1;}
+.top .logo{height:calc(60px*var(--s));width:auto;align-self:center;}
+.top .count{font-family:'Plex';font-weight:600;font-size:calc(24px*var(--s));letter-spacing:.14em;color:var(--amber);}
+.top .count b{font-weight:400;color:var(--ink-faint);}
+.dark .top .count b{color:#5a6a82;}
+.foot{display:flex;justify-content:space-between;align-items:center;margin-top:calc(34px*var(--s));padding-top:calc(24px*var(--s));
+  border-top:2px solid var(--line);font-family:'Plex';font-size:calc(21px*var(--s));letter-spacing:.2em;text-transform:uppercase;color:var(--ink-faint);position:relative;z-index:1;}
+.dark .foot{border-top-color:rgba(255,255,255,.1);color:#6f83a0;}
+.foot .go{display:flex;align-items:center;gap:.6em;color:var(--amber);font-weight:600;}
+.foot .go .ic{font-size:1.3em;}
+.wm.big{right:-9%;bottom:-7%;width:64%;height:auto;aspect-ratio:1;stroke:var(--ink);opacity:.04;}
+.dark .wm.big{stroke:#fff;opacity:.05;}
+
+.head{margin-bottom:5.4em;}
+.head .eyebrow{font-size:2.4em;margin-bottom:.9em;}
+.head .title{font-size:8.6em;}
+
+/* cover */
+.slide .fitbox{justify-content:center;}
+.rule{width:9.6em;height:.6em;border-radius:1em;background:var(--amber);margin-bottom:4em;}
+.l-cover .eyebrow{font-size:2.5em;margin-bottom:1.2em;}
+.l-cover .title{font-size:12.4em;letter-spacing:-.03em;}
+.l-cover .sub{font-size:3.6em;line-height:1.45;margin-top:1.1em;max-width:26em;}
+
+/* points */
+.cards{display:flex;flex-direction:column;gap:2.6em;}
+.card{position:relative;overflow:hidden;display:flex;gap:3.2em;align-items:flex-start;padding:4em 4.2em;
+  border:2px solid var(--line);border-radius:2.6em;background:linear-gradient(180deg,#fff,var(--paper-2));}
+.card>*{position:relative;z-index:1;}
+.card .cwm{position:absolute;z-index:0;right:-2em;bottom:-3.6em;width:21em;height:21em;fill:none;stroke:var(--ink);stroke-width:1.1;opacity:.07;}
+.card.am .cwm{stroke:var(--amber);opacity:.12;}
+.ibox{width:10em;height:10em;border-radius:2.6em;display:flex;align-items:center;justify-content:center;flex:none;background:var(--azure-soft);color:var(--blue-deep);}
+.ibox .ic{font-size:5em;}
+.card.am .ibox{background:var(--amber-soft);color:#c8770a;}
+.card h4{font-size:4.2em;font-weight:700;line-height:1.2;color:var(--ink);margin:.2em 0 .3em;}
+.card p{font-size:3.2em;line-height:1.45;color:var(--ink-soft);}
+
+/* stats */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:2.4em;}
+.numbox{background:rgba(255,255,255,.05);border:2px solid rgba(255,255,255,.1);border-radius:2.4em;padding:4.6em 4.2em;}
+.light .numbox{background:var(--paper-2);border-color:var(--line);}
+.numbox:last-child:nth-child(odd){grid-column:1/-1;}
+.numbox .v{font-family:'Fraunces';font-weight:500;font-size:14em;line-height:1;white-space:nowrap;letter-spacing:-.02em;}
+.numbox .v sup{font-size:.5em;color:var(--amber-2);vertical-align:top;position:relative;top:.08em;margin-left:.04em;}
+.numbox:nth-child(even) .v{color:var(--amber-2);}
+.numbox .l{font-family:'Plex';font-size:2.4em;letter-spacing:.16em;text-transform:uppercase;color:#9db2c9;margin-top:1.2em;line-height:1.4;}
+.light .numbox .l{color:var(--blue-deep);}
+.caption{font-size:3.4em;line-height:1.45;margin-top:1.6em;}
+
+/* quote */
+.qmark{font-family:'Fraunces';font-size:26em;line-height:1;height:.42em;color:var(--amber);}
+.quote{font-family:'Fraunces';font-weight:400;font-size:7.6em;line-height:1.16;letter-spacing:-.015em;}
+.quote i{font-style:italic;color:var(--azure-2);}
+.light .quote i{color:var(--azure);}
+.attr{display:flex;align-items:center;gap:1.6em;margin-top:5em;}
+.attr .ln{width:6em;height:2px;background:var(--amber);}
+.attr span{font-family:'Plex';font-size:2.5em;letter-spacing:.22em;text-transform:uppercase;color:var(--amber-2);}
+.l-quote .eyebrow{font-size:2.5em;margin-bottom:2em;}
+
+/* steps */
+.step{display:flex;gap:3.4em;position:relative;padding-bottom:4.4em;}
+.step:last-child{padding-bottom:0;}
+.step:not(:last-child)::before{content:"";position:absolute;left:4.2em;top:8.4em;bottom:0;width:2px;background:var(--line);}
+.dot{width:8.4em;height:8.4em;border-radius:50%;background:var(--navy-3);color:#fff;display:flex;align-items:center;justify-content:center;flex:none;position:relative;z-index:1;}
+.dot span{font-family:'Plex';font-weight:600;font-size:3em;}
+.step:last-child .dot{background:var(--amber);}
+.step h4{font-size:4.2em;font-weight:700;line-height:1.2;margin-top:.45em;}
+.step p{font-size:3.2em;line-height:1.45;color:var(--ink-soft);margin-top:.25em;}
+
+/* compare */
+.cmp{display:grid;grid-template-columns:1fr 1fr;column-gap:2.4em;}
+.cell{display:flex;gap:1.8em;align-items:flex-start;padding:2.4em 3.4em;}
+.cell .ic{font-size:3.8em;margin-top:.1em;}
+.cell span{font-size:3.3em;line-height:1.4;}
+.cell.L{background:var(--paper-2);color:var(--ink-soft);} .cell.L .ic{color:var(--ink-faint);}
+.cell.R{background:var(--navy-3);color:#fff;} .cell.R .ic{color:var(--amber-2);}
+.cell.hd{padding-top:3.6em;padding-bottom:1.4em;border-radius:2.6em 2.6em 0 0;}
+.cell.hd b{font-family:'Plex';font-weight:600;font-size:2.4em;letter-spacing:.24em;text-transform:uppercase;}
+.cell.L.hd b{color:var(--ink-faint);} .cell.R.hd b{color:var(--amber-2);}
+.cell.end{padding-bottom:3.6em;border-radius:0 0 2.6em 2.6em;}
+
+/* cta */
+.l-cta .eyebrow{font-size:2.5em;margin-bottom:1.2em;}
+.l-cta .title{font-size:10.4em;}
+.l-cta .text{font-size:3.5em;line-height:1.45;margin-top:1.1em;max-width:26em;}
+.btn{display:inline-flex;align-self:flex-start;align-items:center;gap:.7em;margin-top:2.2em;background:var(--amber);color:var(--navy);
+  font-weight:700;font-size:3.6em;padding:.8em 1.4em;border-radius:99em;}
+.contact{display:flex;flex-wrap:wrap;gap:1.4em 3em;margin-top:5em;}
+.contact span{display:flex;align-items:center;gap:.8em;font-family:'Plex';font-size:2.5em;letter-spacing:.14em;text-transform:uppercase;color:#9db2c9;}
+.contact .ic{font-size:1.3em;color:var(--amber-2);}
+
+/* navy versions of the layouts designed for white pages */
+.dark .card{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1);}
+.dark .card h4{color:#fff;}
+.dark .card p{color:#b7c6da;}
+.dark .card .cwm{stroke:#fff;opacity:.06;}
+.dark .card.am .cwm{stroke:var(--amber-2);opacity:.1;}
+.dark .ibox{background:rgba(91,180,229,.16);color:var(--azure-2);}
+.dark .card.am .ibox{background:rgba(244,165,46,.16);color:var(--amber-2);}
+.dark .step h4{color:#fff;}
+.dark .step p{color:#b7c6da;}
+.dark .step:not(:last-child)::before{background:rgba(255,255,255,.14);}
+.dark .dot{background:var(--azure);}
+.dark .cell.L{background:rgba(255,255,255,.05);color:#b7c6da;}
+.dark .cell.L .ic,.dark .cell.L.hd b{color:#6f83a0;}
+.dark .cell.R{background:#16395c;}
+{% endblock %}
+
+{% block body %}
+{% set total = slides|length %}
+{% for s in slides %}
+{% set dark = s.tone == "dark" %}
+<section class="frame slide {{ s.tone }} l-{{ s.layout }}" style="--s:{{ scale }}">
+  <header class="top">
+    <img class="logo" src="{{ asset }}/{{ 'logo_horizontal.png' if dark else 'logo_light.png' }}" alt="">
+    {% if total > 1 %}<span class="count">{{ '%02d' % loop.index }} <b>/ {{ '%02d' % total }}</b></span>{% endif %}
+  </header>
+
+  <div class="fitbox"><div class="inner">
+  {% if s.layout == "cover" %}
+    <div class="rule"></div>
+    {% if s.eyebrow %}<div class="eyebrow">{{ s.eyebrow }}</div>{% endif %}
+    {{ heading(s) }}
+    {% if s.subtitle %}<p class="sub muted">{{ s.subtitle }}</p>{% endif %}
+
+  {% elif s.layout == "points" %}
+    {{ head(s) }}
+    <div class="cards">
+    {% for it in s["items"] %}
+      <div class="card{{ ' am' if loop.index is even }}">
+        <svg class="cwm" viewBox="0 0 24 24">{{ icons[it.icon]|safe }}</svg>
+        <div class="ibox">{{ icon(it.icon) }}</div>
+        <div><h4>{{ it.title }}</h4>{% if it.text %}<p>{{ it.text }}</p>{% endif %}</div>
+      </div>
+    {% endfor %}
+    </div>
+
+  {% elif s.layout == "stats" %}
+    {{ head(s) }}
+    <div class="stats">
+    {% for it in s["items"] %}
+      <div class="numbox"><div class="v">{{ it.value }}{% if it.suffix %}<sup>{{ it.suffix }}</sup>{% endif %}</div><div class="l">{{ it.label }}</div></div>
+    {% endfor %}
+    </div>
+    {% if s.caption %}<p class="caption muted">{{ s.caption }}</p>{% endif %}
+
+  {% elif s.layout == "quote" %}
+    {% if s.eyebrow %}<div class="eyebrow">{{ s.eyebrow }}</div>{% endif %}
+    <div class="qmark">&ldquo;</div>
+    <div class="quote">{{ s.quote }}{% if s.quote_emphasis %} <i>{{ s.quote_emphasis }}</i>{% endif %}</div>
+    {% if s.attribution %}<div class="attr"><div class="ln"></div><span>{{ s.attribution }}</span></div>{% endif %}
+
+  {% elif s.layout == "steps" %}
+    {{ head(s) }}
+    <div class="steps">
+    {% for it in s["items"] %}
+      <div class="step"><div class="dot"><span>{{ '%02d' % loop.index }}</span></div>
+        <div><h4>{{ it.title }}</h4>{% if it.text %}<p>{{ it.text }}</p>{% endif %}</div></div>
+    {% endfor %}
+    </div>
+
+  {% elif s.layout == "compare" %}
+    {{ head(s) }}
+    <div class="cmp">
+      <div class="cell L hd"><b>{{ s.left_label }}</b></div>
+      <div class="cell R hd"><b>{{ s.right_label }}</b></div>
+      {% for r in s.rows %}
+      {% set end = ' end' if loop.last else '' %}
+      <div class="cell L{{ end }}">{{ icon('cross') }}<span>{{ r.left }}</span></div>
+      <div class="cell R{{ end }}">{{ icon('check') }}<span>{{ r.right }}</span></div>
+      {% endfor %}
+    </div>
+
+  {% elif s.layout == "cta" %}
+    {% if s.eyebrow %}<div class="eyebrow">{{ s.eyebrow }}</div>{% endif %}
+    {{ heading(s) }}
+    {% if s.text %}<p class="text muted">{{ s.text }}</p>{% endif %}
+    {% if s.button %}<span class="btn">{{ s.button }} {{ icon('arrow_right') }}</span>{% endif %}
+    <div class="contact"><span>{{ icon('globe') }}{{ brand.website }}</span><span>{{ icon('mail') }}{{ brand.email }}</span></div>
+  {% endif %}
+  </div></div>
+
+  <footer class="foot">
+    <span>{{ brand.short_name }} &middot; {{ brand.website }}</span>
+    {% if not loop.last %}<span class="go">Swipe {{ icon('arrow_right') }}</span>{% else %}<span>{{ brand.tagline }}</span>{% endif %}
+  </footer>
+  {% if s.layout in ("cover", "quote", "stats", "cta") %}<svg class="wm big" viewBox="0 0 24 24">{{ icons[s.icon]|safe }}</svg>{% endif %}
+</section>
+{% endfor %}
+{% endblock %}
