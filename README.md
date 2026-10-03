@@ -58,6 +58,18 @@ bench get-app https://github.com/finbyz/ai_crm.git --branch develop
 bench --site [your-site-name] install-app ai_crm
 ```
 
+### Creative rendering (Playwright + Chromium)
+Generate Creative renders slides and PDFs with headless Chromium through Playwright. After installing the app, run once per server from the bench directory:
+
+```bash
+./env/bin/pip install playwright
+PLAYWRIGHT_BROWSERS_PATH=$PWD/env/playwright-browsers ./env/bin/python -m playwright install chromium-headless-shell
+sudo apt-get install -y libnss3 libnspr4 libatk1.0-0t64 libatk-bridge2.0-0t64 libxcomposite1 libxdamage1 \
+    libxfixes3 libxrandr2 libgbm1 libxkbcommon0 libasound2t64 libatspi2.0-0t64
+```
+
+The renderer looks for browsers in `env/playwright-browsers`, so web workers and background workers share one install. The apt packages are Chromium's system libraries (package names are for Ubuntu 24.04); add them to your server provisioning so a rebuild does not remove them.
+
 ## 🛠️ Configuration Guide
 
 ### 1. Setup Social Media (LinkedIn / Twitter)

@@ -14,7 +14,7 @@ from ai_crm.social_media.platforms import PLATFORM_BY_CREDENTIAL, get_platform
 
 class SocialMediaPost(Document):
     APPROVAL_FIELDS = {
-        "title", "content", "image_attachment", "creative_pdf",
+        "title", "content", "image_attachment", "creative_pdf", "creative_status", "creative_template",
         "credential_type", "credential", "subreddit", "post_on",
     }
     SOURCE_FIELDS = {
@@ -148,8 +148,12 @@ class SocialMediaPost(Document):
 
     @frappe.whitelist(methods=["POST"])
     def submit_for_approval(self):
-        # Anyone who can see the post may send it for approval.
+        # Anyone who can see the post may send it for approval. Reload so field
+        # values sent with the request cannot be saved by a read-only user.
+        self.reload()
         self.check_permission("read")
+        if self.creative_status in {"Queued", "Generating"}:
+            frappe.throw(_("Wait for the creative to finish generating"))
         if self.generation_status != "Ready":
             frappe.throw("Wait for content generation to finish")
         if self.status != "Draft":
@@ -170,6 +174,7 @@ class SocialMediaPost(Document):
     def approve(self):
         """Approve, then publish now (no Post On, or it has passed) or schedule for Post On."""
         self._require_approver()
+        self.reload()
         if self.status != "Pending Approval":
             frappe.throw("Only pending posts can be approved")
         self.approved_by = frappe.session.user
@@ -208,6 +213,7 @@ class SocialMediaPost(Document):
     @frappe.whitelist(methods=["POST"])
     def reject(self, reason: str):
         self._require_approver()
+        self.reload()
         reason = (reason or "").strip()
         if self.status != "Pending Approval":
             frappe.throw("Only pending posts can be rejected")
@@ -216,7 +222,7 @@ class SocialMediaPost(Document):
         self._return_to_draft()
         self.rejection_reason = reason
         self.flags.skip_approval_reset = True
-        self.save()
+        self.save(ignore_permissions=True)
         return self.as_studio_dict()
 
     @frappe.whitelist(methods=["POST"])
@@ -316,7 +322,12 @@ class SocialMediaPost(Document):
     def _require_manager(self):
         if not self._is_manager():
             frappe.throw("Social Media Manager role is required", frappe.PermissionError)
-        self.check_permission("write")
+        # Approver roles are authorised by Content Hub Setting and may lack write permission,
+        # so their workflow saves skip the DocType permission check.
+        if self._is_approver():
+            self.flags.ignore_permissions = True
+        else:
+            self.check_permission("write")
 
     def _is_manager(self):
         return self._is_approver() or bool(
@@ -436,6 +447,8 @@ class SocialMediaPost(Document):
             frappe.throw(_("This post is scheduled for a future time"))
 
         self.reload()
+        # The caller passed _require_manager; publishing saves must not need write permission.
+        self.flags.ignore_permissions = True
         self.status = "Publishing"
         self.failure_reason = None
         self.flags.skip_approval_reset = True
