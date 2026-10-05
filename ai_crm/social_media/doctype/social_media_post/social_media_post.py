@@ -95,6 +95,8 @@ class SocialMediaPost(Document):
     @frappe.whitelist(methods=["POST"])
     def copy_to_account(self, credential_type: str, credential: str):
         """Create a new Draft of this post for another account. It is not submitted."""
+        # Copy the stored post, not field values sent with the request.
+        self.reload()
         self.check_permission("read")
         frappe.has_permission(self.doctype, "create", throw=True)
         if credential_type not in PLATFORM_BY_CREDENTIAL:

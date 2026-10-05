@@ -28,7 +28,10 @@ function add_workflow_buttons(frm) {
 	const { status, generation_status } = frm.doc;
 
 	if (status === "Draft" && generation_status === "Ready" && !frm.is_new()) {
-		frm.add_custom_button(__("Submit for Approval"), () => run_action(frm, "submit_for_approval"));
+		// The server submits the stored post, so save unsaved edits first.
+		frm.add_custom_button(__("Submit for Approval"), () =>
+			(frm.is_dirty() ? frm.save() : Promise.resolve()).then(() => run_action(frm, "submit_for_approval")),
+		);
 		frm.add_custom_button(__("Revise Post"), () => revise_post(frm), __("Actions"));
 		frm.add_custom_button(__("Generate Image"), () => generate_image(frm), __("Actions"));
 	}

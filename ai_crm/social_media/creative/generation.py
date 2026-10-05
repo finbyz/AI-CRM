@@ -337,6 +337,14 @@ def _share_file(file_url, target):
     """Attach an existing file to another post without copying it on disk."""
     if not file_url:
         return None
+    # Only share creatives of posts the user can already read, never an arbitrary private file.
+    sources = frappe.get_all(
+        "File",
+        filters={"file_url": file_url, "attached_to_doctype": target.doctype},
+        pluck="attached_to_name",
+    )
+    if not any(frappe.has_permission(target.doctype, "read", doc=name) for name in sources):
+        frappe.throw(_("You do not have access to {0}").format(file_url), frappe.PermissionError)
     if not frappe.db.exists("File", {"file_url": file_url, "attached_to_name": target.name}):
         frappe.get_doc({
             "doctype": "File",
