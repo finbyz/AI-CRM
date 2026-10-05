@@ -27,11 +27,11 @@ frappe.ui.form.on('LinkedIn Integration', {
                         const redirectUri = encodeURIComponent(frm.doc.redirect_uri);
                         const state = frm.doc.state;
 
-                        // Using modern OpenID Connect scopes for user info, plus social posting scopes
-                        let scopes = "openid profile email w_member_social";
-                        if (frm.doc.organization_support) {
-                            scopes += " w_organization_social";
-                        }
+                        // Page posting needs a Community Management API app, which cannot also
+                        // carry Sign In with LinkedIn, so it reads the profile via r_basicprofile.
+                        const scopes = frm.doc.organization_support
+                            ? "r_basicprofile w_member_social w_organization_social"
+                            : "openid profile email w_member_social";
                         const scope = encodeURIComponent(scopes);
                         
                         const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}&state=${state}`;

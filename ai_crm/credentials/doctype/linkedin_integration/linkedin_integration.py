@@ -364,18 +364,13 @@ def callback(code=None, state=None, error=None, *args, **kwargs):
         access_token = token_data.get("access_token")
         expiry_seconds = token_data.get("expires_in")
         
-        user_info_headers = {'Authorization': f'Bearer {access_token}'}
-        user_info_response = requests.get("https://api.linkedin.com/v2/userinfo", headers=user_info_headers)
-        user_info_response.raise_for_status()
-        user_info = user_info_response.json()
-
         integration.access_token = access_token
         if expiry_seconds:
             integration.expires_in = (datetime.now() + timedelta(seconds=expiry_seconds)).strftime("%Y-%m-%d %H:%M:%S")
         integration.connection_status = "Connected"
-        integration.full_name = user_info.get("name")
-        integration.email = user_info.get("email")
-        integration.person_id = user_info.get("sub")
+        integration.full_name, integration.email, integration.person_id = _fetch_member_profile(
+            access_token, integration.organization_support
+        )
         
         integration.save(ignore_permissions=True)
         frappe.db.commit()
@@ -385,3 +380,19 @@ def callback(code=None, state=None, error=None, *args, **kwargs):
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "LinkedIn OAuth Callback Error")
         frappe.respond_as_web_page("Error", f"An error occurred: {str(e)}", http_status_code=500)
+
+def _fetch_member_profile(access_token, organization_support):
+    """Return (full name, email, person id) of the member who authorised the app."""
+    headers = {"Authorization": f"Bearer {access_token}"}
+    if not organization_support:
+        res = requests.get("https://api.linkedin.com/v2/userinfo", headers=headers, timeout=30)
+        res.raise_for_status()
+        info = res.json()
+        return info.get("name"), info.get("email"), info.get("sub")
+
+    # Community Management API apps have no OpenID Connect; r_basicprofile serves /v2/me and no email.
+    res = requests.get("https://api.linkedin.com/v2/me", headers=headers, timeout=30)
+    res.raise_for_status()
+    info = res.json()
+    full_name = " ".join(filter(None, [info.get("localizedFirstName"), info.get("localizedLastName")]))
+    return full_name or None, None, info.get("id")
