@@ -363,43 +363,37 @@ def get_analytics():
 @frappe.whitelist()
 def get_configured_youtube_channels():
     settings = frappe.get_single("YouTube Settings")
-    channels = []
-    for c in (settings.channels or []):
-        name = c.channel_name or c.channel_id
-        if name:
-            channels.append({
-                "channel_name": c.channel_name or "",
-                "channel_id": c.channel_id or "",
-                "label": f"{c.channel_name} ({c.channel_id})" if c.channel_id else c.channel_name
-            })
-    return channels
-
+    return [
+        {
+            "channel_id": c.channel_id,
+            "channel_title": c.channel_title or c.channel_name,
+            "last_fetched_on": c.last_fetched_on,
+        }
+        for c in settings.channels or []
+        if c.channel_id
+    ]
 
 
 @frappe.whitelist()
-def fetch_youtube_channel_videos(channel_name_or_id: str, max_results: int = 5):
-    settings = frappe.get_single("YouTube Settings")
-    requested_channel = (channel_name_or_id or "").strip()
-    channel = next(
-        (row for row in settings.channels or [] if requested_channel in {row.channel_name, row.channel_id}),
-        None,
-    )
-    if not channel or not channel.channel_id:
-        frappe.throw(_("Select a configured YouTube channel"))
+def fetch_youtube_channel_videos(channel_ids=None, max_results: int = 3):
+    """Fetch the latest videos of the given channels (all when empty) and process them in the background."""
+    configured = [c["channel_id"] for c in get_configured_youtube_channels()]
+    channel_ids = frappe.parse_json(channel_ids) if isinstance(channel_ids, str) else channel_ids
+    channel_ids = [c for c in channel_ids or configured if c in configured]
+    if not channel_ids:
+        frappe.throw(_("Add a channel in YouTube Settings first"))
 
     tracker = frappe.new_doc("YouTube Videos")
+    tracker.workflow_status = "Queued"
+    tracker.workflow_message = f"Fetching latest videos from {len(channel_ids)} channel(s)"
     tracker.insert()
     enqueue_youtube_workflow(
         tracker_name=tracker.name,
-        channel_id=channel.channel_id,
+        channel_id=channel_ids,
         force=True,
-        max_results=max_results,
+        max_results=max(1, min(int(max_results or 3), 10)),
     )
-    return {
-        "status": "queued",
-        "channel_title": channel.channel_name,
-        "tracker_name": tracker.name,
-    }
+    return {"status": "queued", "tracker_name": tracker.name, "channels": len(channel_ids)}
 
 
 @frappe.whitelist()

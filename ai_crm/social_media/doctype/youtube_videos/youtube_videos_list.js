@@ -16,132 +16,91 @@ function add_fetch_button(listview) {
     if (!listview.page.has_youtube_fetch_button) {
         listview.page.has_youtube_fetch_button = true;
         listview.page.add_inner_button(__('Fetch YouTube Videos'), function () {
-            open_youtube_fetch_dialog(listview);
+            frappe.call('ai_crm.social_media.api.get_configured_youtube_channels').then(r => {
+                open_youtube_fetch_dialog(listview, r.message || []);
+            });
         });
     }
 }
 
-function open_youtube_fetch_dialog(listview) {
+function open_youtube_fetch_dialog(listview, channels) {
     const dialog = new frappe.ui.Dialog({
         title: __('Fetch & Import YouTube Videos'),
+        size: 'large',
         fields: [
             {
                 fieldname: 'fetch_type',
                 fieldtype: 'Select',
                 label: __('Fetch Mode'),
-                options: ['Single Video URL', 'Configured YouTube Channel'],
-                default: 'Single Video URL'
+                options: ['Configured Channels', 'Single Video URL'],
+                default: channels.length ? 'Configured Channels' : 'Single Video URL'
             },
             {
                 fieldname: 'video_url',
                 fieldtype: 'Data',
                 label: __('YouTube Video URL'),
-                placeholder: 'https://www.youtube.com/watch?v=vX_892kL1aM',
-                depends_on: 'eval:doc.fetch_type=="Single Video URL"'
+                placeholder: 'https://www.youtube.com/watch?v=...',
+                depends_on: 'eval:doc.fetch_type=="Single Video URL"',
+                mandatory_depends_on: 'eval:doc.fetch_type=="Single Video URL"'
             },
             {
-                fieldname: 'configured_channel',
-                fieldtype: 'Select',
-                label: __('Select Configured Channel'),
-                options: [],
-                depends_on: 'eval:doc.fetch_type=="Configured YouTube Channel"'
+                fieldname: 'channels',
+                fieldtype: 'Table',
+                label: __('Channels'),
+                description: __('Tick the channels to fetch; with none ticked, all channels are fetched. Add channels in YouTube Settings.'),
+                depends_on: 'eval:doc.fetch_type=="Configured Channels"',
+                cannot_add_rows: true,
+                cannot_delete_rows: true,
+                in_place_edit: false,
+                data: channels,
+                fields: [
+                    { fieldname: 'channel_title', fieldtype: 'Data', label: __('Channel'), in_list_view: 1, read_only: 1, columns: 4 },
+                    { fieldname: 'channel_id', fieldtype: 'Data', label: __('Channel ID'), in_list_view: 1, read_only: 1, columns: 4 },
+                    { fieldname: 'last_fetched_on', fieldtype: 'Datetime', label: __('Last Fetched'), in_list_view: 1, read_only: 1, columns: 2 }
+                ]
             },
             {
                 fieldname: 'max_results',
-                fieldtype: 'Select',
-                label: __('Max Videos to Fetch'),
-                options: ['3', '5', '10', '20'],
-                default: '5',
-                depends_on: 'eval:doc.fetch_type!="Single Video URL"'
+                fieldtype: 'Int',
+                label: __('Latest Videos per Channel'),
+                default: 3,
+                description: __('Up to 10. Already imported videos are skipped, and the hourly fetch is not affected.'),
+                depends_on: 'eval:doc.fetch_type=="Configured Channels"'
             }
         ],
         primary_action_label: __('Fetch & Import'),
         primary_action: function (values) {
-            const btn = dialog.get_primary_btn();
-            btn.prop('disabled', true);
-
-            if (values.fetch_type === 'Single Video URL') {
-                if (!values.video_url) {
-                    frappe.msgprint(__('Please enter a YouTube video URL'));
-                    btn.prop('disabled', false);
-                    return;
-                }
-
-                frappe.dom.freeze(__('Fetching video details & captions...'));
-                frappe.call({
+            const call = values.fetch_type === 'Single Video URL'
+                ? {
                     method: 'ai_crm.social_media.api.fetch_youtube_url',
-                    args: {
-                        url: values.video_url
-                    },
-                    callback: function (r) {
-                        frappe.dom.unfreeze();
-                        btn.prop('disabled', false);
-                        if (r.message && ['success', 'queued'].includes(r.message.status)) {
-                            dialog.hide();
-                            const msg = r.message.already_exists
-                                ? __('ℹ️ Video already imported in {0}', [r.message.tracker_name])
-                                : __('✅ Imported video: {0}', [r.message.title || r.message.video_name]);
-                            frappe.show_alert({
-                                message: msg,
-                                indicator: r.message.already_exists ? 'orange' : 'green'
-                            });
-                            listview.refresh();
-                        }
-                    },
-                    error: function () {
-                        frappe.dom.unfreeze();
-                        btn.prop('disabled', false);
-                    }
-                });
-
-            } else {
-                const channel = values.configured_channel;
-
-                if (!channel) {
-                    frappe.msgprint(__('Please select or enter a YouTube channel'));
-                    btn.prop('disabled', false);
-                    return;
+                    args: { url: values.video_url },
+                    freeze_message: __('Fetching video details...')
                 }
-
-                frappe.dom.freeze(__('Fetching videos from YouTube channel...'));
-                frappe.call({
+                : {
                     method: 'ai_crm.social_media.api.fetch_youtube_channel_videos',
                     args: {
-                        channel_name_or_id: channel,
+                        channel_ids: dialog.fields_dict.channels.grid.get_selected_children().map(row => row.channel_id),
                         max_results: values.max_results
                     },
-                    callback: function (r) {
-                        frappe.dom.unfreeze();
-                        btn.prop('disabled', false);
-                        if (r.message && ['success', 'queued'].includes(r.message.status)) {
-                            dialog.hide();
-                            const msg = __('Queued new-video processing for {0}', [r.message.channel_title]);
-                            frappe.show_alert({
-                                message: msg,
-                                indicator: 'green'
-                            });
-                            listview.refresh();
-                        }
-                    },
-                    error: function () {
-                        frappe.dom.unfreeze();
-                        btn.prop('disabled', false);
-                    }
-                });
-            }
-        }
-    });
+                    freeze_message: __('Queuing channel fetch...')
+                };
 
-    // Populate configured channels dynamically
-    frappe.call({
-        method: 'ai_crm.social_media.api.get_configured_youtube_channels',
-        callback: function (r) {
-            if (r.message && r.message.length > 0) {
-                const options = r.message.map(c => c.channel_name || c.channel_id);
-                dialog.set_df_property('configured_channel', 'options', options);
-            } else {
-                dialog.set_df_property('configured_channel', 'options', ['No channels configured in YouTube Settings']);
-            }
+            frappe.call({ ...call, freeze: true }).then(r => {
+                const res = r.message || {};
+                dialog.hide();
+                listview.refresh();
+
+                let msg;
+                if (res.already_exists) {
+                    msg = __('This video was already imported.');
+                } else if (res.channels) {
+                    msg = __('Fetching the latest videos from {0} channel(s). Transcript, analysis and ideas run in the background.', [res.channels]);
+                } else {
+                    msg = __('Imported {0}. Transcript, analysis and ideas run in the background.', [frappe.utils.escape_html(res.title || '')]);
+                }
+                frappe.show_alert({ message: msg, indicator: res.already_exists ? 'orange' : 'green' }, 7);
+                frappe.set_route('Form', 'YouTube Videos', res.tracker_name);
+            });
         }
     });
 

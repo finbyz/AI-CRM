@@ -82,29 +82,3 @@ def lookup_channel(channel_name):
         frappe.throw(_("YouTube channel {0} not found").format(frappe.bold(channel_name)))
     return info
 
-
-@frappe.whitelist()
-def test_channels(channel_ids, max_results=3):
-    """Fetch the latest videos of the given channels now and process them in the background."""
-    from ai_crm.social_media.doctype.youtube_videos.youtube_workflow.services.background_jobs import (
-        enqueue_youtube_workflow,
-    )
-
-    frappe.only_for(("System Manager", "Social Media Manager"))
-    channel_ids = frappe.parse_json(channel_ids) if isinstance(channel_ids, str) else channel_ids
-    configured = {row.channel_id for row in frappe.get_single("YouTube Settings").channels}
-    channel_ids = [c for c in channel_ids or [] if c in configured]
-    if not channel_ids:
-        frappe.throw(_("Select at least one saved channel"))
-
-    tracker = frappe.new_doc("YouTube Videos")
-    tracker.workflow_status = "Queued"
-    tracker.workflow_message = f"Test fetch for {len(channel_ids)} channel(s)"
-    tracker.insert()
-    enqueue_youtube_workflow(
-        tracker_name=tracker.name,
-        channel_id=channel_ids,
-        force=True,
-        max_results=max(1, min(int(max_results or 3), 10)),
-    )
-    return tracker.name
