@@ -212,103 +212,6 @@ def get_post(post):
 
 
 # --------------------------------------------------------------------------- #
-# Generate: ideas + posts (reuse Content Hub controller methods)
-# --------------------------------------------------------------------------- #
-def _ensure_hub(title, target_audience, platform, credential_type, credential, source_type="Manual Topic", youtube_video=None):
-    """Find a matching Content Hub or create one. Content Hub is single-platform,
-    so we keep one hub per (title, platform, credential)."""
-    existing = frappe.get_all(
-        "Content Hub",
-        filters={"title": title, "platform": platform, "credential": credential},
-        limit=1,
-    )
-    if existing:
-        if source_type == "YouTube Video" and youtube_video:
-            frappe.db.set_value("Content Hub", existing[0].name, {
-                "source_type": source_type,
-                "youtube_video": youtube_video
-            })
-        return existing[0].name
-
-    doc = frappe.new_doc("Content Hub")
-    doc.title = title
-    doc.target_audience = target_audience or ""
-    doc.platform = platform
-    doc.credential_type = credential_type
-    doc.credential = credential
-    doc.source_type = source_type
-    if source_type == "YouTube Video":
-        doc.youtube_video = youtube_video
-    doc.insert(ignore_permissions=True)
-    return doc.name
-
-
-@frappe.whitelist()
-def generate_ideas(title, target_audience, credential_type, credential, source_type="Manual Topic", youtube_video=None):
-    """Create/reuse a Content Hub and run the existing idea generator."""
-    if not title:
-        frappe.throw(_("A topic/title is required to generate ideas"))
-
-    platform = PLATFORM_BY_CREDENTIAL.get(credential_type)
-    if not platform:
-        frappe.throw(_("Unknown credential type: {0}").format(credential_type))
-
-    hub = _ensure_hub(title, target_audience, platform, credential_type, credential, source_type, youtube_video)
-    hub_doc = frappe.get_doc("Content Hub", hub)
-
-    # regenerate cleanly instead of appending on top of old ideas
-    hub_doc.set("ideas_child_table", [])
-    hub_doc.save(ignore_permissions=True)
-
-    hub_doc.generate_linkedin_ideas()  # existing whitelisted controller method
-    hub_doc.reload()
-
-    ideas = [
-        {"idea_title": r.idea_title, "description": r.description}
-        for r in hub_doc.ideas_child_table
-    ]
-    return {"hub": hub, "platform": platform, "ideas": ideas}
-
-
-@frappe.whitelist()
-def create_posts_for_idea(idea_title, idea_description, targets, title,
-                          target_audience=None, generate_image_flag=False, image_prompt=None):
-    """Fan one idea out into a Draft Social Media Post per selected account.
-    Reuses Content Hub.generate_post_from_idea -- no duplicated AI logic."""
-    targets = frappe.parse_json(targets) if isinstance(targets, str) else targets
-    if isinstance(generate_image_flag, str):
-        generate_image_flag = frappe.parse_json(generate_image_flag)
-
-    if not targets:
-        frappe.throw(_("Select at least one account to create posts for"))
-
-    created, errors = [], []
-    for t in targets:
-        credential_type = t.get("credential_type")
-        credential = t.get("credential")
-        platform = t.get("platform") or PLATFORM_BY_CREDENTIAL.get(credential_type)
-        try:
-            hub = _ensure_hub(title, target_audience, platform,
-                              credential_type, credential)
-            hub_doc = frappe.get_doc("Content Hub", hub)
-            res = hub_doc.generate_post_from_idea(idea_title, idea_description)
-            post_name = res.get("post_name")
-
-            if generate_image_flag:
-                try:
-                    frappe.get_doc("Social Media Post", post_name).generate_image(image_prompt or "")
-                except Exception as img_e:
-                    frappe.log_error(f"Image Gen Error: {str(img_e)}", "Postato create_posts_for_idea")
-
-            created.append(get_post(post_name))
-        except Exception as e:
-            frappe.log_error(frappe.get_traceback(), "Postato create_posts_for_idea")
-            errors.append({"platform": platform, "error": str(e)})
-
-    return {"posts": created, "errors": errors}
-
-
-# --------------------------------------------------------------------------- #
 # Compose actions: thin wrappers so the page has ONE clean API surface
 # --------------------------------------------------------------------------- #
 @frappe.whitelist()
@@ -474,8 +377,7 @@ def get_configured_youtube_channels():
 
 
 @frappe.whitelist()
-def fetch_youtube_channel_videos(channel_name_or_id: str, max_results: int = 5, auto_create_content_hub: int = 1):
-    del auto_create_content_hub
+def fetch_youtube_channel_videos(channel_name_or_id: str, max_results: int = 5):
     settings = frappe.get_single("YouTube Settings")
     requested_channel = (channel_name_or_id or "").strip()
     channel = next(
@@ -501,8 +403,7 @@ def fetch_youtube_channel_videos(channel_name_or_id: str, max_results: int = 5, 
 
 
 @frappe.whitelist()
-def fetch_youtube_url(url: str, auto_create_content_hub: int = 1):
-    del auto_create_content_hub
+def fetch_youtube_url(url: str):
     match = re.search(r"(?:v=|\/)([0-9A-Za-z_-]{11}).*", url or "")
     if not match:
         frappe.throw(_("Invalid YouTube URL"))

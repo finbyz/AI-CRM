@@ -20,19 +20,41 @@ class TestYouTubeSettings(FrappeTestCase):
         self.assertEqual(meta.get_field("channels").options, "YouTube Channel")
         self.assertEqual(meta.get_field("analysis_ai_agent").options, "AI Agent")
 
-    def test_validate_resolves_only_missing_channel_ids(self):
-        """Verify that validation resolves a channel ID without replacing an existing ID."""
-        settings = object.__new__(YouTubeSettings)
-        missing = frappe._dict(channel_name="@missing", channel_id=None)
-        existing = frappe._dict(channel_name="@existing", channel_id="UC-existing")
-        settings.channels = [missing, existing]
+    def test_validate_resolves_new_or_renamed_channels_only(self):
+        """Verify that validation looks up new or renamed channels and keeps resolved ones."""
+        settings = frappe.get_doc({
+            "doctype": "YouTube Settings",
+            "channels": [
+                {"name": "row-new", "channel_name": "@new"},
+                {"name": "row-kept", "channel_name": "@kept", "channel_id": "UC-kept", "channel_title": "Kept"},
+            ],
+        })
+        before = frappe._dict(channels=[frappe._dict(name="row-kept", channel_name="@kept")])
 
-        with patch(
-            "ai_crm.social_media.doctype.youtube_settings.youtube_settings.get_channel_id_from_name",
-            return_value="UC-resolved",
-        ) as resolver:
+        with (
+            patch.object(settings, "get_doc_before_save", return_value=before),
+            patch(
+                "ai_crm.social_media.doctype.youtube_settings.youtube_settings.get_channel_info",
+                return_value={"channel_id": "UC-new", "title": "New"},
+            ) as lookup,
+        ):
             settings.validate()
 
-        self.assertEqual(missing.channel_id, "UC-resolved")
-        self.assertEqual(existing.channel_id, "UC-existing")
-        resolver.assert_called_once_with("@missing")
+        self.assertEqual(settings.channels[0].channel_id, "UC-new")
+        self.assertEqual(settings.channels[0].channel_title, "New")
+        self.assertEqual(settings.channels[1].channel_id, "UC-kept")
+        lookup.assert_called_once_with("@new", None)
+
+    def test_validate_rejects_unknown_channel(self):
+        """Verify that saving fails when a channel handle cannot be found."""
+        settings = frappe.get_doc({"doctype": "YouTube Settings", "channels": [{"channel_name": "@nope"}]})
+
+        with (
+            patch.object(settings, "get_doc_before_save", return_value=None),
+            patch(
+                "ai_crm.social_media.doctype.youtube_settings.youtube_settings.get_channel_info",
+                return_value=None,
+            ),
+            self.assertRaises(frappe.ValidationError),
+        ):
+            settings.validate()

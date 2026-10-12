@@ -7,43 +7,66 @@
  "engine": "InnoDB",
  "field_order": [
   "channel_name",
+  "channel_title",
   "channel_id",
-  "last_fetched_on",
-  "fetch_frequency"
+  "column_break_ytch",
+  "fetch_frequency",
+  "last_fetched_on"
  ],
  "fields": [
-  {
-   "fieldname": "channel_id",
-   "fieldtype": "Data",
-   "label": "Channel ID",
-   "reqd": 1
-  },
   {
    "fieldname": "channel_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Channel Name",
-   "reqd": 1
+   "label": "Channel Handle",
+   "reqd": 1,
+   "description": "@handle or channel URL, e.g. @frappetech",
+   "columns": 2
   },
   {
-   "fieldname": "last_fetched_on",
-   "fieldtype": "Datetime",
-   "label": "Last Fetched On",
+   "fieldname": "channel_title",
+   "fieldtype": "Data",
+   "label": "Channel Title",
+   "read_only": 1,
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "channel_id",
+   "fieldtype": "Data",
+   "label": "Channel ID",
+   "in_list_view": 1,
+   "columns": 3,
+   "description": "Filled automatically from the handle on save.",
    "read_only": 1
+  },
+  {
+   "fieldname": "column_break_ytch",
+   "fieldtype": "Column Break"
   },
   {
    "default": "1",
    "fieldname": "fetch_frequency",
    "fieldtype": "Int",
    "label": "Fetch Frequency",
-   "description": "Fetch interval in days."
+   "description": "Fetch interval in days.",
+   "in_list_view": 1,
+   "columns": 1
+  },
+  {
+   "fieldname": "last_fetched_on",
+   "fieldtype": "Datetime",
+   "label": "Last Fetched On",
+   "read_only": 1,
+   "in_list_view": 1,
+   "columns": 2
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-11-27 17:20:10.164024",
+ "modified": "2026-10-12 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Social Media",
  "name": "YouTube Channel",

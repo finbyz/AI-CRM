@@ -53,12 +53,6 @@ function open_youtube_fetch_dialog(listview) {
                 options: ['3', '5', '10', '20'],
                 default: '5',
                 depends_on: 'eval:doc.fetch_type!="Single Video URL"'
-            },
-            {
-                fieldname: 'auto_content_hub',
-                fieldtype: 'Check',
-                label: __('Auto-create Content Hub & generate post ideas'),
-                default: 1
             }
         ],
         primary_action_label: __('Fetch & Import'),
@@ -77,8 +71,7 @@ function open_youtube_fetch_dialog(listview) {
                 frappe.call({
                     method: 'ai_crm.social_media.api.fetch_youtube_url',
                     args: {
-                        url: values.video_url,
-                        auto_create_content_hub: values.auto_content_hub
+                        url: values.video_url
                     },
                     callback: function (r) {
                         frappe.dom.unfreeze();
@@ -115,8 +108,7 @@ function open_youtube_fetch_dialog(listview) {
                     method: 'ai_crm.social_media.api.fetch_youtube_channel_videos',
                     args: {
                         channel_name_or_id: channel,
-                        max_results: values.max_results,
-                        auto_create_content_hub: values.auto_content_hub
+                        max_results: values.max_results
                     },
                     callback: function (r) {
                         frappe.dom.unfreeze();

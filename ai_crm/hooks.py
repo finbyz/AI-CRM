@@ -119,4 +119,8 @@ fixtures = [
             ["module", "in", ["Ai CRM", "Resume Ranker"]]
         ]
     },
+    {
+        "doctype": "Notification",
+        "filters": {"name": ["in", ["YouTube Content Ideas Ready"]]}
+    },
 ]

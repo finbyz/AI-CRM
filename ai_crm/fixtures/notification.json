@@ -1,0 +1,43 @@
+[
+ {
+  "attach_print": 0,
+  "channel": "Email",
+  "condition": "doc.source_type == \"YouTube Video\" and doc.generation_status == \"Completed\"",
+  "date_changed": null,
+  "days_in_advance": 0,
+  "docstatus": 0,
+  "doctype": "Notification",
+  "document_type": "Content Hub",
+  "enabled": 1,
+  "event": "Value Change",
+  "is_standard": 0,
+  "message": "<p>A relevant YouTube video was found and <b>{{ doc.ideas_child_table | length }} content ideas</b> are ready for review.</p>\n<p><b>Video:</b> {{ doc.title }}<br>\n{% if doc.channel_name %}<b>Channel:</b> {{ doc.channel_name }}<br>{% endif %}\n{% if doc.source_url %}<a href=\"{{ doc.source_url }}\">Watch on YouTube</a>{% endif %}</p>",
+  "message_type": "HTML",
+  "method": null,
+  "modified": "2026-10-12 19:48:52.627393",
+  "module": null,
+  "name": "YouTube Content Ideas Ready",
+  "print_format": null,
+  "property_value": null,
+  "recipients": [
+   {
+    "bcc": null,
+    "cc": null,
+    "condition": null,
+    "parent": "YouTube Content Ideas Ready",
+    "parentfield": "recipients",
+    "parenttype": "Notification",
+    "receiver_by_document_field": null,
+    "receiver_by_role": "Social Media Manager"
+   }
+  ],
+  "send_system_notification": 0,
+  "send_to_all_assignees": 0,
+  "sender": null,
+  "sender_email": null,
+  "set_property_after_alert": null,
+  "slack_webhook_url": null,
+  "subject": "New ideas from YouTube: {{ doc.title }}",
+  "value_changed": "generation_status"
+ }
+]

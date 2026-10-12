@@ -9,7 +9,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import get_datetime, now_datetime
 
-from ai_crm.social_media.platforms import PLATFORM_BY_CREDENTIAL, get_platform
+from ai_crm.social_media.platforms import PLATFORM_BY_CREDENTIAL, get_platform, to_platform_text
 
 
 class SocialMediaPost(Document):
@@ -502,11 +502,11 @@ class SocialMediaPost(Document):
             frappe.throw("AI agent did not return revised content")
 
         # Step 5: Save result back
-        self.content = revised_content
+        self.content = to_platform_text(self.credential_type, str(revised_content))
         self.save()
         self.reload()
 
-        return {"status": "success", "revised_content": revised_content}
+        return {"status": "success", "revised_content": self.content}
 
 
     def post_to_linkedin(self):

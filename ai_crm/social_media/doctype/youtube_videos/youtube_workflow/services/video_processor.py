@@ -76,6 +76,8 @@ def process_video_workflow(tracker_name, video_id):
                     ch_doc.source_url = video.video_link
                     ch_doc.insert(ignore_permissions=True)
                     video.content_hub = ch_doc.name
+                    # Link first: idea generation finds the transcript through this link.
+                    frappe.db.set_value("YouTube Video", video.name, "content_hub", ch_doc.name)
 
                     # Try generating ideas for the Content Hub
                     try:

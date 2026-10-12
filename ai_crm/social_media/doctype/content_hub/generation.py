@@ -1,7 +1,7 @@
 import frappe
 from frappe import _
 
-from ai_crm.social_media.platforms import PLATFORM_BY_CREDENTIAL, get_platform
+from ai_crm.social_media.platforms import PLATFORM_BY_CREDENTIAL, get_platform, to_platform_text
 
 
 def queue_posts_for_idea(content_hub, idea_name, targets):
@@ -69,7 +69,7 @@ def generate_post_content(post_name, content_hub_name, idea_name):
             frappe.throw(_("The post agent returned empty content"))
 
         post.reload()
-        post.content = str(content)
+        post.content = to_platform_text(post.credential_type, str(content))
         post.generation_status = "Ready"
         post.failure_reason = None
         post.flags.skip_approval_reset = True

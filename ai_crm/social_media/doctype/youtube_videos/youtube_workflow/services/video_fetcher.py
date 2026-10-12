@@ -6,15 +6,18 @@ Video Fetcher Service
 Handles fetching videos from YouTube channels
 """
 
+import html
+
 import frappe
 import requests
 from datetime import timedelta
-from frappe.utils import now_datetime
+from zoneinfo import ZoneInfo
+from frappe.utils import get_datetime, get_system_timezone, now_datetime
 
 
 def fetch_videos_from_channels(channel_id=None, force=False, max_results=None):
     """
-    Fetch videos from all configured YouTube channels.
+    Fetch videos from all configured YouTube channels (or the given channel ID / list of IDs).
     Returns list of video data dictionaries.
     
     Returns:
@@ -30,12 +33,14 @@ def fetch_videos_from_channels(channel_id=None, force=False, max_results=None):
     if not channels:
         return []
     
+    if isinstance(channel_id, str):
+        channel_id = [channel_id]
+
     all_videos = []
-    settings_changed = False
     now = now_datetime()
 
     for channel in channels:
-        if channel_id and channel.channel_id != channel_id:
+        if channel_id and channel.channel_id not in channel_id:
             continue
 
         try:
@@ -45,8 +50,9 @@ def fetch_videos_from_channels(channel_id=None, force=False, max_results=None):
             channel_videos = _fetch_channel_videos(channel, api_key, now, max_results)
             all_videos.extend(channel_videos)
             
-            channel.last_fetched_on = now
-            settings_changed = True
+            # A limited test fetch skips older videos, so the scheduled fetch must still see them.
+            if not max_results:
+                frappe.db.set_value("YouTube Channel", channel.name, "last_fetched_on", now)
 
         except Exception as e:
             frappe.log_error(
@@ -54,9 +60,6 @@ def fetch_videos_from_channels(channel_id=None, force=False, max_results=None):
                 "YouTube Video Fetcher"
             )
             continue
-    
-    if settings_changed:
-        settings.save(ignore_permissions=True)
 
     return all_videos
 
@@ -75,10 +78,16 @@ def _should_fetch_channel(channel, current_time):
 def _fetch_channel_videos(channel, api_key, now, max_results=None):
     """Fetch videos from a specific YouTube channel."""
     frequency_days = max(int(channel.fetch_frequency or 5), 1)
-    is_weekly = frequency_days == 7
+    # A limited (test) fetch simply takes the channel's latest uploads.
+    is_weekly = frequency_days == 7 and not max_results
     
-    last_fetched_on = channel.last_fetched_on
-    published_after = (last_fetched_on or (now - timedelta(days=7))).isoformat("T") + "Z"
+    # Stored times are in the system timezone; YouTube expects UTC.
+    since = get_datetime(channel.last_fetched_on or (now - timedelta(days=7)))
+    published_after = (
+        since.replace(tzinfo=ZoneInfo(get_system_timezone()))
+        .astimezone(ZoneInfo("UTC"))
+        .strftime("%Y-%m-%dT%H:%M:%SZ")
+    )
     
     all_videos = []
     next_page_token = None
@@ -88,12 +97,13 @@ def _fetch_channel_videos(channel, api_key, now, max_results=None):
             "key": api_key,
             "channelId": channel.channel_id,
             "part": "snippet",
-            "publishedAfter": published_after,
             "order": "viewCount" if is_weekly else "date",
             "type": "video",
             "maxResults": max(1, min(int(max_results), 50)) if max_results else 50,
         }
         
+        if not max_results:
+            params["publishedAfter"] = published_after
         if next_page_token:
             params["pageToken"] = next_page_token
         
@@ -128,23 +138,23 @@ def _fetch_channel_videos(channel, api_key, now, max_results=None):
 
 def _process_api_response(response, api_key, channel):
     """Process YouTube API response and extract video information."""
+    items = [item for item in response.get("items", []) if item.get("id", {}).get("videoId")]
+    views = _fetch_video_views([item["id"]["videoId"] for item in items], api_key)
     videos = []
     
-    for item in response.get("items", []):
-        video_id = item.get("id", {}).get("videoId")
-        if not video_id:
-            continue
-        
+    for item in items:
+        video_id = item["id"]["videoId"]
         snippet = item.get("snippet", {})
         
         video_data = {
             "channel_id": channel.channel_id,
             "channel_name": channel.channel_name,
             "video_id": video_id,
-            "title": (snippet.get("title") or "")[:140],
-            "description": (snippet.get("description") or "").strip(),
+            # The search API returns HTML-escaped text (e.g. &#39; for an apostrophe).
+            "title": html.unescape(snippet.get("title") or "")[:140],
+            "description": html.unescape(snippet.get("description") or "").strip(),
             "published_on": snippet.get("publishedAt"),
-            "views": _fetch_video_views(video_id, api_key),
+            "views": views.get(video_id, 0),
             "video_link": f"https://www.youtube.com/watch?v={video_id}"
         }
         
@@ -153,28 +163,32 @@ def _process_api_response(response, api_key, channel):
     return videos
 
 
-def _fetch_video_views(video_id, api_key):
-    """Fetch view count for a specific video."""
+def _fetch_video_views(video_ids, api_key):
+    """Fetch view counts for up to 50 videos in one call."""
+    if not video_ids:
+        return {}
     try:
         res = requests.get(
             "https://www.googleapis.com/youtube/v3/videos",
             params={
                 "key": api_key,
-                "id": video_id,
+                "id": ",".join(video_ids),
                 "part": "statistics"
             },
             timeout=30
         ).json()
         
-        if res.get("items"):
-            return int(res["items"][0]["statistics"].get("viewCount", 0))
+        return {
+            item["id"]: int(item.get("statistics", {}).get("viewCount", 0))
+            for item in res.get("items", [])
+        }
     except Exception as e:
         frappe.log_error(
-            f"View fetch failed ({video_id}): {str(e)}",
+            f"View fetch failed ({', '.join(video_ids)}): {str(e)}",
             "YouTube Stats Error"
         )
     
-    return 0
+    return {}
 
 
 def save_videos_to_tracker(tracker_name, videos_list):
