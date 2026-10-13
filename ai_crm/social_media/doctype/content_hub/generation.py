@@ -2,6 +2,7 @@ import frappe
 from frappe import _
 
 from ai_crm.social_media.platforms import PLATFORM_BY_CREDENTIAL, get_platform, to_platform_text
+from ai_crm.social_media.doctype.youtube_settings.youtube_settings import is_own_channel
 
 
 def queue_posts_for_idea(content_hub, idea_name, targets):
@@ -118,6 +119,7 @@ def _build_agent_input(hub, post, idea):
     settings = frappe.get_single("Content Hub Setting")
     source = _get_source_context(hub)
     brand_voice = settings.brand_voice or ""
+    own = is_own_channel(source.get("channel_id"))
     return {
         "action": "generate",
         "title": hub.title,
@@ -130,7 +132,9 @@ def _build_agent_input(hub, post, idea):
         "source_type": hub.source_type or "Manual Topic",
         "channel_name": source.get("channel_name") or hub.channel_name or "",
         "youtube_views": source.get("views") or 0,
-        "youtube_video_link": source.get("video_link") or hub.source_url or "",
+        # Only our own videos are linked; other channels are used as background, never cited.
+        "youtube_video_link": (source.get("video_link") or hub.source_url or "None") if own else "None",
+        "video_ownership": "Our own video" if own else "Third-party video",
         "transcript": (source.get("transcript") or "")[:12000],
     }
 
@@ -141,7 +145,7 @@ def _get_source_context(hub):
     return frappe.db.get_value(
         "YouTube Video",
         {"content_hub": hub.name},
-        ["channel_name", "views", "video_link", "transcript"],
+        ["channel_id", "channel_name", "views", "video_link", "transcript"],
         as_dict=True,
     ) or frappe._dict()
 

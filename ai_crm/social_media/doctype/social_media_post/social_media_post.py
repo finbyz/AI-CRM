@@ -4,7 +4,6 @@
 import base64
 
 import frappe
-from finbyzai.ai.agent.agent_service import AgentService
 from frappe import _
 from frappe.model.document import Document
 from frappe.utils import get_datetime, now_datetime
@@ -679,86 +678,67 @@ class SocialMediaPost(Document):
             }
 
     @frappe.whitelist(methods=["POST"])
-    def generate_image(self, instruction: str = ''):
+    def generate_image(self, instruction: str = ""):
+        """Generate one general image for the post. Branded carousels and slides belong to Creative."""
         self.check_permission("write")
         if self.status not in {"Draft", "Approved", "Scheduled"}:
             frappe.throw(_("Only draft or approved posts can be changed"))
         if self.status != "Draft":
             self._require_manager()
+        if not (self.content or "").strip():
+            frappe.throw(_("Write the post content first; the image is based on it."))
+
         setting = frappe.get_single("Content Hub Setting")
-
         credential_doc = self.get_credentials()
-
-        # Determine which image agent to use
         agent_name = None
-        meta_prompt = setting.image_generation_meta_prompt or ""
-
         if credential_doc and not getattr(credential_doc, "use_default_ai_agents", False):
             agent_name = getattr(credential_doc, "image_generation_agent", None)
-            account_prompt = getattr(credential_doc, "image_generation_meta_prompt", None)
-            if account_prompt:
-                meta_prompt = account_prompt
-
+        agent_name = agent_name or setting.image_generation_agent
         if not agent_name:
-            agent_name = setting.image_generation_agent
+            frappe.throw(_("No Image Generation Agent configured in Content Hub Setting"))
 
-        if not agent_name:
-            frappe.throw("No Image Generation Agent configured in Content Hub Setting")
-
-        image_agent = frappe.get_doc("AI Agent", agent_name).agent_service
-
-        if not self.image_generation_prompt:
-            helper_agent = AgentService(setting.helper_agent)
-            generation_prompt = f"{meta_prompt}\n\nPost Content:\n{self.content}\n{instruction}"
-            image_generation_response = helper_agent.invoke(query=generation_prompt)
-
-            # ✅ Extract the actual usable string
-            if isinstance(image_generation_response, dict) and "output" in image_generation_response:
-                image_generation_prompt = image_generation_response["output"]
-            elif hasattr(image_generation_response, 'content'):
-                image_generation_prompt = str(image_generation_response.content)
-            elif hasattr(image_generation_response, 'text'):
-                image_generation_prompt = str(image_generation_response.text)
-            else:
-                image_generation_prompt = str(image_generation_response)
-        else:
-            image_generation_prompt = str(self.image_generation_prompt)
-
+        prompt_text = _general_image_prompt(self.platform, self.content, instruction)
         try:
-            prompt_text = str(image_generation_prompt)[:900]
-            image_response = image_agent.invoke(query=prompt_text, size=setting.image_size)
+            image_response = frappe.get_doc("AI Agent", agent_name).agent_service.invoke(
+                query=prompt_text, size=setting.image_size
+            )
+            image_bytes = base64.b64decode(image_response.images[0])
         except Exception as e:
-            frappe.log_error("Image generation failed", frappe.get_traceback())
-            return {
-                "status": "error",
-                "error": str(e)
-            }
+            frappe.log_error(frappe.get_traceback(), f"Image generation failed: {self.name}")
+            if "429" in str(e):
+                frappe.throw(_("The image model is busy right now. Please try again in a minute."))
+            frappe.throw(_("Image generation failed: {0}").format(str(e)[:300]))
 
-        # Handle the image response safely
-        try:
-            b64_image = image_response.images[0]
-            image_bytes = base64.b64decode(b64_image)
+        file_doc = frappe.get_doc({
+            "doctype": "File",
+            "file_name": f"{frappe.scrub(self.title or 'social_post')}_{frappe.scrub(self.platform or 'post')}.png",
+            "content": image_bytes,
+            "is_private": 1,
+            "attached_to_doctype": self.doctype,
+            "attached_to_name": self.name,
+            "attached_to_field": "image_attachment",
+        }).insert(ignore_permissions=True)
 
-            file_name = f"{frappe.scrub(self.title or 'social_post')}_{self.platform.lower()}.png"
-            file_doc = frappe.new_doc("File")
-            file_doc.content = image_bytes
-            file_doc.file_name = file_name
-            file_doc.is_private = True
-            file_doc.save()
+        self.image_attachment = file_doc.file_url
+        self.image_generation_prompt = prompt_text
+        self.save()
+        return {"status": "success"}
 
-            self.image_attachment = file_doc.file_url
-            self.image_generation_prompt = prompt_text
-            self.save()
-            self.reload()
 
-            return {"status": "success"}
-
-        except Exception as e:
-            frappe.log_error("Image download/save failed", frappe.get_traceback())
-            return {
-                "status": "error",
-                "error": str(e)
-            }
+def _general_image_prompt(platform, content, instruction=""):
+    instruction = (instruction or "").strip()
+    lines = [
+        f"Create one high-quality image to accompany the {platform or 'social media'} post below.",
+        "- A single standalone image: not a carousel, slide, infographic page, collage or PDF.",
+        "- Show the post's core idea visually, as a clear scene or visual metaphor a busy professional understands at a glance.",
+        "- Little or no text in the image; if any, at most five words, spelled correctly.",
+        "- No logos, watermarks, brand names, slide numbers or real people's faces unless the instruction asks for them.",
+        "- Clean, modern, professional look with a strong focal point; square composition.",
+    ]
+    if instruction:
+        lines.append(f"\nMost important, follow this instruction from the user: {instruction}")
+    lines.append(f"\nPost:\n{(content or '')[:3000]}")
+    return "\n".join(lines)
 
 
 def publish_approved_post(post_name):

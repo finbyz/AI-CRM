@@ -10,6 +10,7 @@
   "channel_title",
   "channel_id",
   "column_break_ytch",
+  "own_channel",
   "fetch_frequency",
   "last_fetched_on"
  ],
@@ -45,6 +46,13 @@
    "fieldtype": "Column Break"
   },
   {
+   "default": "0",
+   "fieldname": "own_channel",
+   "fieldtype": "Check",
+   "label": "Our Own Channel",
+   "description": "Tick for Finbyz channels. Only their posts include the video link."
+  },
+  {
    "default": "1",
    "fieldname": "fetch_frequency",
    "fieldtype": "Int",
@@ -66,7 +74,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-10-12 12:00:00.000000",
+ "modified": "2026-10-13 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Social Media",
  "name": "YouTube Channel",

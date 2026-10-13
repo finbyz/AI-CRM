@@ -31,6 +31,13 @@ class YouTubeSettings(Document):
             row.channel_title = info["title"]
 
 
+def is_own_channel(channel_id):
+    """True when the video's channel is ticked as one of our own in YouTube Settings."""
+    return bool(channel_id) and bool(
+        frappe.db.exists("YouTube Channel", {"parent": "YouTube Settings", "channel_id": channel_id, "own_channel": 1})
+    )
+
+
 def get_channel_info(value, api_key=None):
     """Resolve an @handle, channel URL or channel ID to {channel_id, title}."""
     value = (value or "").strip().rstrip("/")

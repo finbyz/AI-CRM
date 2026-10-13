@@ -2,6 +2,7 @@ import frappe
 from frappe.model.document import Document
 
 from ai_crm.social_media.doctype.content_hub.generation import queue_posts_for_idea
+from ai_crm.social_media.doctype.youtube_settings.youtube_settings import is_own_channel
 
 
 class ContentHub(Document):
@@ -35,46 +36,40 @@ class ContentHub(Document):
         idea_agent = frappe.get_doc("AI Agent", agent_name).agent_service
 
         # Prepare YouTube transcript & context
-        youtube_context = ""
         transcript_text = ""
-        youtube_video_link = ""
+        youtube_video_link = "None"
         youtube_views = 0
+        own_video = False
         channel_name = getattr(self, "channel_name", "") or ""
 
         if is_youtube:
-            try:
-                # Find the linked YouTube Video child table record
-                yt_video_name = frappe.db.get_value("YouTube Video", {"content_hub": self.name}, "name")
-                if yt_video_name:
-                    yt_doc = frappe.get_doc("YouTube Video", yt_video_name)
-                    raw_transcript = (yt_doc.transcript or "").strip()
-                    transcript_text = raw_transcript[:12000] + ("..." if len(raw_transcript) > 12000 else "")
+            yt_doc = frappe.db.get_value(
+                "YouTube Video",
+                {"content_hub": self.name},
+                ["channel_id", "channel_name", "video_id", "video_link", "views", "transcript"],
+                as_dict=True,
+            )
+            if yt_doc:
+                raw_transcript = (yt_doc.transcript or "").strip()
+                transcript_text = raw_transcript[:12000] + ("..." if len(raw_transcript) > 12000 else "")
+                youtube_views = yt_doc.views or 0
+                channel_name = channel_name or yt_doc.channel_name or ""
+                # Only our own videos are linked; other channels are used as background, never cited.
+                own_video = is_own_channel(yt_doc.channel_id)
+                if own_video:
                     youtube_video_link = yt_doc.video_link or f"https://www.youtube.com/watch?v={yt_doc.video_id}"
-                    youtube_views = yt_doc.views or 0
-                    if yt_doc.channel_name and not channel_name:
-                        channel_name = yt_doc.channel_name
-    
-                    youtube_context = (
-                        f"\n\nYouTube Video Context:\n"
-                        f"Title: {yt_doc.title}\n"
-                        f"Channel Name: {channel_name}\n"
-                        f"Views: {youtube_views}\n"
-                        f"Video Link: {youtube_video_link}\n"
-                        f"Transcript: {transcript_text}"
-                    )
-            except Exception as e:
-                frappe.log_error(f"Error fetching YouTube Video for Content Hub: {str(e)}")
 
         brand_voice = content_hub_setting.brand_voice or ""
         brand_voice_prompt = f"\nBrand Voice / Tone: {brand_voice}" if brand_voice else ""
 
         ai_input_data = {
-            "title": f"{self.title}{youtube_context}{brand_voice_prompt}",
+            "title": f"{self.title}{brand_voice_prompt}",
             "target_audience": self.target_audience or "",
             "social_media": "Source Neutral",
             "youtube_views": youtube_views,
             "channel_name": channel_name,
             "youtube_video_link": youtube_video_link,
+            "video_ownership": "Our own video" if own_video else "Third-party video",
             "transcript": transcript_text
         }
 

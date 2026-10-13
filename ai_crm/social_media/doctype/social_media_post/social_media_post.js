@@ -107,7 +107,12 @@ function revise_post(frm) {
 
 function generate_image(frm) {
 	frappe.prompt(
-		{ fieldname: "instruction", fieldtype: "Small Text", label: __("Image instruction") },
+		{
+			fieldname: "instruction",
+			fieldtype: "Small Text",
+			label: __("Image instruction"),
+			description: __("Optional, e.g. \"a warehouse manager checking stock on a tablet\". Creates one general image from the post; for branded carousels or slides use Creative."),
+		},
 		(values) => run_action(frm, "generate_image", values),
 		__("Generate Image"),
 		__("Generate"),
