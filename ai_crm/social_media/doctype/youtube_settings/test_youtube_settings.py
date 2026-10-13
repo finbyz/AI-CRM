@@ -58,3 +58,47 @@ class TestYouTubeSettings(FrappeTestCase):
             self.assertRaises(frappe.ValidationError),
         ):
             settings.validate()
+
+    def test_validate_keeps_unchanged_legacy_row_without_title(self):
+        """Verify that a saved row without a title is looked up by its ID and never blocks the save."""
+        settings = frappe.get_doc({
+            "doctype": "YouTube Settings",
+            "channels": [{"name": "row-old", "channel_name": "Finbyz Tech", "channel_id": "UC-old"}],
+        })
+        before = frappe._dict(channels=[frappe._dict(name="row-old", channel_name="Finbyz Tech")])
+
+        with (
+            patch.object(settings, "get_doc_before_save", return_value=before),
+            patch(
+                "ai_crm.social_media.doctype.youtube_settings.youtube_settings.get_channel_info",
+                return_value=None,
+            ) as lookup,
+        ):
+            settings.validate()
+
+        self.assertEqual(settings.channels[0].channel_id, "UC-old")
+        self.assertEqual(settings.channels[0].channel_title, "Finbyz Tech")
+        lookup.assert_called_once_with("UC-old", None)
+
+    def test_validate_resets_checkpoint_when_channel_changes(self):
+        """Verify that replacing a row's channel clears its last fetched time."""
+        settings = frappe.get_doc({
+            "doctype": "YouTube Settings",
+            "channels": [{
+                "name": "row-1", "channel_name": "@new", "channel_id": "UC-old",
+                "channel_title": "Old", "last_fetched_on": "2026-10-01 10:00:00",
+            }],
+        })
+        before = frappe._dict(channels=[frappe._dict(name="row-1", channel_name="@old")])
+
+        with (
+            patch.object(settings, "get_doc_before_save", return_value=before),
+            patch(
+                "ai_crm.social_media.doctype.youtube_settings.youtube_settings.get_channel_info",
+                return_value={"channel_id": "UC-new", "title": "New"},
+            ),
+        ):
+            settings.validate()
+
+        self.assertEqual(settings.channels[0].channel_id, "UC-new")
+        self.assertIsNone(settings.channels[0].last_fetched_on)

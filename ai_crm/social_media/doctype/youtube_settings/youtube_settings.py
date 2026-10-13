@@ -17,7 +17,11 @@ class YouTubeSettings(Document):
         for row in self.channels:
             row.channel_name = (row.channel_name or "").strip()
             name_changed = old_names.get(row.name) != row.channel_name
-            if row.channel_id and row.channel_title and not name_changed:
+            if row.channel_id and not name_changed:
+                # Unchanged row: keep its ID; only fill a missing title, never block the save.
+                if not row.channel_title:
+                    info = get_channel_info(row.channel_id, api_key)
+                    row.channel_title = info["title"] if info else row.channel_name
                 continue
 
             info = get_channel_info(row.channel_name, api_key)
@@ -27,6 +31,9 @@ class YouTubeSettings(Document):
                         row.idx, frappe.bold(row.channel_name)
                     )
                 )
+            if info["channel_id"] != row.channel_id:
+                # A different channel starts fresh instead of inheriting the old fetch checkpoint.
+                row.last_fetched_on = None
             row.channel_id = info["channel_id"]
             row.channel_title = info["title"]
 
