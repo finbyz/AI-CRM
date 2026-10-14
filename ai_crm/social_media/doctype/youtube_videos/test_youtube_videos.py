@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
+from frappe.utils import now_datetime
 
 from ai_crm.social_media.doctype.youtube_videos.youtube_workflow.services.ai_service import (
     analyze_video,
@@ -12,6 +13,12 @@ from ai_crm.social_media.doctype.youtube_videos.youtube_workflow.services.ai_ser
 from ai_crm.social_media.doctype.youtube_videos.youtube_workflow.services.background_jobs import (
     run_youtube_workflow,
 )
+from ai_crm.social_media.doctype.youtube_videos.youtube_workflow.services.video_fetcher import (
+    FIRST_FETCH_LIMIT,
+    _fetch_channel_videos,
+)
+
+FETCHER = "ai_crm.social_media.doctype.youtube_videos.youtube_workflow.services.video_fetcher"
 
 
 class AnalysisAgent:
@@ -24,13 +31,29 @@ class AnalysisAgent:
 
 
 class TestYouTubeVideos(FrappeTestCase):
-    def test_tracker_schema_owns_read_only_video_rows(self):
+    def test_tracker_schema_owns_video_rows(self):
         """Verify that the tracker owns imported rows and exposes workflow progress."""
         meta = frappe.get_meta("YouTube Videos")
 
         self.assertEqual(meta.get_field("videos").options, "YouTube Video")
-        self.assertEqual(meta.get_field("videos").read_only, 1)
         self.assertEqual(meta.get_field("workflow_status").default, "Queued")
+        self.assertEqual(meta.get_field("relevant_videos").read_only, 1)
+
+    def test_first_fetch_of_a_channel_takes_only_latest_uploads(self):
+        """Verify that a newly added channel imports only its latest few videos, not its back catalogue."""
+        channel = frappe._dict(channel_id="UC1", channel_name="@new", fetch_frequency="1", last_fetched_on=None)
+        response = frappe._dict(json=lambda: {"items": []}, raise_for_status=lambda: None)
+
+        with (
+            patch(f"{FETCHER}.requests.get", return_value=response) as get,
+            patch(f"{FETCHER}._process_api_response", return_value=[]),
+        ):
+            _fetch_channel_videos(channel, "key", now_datetime())
+
+        params = get.call_args.kwargs["params"]
+        self.assertEqual(params["maxResults"], FIRST_FETCH_LIMIT)
+        self.assertEqual(params["order"], "date")
+        self.assertNotIn("publishedAfter", params)
 
     def test_analysis_receives_user_relevance_settings(self):
         """Verify that video analysis receives the configured relevance instructions."""

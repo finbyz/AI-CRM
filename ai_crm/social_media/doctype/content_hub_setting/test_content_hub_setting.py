@@ -14,6 +14,7 @@ class TestContentHubSetting(FrappeTestCase):
             "post_generator_agent",
             "youtube_idea_generator_agent",
             "youtube_post_generator_agent",
+            "research_agent",
             "revise_post_agent",
             "image_generation_agent",
             "helper_agent",

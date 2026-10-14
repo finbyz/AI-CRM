@@ -12,8 +12,13 @@
   "source_url",
   "column_break_akfh",
   "target_audience",
+  "research_status",
+  "researched_on",
   "generation_status",
   "generation_error",
+  "research_section",
+  "research_error",
+  "research",
   "section_break_tbde",
   "ideas_child_table"
  ],
@@ -53,8 +58,26 @@
    "label": "Target Audience"
   },
   {
+   "fieldname": "research_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Research Status",
+   "no_copy": 1,
+   "options": "\nQueued\nResearching\nCompleted\nFailed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "researched_on",
+   "fieldtype": "Datetime",
+   "label": "Researched On",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
    "fieldname": "section_break_tbde",
    "fieldtype": "Section Break",
+   "hidden": 1,
    "label": "Generated Content Ideas"
   },
   {
@@ -66,15 +89,35 @@
   {
    "fieldname": "generation_error",
    "fieldtype": "Small Text",
+   "hidden": 1,
    "label": "Idea Generation Error",
    "read_only": 1
+  },
+  {
+   "fieldname": "research_section",
+   "fieldtype": "Section Break",
+   "label": "Research"
+  },
+  {
+   "depends_on": "eval:doc.research_status=='Failed'",
+   "fieldname": "research_error",
+   "fieldtype": "Small Text",
+   "label": "Research Error",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "description": "Filled by Do Research with web findings and sources. You can edit it before generating content.",
+   "fieldname": "research",
+   "fieldtype": "Markdown Editor",
+   "label": "Research Notes",
+   "no_copy": 1
   },
   {
    "default": "Queued",
    "fieldname": "generation_status",
    "fieldtype": "Select",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
+   "hidden": 1,
    "label": "Generation Status",
    "options": "Queued\nGenerating\nCompleted\nFailed",
    "read_only": 1
@@ -90,7 +133,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-08-05 16:28:48.333994",
+ "modified": "2026-10-14 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Social Media",
  "name": "Content Hub",

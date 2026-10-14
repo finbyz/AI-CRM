@@ -1,97 +1,130 @@
+const RESEARCH_RUNNING = ["Queued", "Researching"];
+
 frappe.ui.form.on("Content Hub", {
 	refresh(frm) {
-		const button = frm.add_custom_button(__("Generate Ideas"), () => generate_ideas(frm));
-		button.toggleClass("btn-primary", frm.doc.generation_status !== "Generating");
-		button.prop("disabled", frm.doc.generation_status === "Generating");
+		if (frm.is_new()) return;
 
-		if (!frm.is_new() && frm.doc.ideas_child_table?.length) {
-			frm.add_custom_button(__("Generate Posts"), () => open_post_dialog(frm));
+		const running = RESEARCH_RUNNING.includes(frm.doc.research_status);
+		const researched = frm.doc.research_status === "Completed";
+
+		const research_button = frm.add_custom_button(
+			researched ? __("Redo Research") : __("Do Research"),
+			() => start_research(frm)
+		);
+		research_button.prop("disabled", running);
+		research_button.toggleClass("btn-primary", !researched && !running);
+
+		const generate_button = frm.add_custom_button(__("Generate"), () => open_generate_dialog(frm));
+		generate_button.toggleClass("btn-primary", researched);
+
+		if (running) {
+			frm.dashboard.set_headline(
+				__("Researching this topic on the web. You will get a message when it is ready."),
+				"blue"
+			);
 		}
 	},
 });
 
-async function generate_ideas(frm) {
-	if (frm.is_new() || frm.is_dirty()) {
-		await frm.save();
+async function start_research(frm) {
+	if (frm.doc.research_status === "Completed") {
+		const confirmed = await new Promise((resolve) =>
+			frappe.confirm(__("Replace the current research notes with a fresh web research?"), () =>
+				resolve(true), () => resolve(false))
+		);
+		if (!confirmed) return;
 	}
+	if (frm.is_dirty()) await frm.save();
 
-	const response = await frm.call({
-		doc: frm.doc,
-		method: "generate_ideas",
-		freeze: true,
-		freeze_message: __("Generating ideas..."),
-	});
+	await frm.call({ doc: frm.doc, method: "start_research", freeze: true });
 	await frm.reload_doc();
-
-	if (response.message?.status === "success") {
-		frappe.show_alert({
-			message: __("Ideas generated successfully"),
-			indicator: "green",
-		});
-		return;
-	}
-
-	frappe.msgprint({
-		title: __("Idea Generation Failed"),
-		message: response.message?.error || __("Unable to generate ideas."),
-		indicator: "red",
-	});
+	frappe.show_alert({ message: __("Research started"), indicator: "blue" });
 }
 
-function open_post_dialog(frm) {
+function open_generate_dialog(frm) {
+	const is_social = "eval:doc.output_type=='Social Media Post'";
 	const dialog = new frappe.ui.Dialog({
-		title: __("Generate Posts"),
-		fields: get_post_dialog_fields(frm),
-		primary_action_label: __("Generate Posts"),
-		primary_action: async (values) => generate_posts(frm, dialog, values),
+		title: __("Generate"),
+		fields: [
+			{
+				fieldname: "output_type",
+				fieldtype: "Select",
+				label: __("What to generate"),
+				options: frappe.boot.versions?.finbyzweb
+					? ["Social Media Post", "Web Page", "Blog Post"]
+					: ["Social Media Post"],
+				default: "Social Media Post",
+				reqd: 1,
+			},
+			{
+				fieldname: "coming_soon",
+				fieldtype: "HTML",
+				depends_on: "eval:doc.output_type!='Social Media Post'",
+				options: `<p class="text-muted">${__(
+					"Opens a new NextJS Page with the full research notes as its content. Review and save it, then use Generate SEO, Generate FAQs and Generate Page there."
+				)}</p>`,
+			},
+			{
+				fieldname: "research_note",
+				fieldtype: "HTML",
+				options: frm.doc.research
+					? ""
+					: `<p class="text-warning">${__(
+							"No research yet. Click Do Research first. Posts can still be written from the source, but web pages need the research."
+					  )}</p>`,
+			},
+			{
+				fieldname: "linkedin_account",
+				fieldtype: "Link",
+				label: __("LinkedIn Account"),
+				options: "LinkedIn Integration",
+				depends_on: is_social,
+			},
+			{
+				fieldname: "twitter_account",
+				fieldtype: "Link",
+				label: __("X (Twitter) Account"),
+				options: "Twitter Integration",
+				depends_on: is_social,
+			},
+			{
+				fieldname: "reddit_account",
+				fieldtype: "Link",
+				label: __("Reddit Account"),
+				options: "Reddit Integration",
+				depends_on: is_social,
+			},
+			{
+				fieldname: "subreddit",
+				fieldtype: "Data",
+				label: __("Subreddit"),
+				depends_on: "eval:doc.output_type=='Social Media Post' && doc.reddit_account",
+				mandatory_depends_on: "eval:doc.output_type=='Social Media Post' && doc.reddit_account",
+			},
+			{
+				fieldname: "instruction",
+				fieldtype: "Small Text",
+				label: __("Angle or Instructions (optional)"),
+				depends_on: is_social,
+			},
+		],
+		primary_action_label: __("Generate"),
+		primary_action: (values) => generate(frm, dialog, values),
 	});
 	dialog.show();
 }
 
-function get_post_dialog_fields(frm) {
-	return [
-		{
-			fieldname: "idea_names",
-			fieldtype: "MultiCheck",
-			label: __("Content Ideas"),
-			options: frm.doc.ideas_child_table.map((idea) => ({
-				label: frappe.utils.escape_html(idea.idea_title),
-				value: idea.name,
-			})),
-			columns: 1,
-		},
-		{ fieldname: "accounts_section", fieldtype: "Section Break", label: __("Accounts") },
-		{
-			fieldname: "linkedin_account",
-			fieldtype: "Link",
-			label: __("LinkedIn Account"),
-			options: "LinkedIn Integration",
-		},
-		{
-			fieldname: "twitter_account",
-			fieldtype: "Link",
-			label: __("X (Twitter) Account"),
-			options: "Twitter Integration",
-		},
-		{
-			fieldname: "reddit_account",
-			fieldtype: "Link",
-			label: __("Reddit Account"),
-			options: "Reddit Integration",
-		},
-		{
-			fieldname: "subreddit",
-			fieldtype: "Data",
-			label: __("Subreddit"),
-			depends_on: "eval:doc.reddit_account",
-			mandatory_depends_on: "eval:doc.reddit_account",
-		},
-	];
-}
-
-async function generate_posts(frm, dialog, values) {
-	if (!values.idea_names?.length) {
-		frappe.msgprint(__("Select at least one content idea."));
+async function generate(frm, dialog, values) {
+	if (values.output_type !== "Social Media Post") {
+		const response = await frm.call({
+			doc: frm.doc,
+			method: "draft_web_page",
+			args: { output_type: values.output_type },
+			freeze: true,
+		});
+		if (!response.message) return;
+		dialog.hide();
+		frappe.new_doc("NextJS Page", response.message);
 		return;
 	}
 
@@ -102,24 +135,31 @@ async function generate_posts(frm, dialog, values) {
 	}
 
 	dialog.disable_primary_action();
-	frappe.dom.freeze(__("Queueing post generation..."));
-	let post_count = 0;
 	try {
-		for (const idea_name of values.idea_names) {
-			const response = await frm.call({
-				doc: frm.doc,
-				method: "generate_posts_from_idea",
-				args: { idea_name, targets },
-			});
-			post_count += response.message?.posts?.length || 0;
-		}
-		dialog.hide();
-		frappe.show_alert({
-			message: __("{0} post(s) queued", [post_count]),
-			indicator: "green",
+		const response = await frm.call({
+			doc: frm.doc,
+			method: "generate_social_posts",
+			args: { targets, instruction: values.instruction },
+			freeze: true,
+			freeze_message: __("Queueing post generation..."),
 		});
+		dialog.hide();
+		const posts = response.message?.posts || [];
+		const url =
+			posts.length === 1
+				? frappe.utils.get_form_link("Social Media Post", posts[0])
+				: `/app/social-media-post?content_hub=${encodeURIComponent(frm.doc.name)}`;
+		frappe.show_alert(
+			{
+				message: __("{0} post(s) queued. {1}", [
+					posts.length,
+					`<a href="${url}">${posts.length === 1 ? __("Open post") : __("View posts")}</a>`,
+				]),
+				indicator: "green",
+			},
+			10
+		);
 	} finally {
-		frappe.dom.unfreeze();
 		dialog.enable_primary_action();
 	}
 }

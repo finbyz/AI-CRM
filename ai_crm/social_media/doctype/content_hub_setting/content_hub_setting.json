@@ -9,6 +9,7 @@
   "post_generator_agent",
   "youtube_idea_generator_agent",
   "youtube_post_generator_agent",
+  "research_agent",
   "revise_post_agent",
   "image_generation_agent",
   "helper_agent",
@@ -51,6 +52,13 @@
    "fieldname": "youtube_post_generator_agent",
    "fieldtype": "Link",
    "label": "YouTube Post Generator Agent",
+   "options": "AI Agent"
+  },
+  {
+   "description": "Researches a topic on the web for Do Research. Must use an OpenRouter model.",
+   "fieldname": "research_agent",
+   "fieldtype": "Link",
+   "label": "Research Agent",
    "options": "AI Agent"
   },
   {
@@ -104,11 +112,11 @@
    "label": "Post Approval"
   },
   {
+   "description": "Only users with one of these roles see Approve and Reject on Social Media Posts. Anyone who can open a post can Submit for Approval.",
    "fieldname": "approver_roles",
    "fieldtype": "Table MultiSelect",
    "label": "Approver Roles",
-   "options": "Has Role",
-   "description": "Only users with one of these roles see Approve and Reject on Social Media Posts. Anyone who can open a post can Submit for Approval."
+   "options": "Has Role"
   },
   {
    "fieldname": "creative_tab",
@@ -116,10 +124,10 @@
    "label": "Creative Skill"
   },
   {
+   "description": "Paste the full FinByz style skill here. It is sent to the model with every Generate Creative request, on top of the Brand Voice and the chosen Creative Template's instructions. Colours, fonts, logo and layouts are enforced by the built-in templates, so the model applies the skill's tone and writing rules to the text.",
    "fieldname": "creative_skill",
    "fieldtype": "Markdown Editor",
-   "label": "Creative Skill (Markdown)",
-   "description": "Paste the full FinByz style skill here. It is sent to the model with every Generate Creative request, on top of the Brand Voice and the chosen Creative Template's instructions. Colours, fonts, logo and layouts are enforced by the built-in templates, so the model applies the skill's tone and writing rules to the text."
+   "label": "Creative Skill (Markdown)"
   },
   {
    "fieldname": "resume_ranker_tab",
@@ -145,7 +153,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-10-01 18:30:00.000000",
+ "modified": "2026-10-14 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Social Media",
  "name": "Content Hub Setting",

@@ -121,6 +121,6 @@ fixtures = [
     },
     {
         "doctype": "Notification",
-        "filters": {"name": ["in", ["YouTube Content Ideas Ready"]]}
+        "filters": {"name": ["in", ["YouTube Content Ideas Ready", "YouTube Relevant Videos Found"]]}
     },
 ]

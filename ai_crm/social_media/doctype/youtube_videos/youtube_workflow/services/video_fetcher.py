@@ -14,6 +14,9 @@ from datetime import timedelta
 from zoneinfo import ZoneInfo
 from frappe.utils import get_datetime, get_system_timezone, now_datetime
 
+# A newly added channel only brings in its latest uploads, not its whole back catalogue.
+FIRST_FETCH_LIMIT = 5
+
 
 def fetch_videos_from_channels(channel_id=None, force=False, max_results=None):
     """
@@ -77,6 +80,9 @@ def _should_fetch_channel(channel, current_time):
 
 def _fetch_channel_videos(channel, api_key, now, max_results=None):
     """Fetch videos from a specific YouTube channel."""
+    if not channel.last_fetched_on and not max_results:
+        return _fetch_channel_videos(channel, api_key, now, FIRST_FETCH_LIMIT)
+
     frequency_days = max(int(channel.fetch_frequency or 5), 1)
     # A limited (test) fetch simply takes the channel's latest uploads.
     is_weekly = frequency_days == 7 and not max_results

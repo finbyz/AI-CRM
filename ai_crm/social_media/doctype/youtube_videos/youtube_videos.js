@@ -3,6 +3,9 @@
 
 frappe.ui.form.on('YouTube Videos', {
     refresh(frm) {
+        // Rows come from the fetch; the table is editable only so the row's Do Research button works.
+        frm.set_df_property('videos', 'cannot_add_rows', true);
+        frm.set_df_property('videos', 'cannot_delete_rows', true);
         if(frm.is_new()) return;
 
         set_dashboard_headline(frm);
@@ -25,7 +28,7 @@ frappe.ui.form.on('YouTube Videos', {
                     .filter(Boolean);
 
                 if (hubIds.length === 0) {
-                    frappe.msgprint(__('No related Content Hubs found.'));
+                    frappe.msgprint(__('No Content Hubs yet. Use Do Research on a relevant video.'));
                     return;
                 }
 
@@ -36,6 +39,28 @@ frappe.ui.form.on('YouTube Videos', {
             } else {
                 frappe.msgprint(__('No videos found in this tracker.'));
             }
+        });
+    }
+});
+
+
+frappe.ui.form.on('YouTube Video', {
+    do_research(frm, cdt, cdn) {
+        const row = locals[cdt][cdn];
+        frappe.call({
+            method: 'ai_crm.social_media.doctype.content_hub.content_hub.start_video_research',
+            args: { video_row: row.name },
+            freeze: true,
+            freeze_message: __('Starting research...'),
+        }).then(r => {
+            const res = r.message || {};
+            frappe.show_alert({
+                message: res.research_status === 'Completed'
+                    ? __('Research is already done. Opening the Content Hub.')
+                    : __('Research started. You will get a message when it is ready.'),
+                indicator: 'blue'
+            }, 6);
+            frappe.set_route('Form', 'Content Hub', res.content_hub);
         });
     }
 });
@@ -77,13 +102,15 @@ function set_dashboard_headline(frm) {
         if (v.is_related) {
             const ch_link = v.content_hub ? `<a href="/app/content-hub/${v.content_hub}" style="font-weight: 600; text-decoration: underline;">${v.content_hub}</a>` : '';
             frm.dashboard.set_headline(
-                `✅ <strong>Video is Relevant for Content Creation</strong> — Content Hub ${ch_link} created successfully.`,
+                v.content_hub
+                    ? `✅ <strong>Video is Relevant</strong> — Content Hub ${ch_link}.`
+                    : `✅ <strong>Video is Relevant</strong> — open the row (pencil icon) and click <strong>Do Research</strong>.`,
                 'green'
             );
         } else if (v.last_analyzed_on || v.analysis_reasoning) {
             const reason = frappe.utils.escape_html(v.analysis_reasoning || __('Content criteria did not match.'));
             frm.dashboard.set_headline(
-                `⚠️ <strong>Video Not Relevant</strong> — Content Hub creation skipped.<br><div style="margin-top: 4px; font-size: 13px; font-weight: normal; opacity: 0.95;"><strong>Reason:</strong> ${reason}</div>`,
+                `⚠️ <strong>Video Not Relevant</strong><br><div style="margin-top: 4px; font-size: 13px; font-weight: normal; opacity: 0.95;"><strong>Reason:</strong> ${reason}</div>`,
                 'red'
             );
         } else {
@@ -97,12 +124,12 @@ function set_dashboard_headline(frm) {
         if (processed.length === total) {
             if (related.length > 0) {
                 frm.dashboard.set_headline(
-                    `✅ <strong>Analysis Completed:</strong> ${related.length} of ${total} video(s) processed into Content Hub (${not_related.length} skipped as not relevant).`,
+                    `✅ <strong>Analysis Completed:</strong> ${related.length} of ${total} video(s) are relevant. Open a relevant row (pencil icon) and click <strong>Do Research</strong>.`,
                     'green'
                 );
             } else {
                 frm.dashboard.set_headline(
-                    `⚠️ <strong>Analysis Completed:</strong> All ${total} video(s) analyzed, 0 marked relevant (Content Hub creation skipped).`,
+                    `⚠️ <strong>Analysis Completed:</strong> All ${total} video(s) analyzed, none are relevant.`,
                     'red'
                 );
             }

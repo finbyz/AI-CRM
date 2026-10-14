@@ -1,7 +1,8 @@
 import frappe
 from frappe.model.document import Document
 
-from ai_crm.social_media.doctype.content_hub.generation import queue_posts_for_idea
+from ai_crm.social_media.doctype.content_hub.generation import draft_nextjs_page, queue_posts, queue_posts_for_idea
+from ai_crm.social_media.doctype.content_hub.research import queue_research, start_research_for_video
 from ai_crm.social_media.doctype.youtube_settings.youtube_settings import is_own_channel
 
 
@@ -101,3 +102,23 @@ class ContentHub(Document):
     def generate_posts_from_idea(self, idea_name: str, targets: str | list):
         self.check_permission("write")
         return queue_posts_for_idea(self, idea_name, targets)
+
+    @frappe.whitelist(methods=["POST"])
+    def start_research(self):
+        queue_research(self)
+        return {"research_status": "Queued"}
+
+    @frappe.whitelist(methods=["POST"])
+    def generate_social_posts(self, targets: str | list, instruction: str | None = None):
+        self.check_permission("write")
+        return queue_posts(self, targets, instruction=instruction)
+
+    @frappe.whitelist(methods=["POST"])
+    def draft_web_page(self, output_type: str):
+        self.check_permission("read")
+        return draft_nextjs_page(self, output_type)
+
+
+@frappe.whitelist(methods=["POST"])
+def start_video_research(video_row: str):
+    return start_research_for_video(video_row)

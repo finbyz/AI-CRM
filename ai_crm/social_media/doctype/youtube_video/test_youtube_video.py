@@ -14,5 +14,6 @@ class TestYouTubeVideo(FrappeTestCase):
         for fieldname in ("channel_id", "video_id", "title", "video_link"):
             self.assertEqual(meta.get_field(fieldname).reqd, 1)
         self.assertEqual(meta.get_field("content_hub").options, "Content Hub")
+        self.assertEqual(meta.get_field("do_research").fieldtype, "Button")
         self.assertEqual(meta.get_field("transcript").fieldtype, "Long Text")
         self.assertIsNone(meta.get_field("social_media_post"))
