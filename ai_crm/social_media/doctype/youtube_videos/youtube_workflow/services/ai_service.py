@@ -67,10 +67,7 @@ def analyze_video(
             }
             
     except Exception as e:
-        frappe.log_error(
-            f"Video analysis error: {str(e)}",
-            "YouTube AI Analysis"
-        )
+        frappe.log_error("YouTube AI Analysis", f"Video analysis error: {str(e)}")
         return {
             'success': False,
             'is_related': 0,

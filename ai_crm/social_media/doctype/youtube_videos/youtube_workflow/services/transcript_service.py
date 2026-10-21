@@ -48,15 +48,12 @@ def fetch_transcript_single_attempt(video_id, api_token=None):
                     return result
             elif response.status_code == 429:
                 errors.append("Transcript.io rate limit reached")
-                frappe.log_error(f"Transcript.io rate limited for video {video_id}", "YouTube Transcript Rate Limit")
+                frappe.log_error("YouTube Transcript Rate Limit", f"Transcript.io rate limited for video {video_id}")
             else:
                 errors.append(f"Transcript.io returned HTTP {response.status_code}")
         except Exception as e:
             errors.append(f"Transcript.io: {e}")
-            frappe.log_error(
-                f"Transcript.io API error ({video_id}): {str(e)}",
-                "YouTube Transcript API Error"
-            )
+            frappe.log_error("YouTube Transcript API Error", f"Transcript.io API error ({video_id}): {str(e)}")
 
     # 2. Fallback: youtube_transcript_api Python library
     try:
@@ -123,10 +120,7 @@ def fetch_transcript_single_attempt(video_id, api_token=None):
                 }
     except Exception as e:
         errors.append(f"YouTube transcript fallback: {e}")
-        frappe.log_error(
-            f"youtube_transcript_api fallback failed for {video_id}: {str(e)}",
-            "YouTube Transcript Fallback Error"
-        )
+        frappe.log_error("YouTube Transcript Fallback Error", f"youtube_transcript_api fallback failed for {video_id}: {str(e)}")
 
     return {
         "success": False,
@@ -170,10 +164,7 @@ def _process_transcript_response(response):
         }
 
     except Exception as e:
-        frappe.log_error(
-            f"Error processing transcript response: {str(e)}",
-            "YouTube Transcript Processing"
-        )
+        frappe.log_error("YouTube Transcript Processing", f"Error processing transcript response: {str(e)}")
         return {
             "success": False,
             "transcript": "",

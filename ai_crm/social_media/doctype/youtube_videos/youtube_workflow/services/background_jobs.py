@@ -100,10 +100,7 @@ def run_youtube_workflow(
         
     except Exception as e:
         _set_tracker_status(tracker_name, "Failed", str(e))
-        frappe.log_error(
-            f"YouTube workflow error: {str(e)}",
-            "YouTube Workflow"
-        )
+        frappe.log_error("YouTube Workflow", f"YouTube workflow error: {str(e)}")
         return {
             "success": False,
             "error": str(e),

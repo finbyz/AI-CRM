@@ -20,6 +20,14 @@ Channel: {channel_name}
 Transcript:
 {transcript}"""
 
+PAGE_TITLE_RESEARCH_LIMIT = 6000
+PAGE_TITLE_PROMPT = """You write headlines for Finbyz Tech, an ERP (ERPNext / Frappe) and AI company, whose readers are business owners, finance and operations leaders, and tech teams.
+Write one original title for a {output_type} built from the research notes given.
+- It must read as our own piece: never reuse the source title's wording or structure, and never mention YouTube, a video or a channel.
+- Lead with the reader's benefit or the key fact, using the main keyword naturally. Aim for 50 to 65 characters.
+- No clickbait, no emojis, no ALL CAPS, no quotes, no trailing period.
+Reply with the title only."""
+
 
 def start_research_for_video(row_name):
     """Create (or reuse) the Content Hub for a relevant video row and queue its research."""
@@ -99,16 +107,23 @@ def run_research(hub_name, user=None):
         )
 
 
-def _research(hub):
-    agent = frappe.get_doc("AI Agent", frappe.db.get_single_value("Content Hub Setting", "research_agent"))
-    llm = frappe.get_doc("LLM", agent.llm)
-    if llm.provider != "OpenRouter":
-        frappe.throw(_("The Research Agent must use an OpenRouter model, because web search runs through OpenRouter"))
+def generate_page_title(hub, source_title, output_type):
+    """Write a fresh headline for a web page or blog post, so it never reuses the source's title."""
+    agent = _get_research_agent()
+    messages = [
+        {"role": "system", "content": PAGE_TITLE_PROMPT.format(output_type=output_type)},
+        {"role": "user", "content": f"Source title (do not reuse): {source_title}\n\nResearch notes:\n{(hub.research or '')[:PAGE_TITLE_RESEARCH_LIMIT]}"},
+    ]
+    content = _openrouter_chat(agent.llm, {"messages": messages, "temperature": 0.7, "max_tokens": 100}, timeout=60)
+    title = re.sub(r"^[#*\s\"'“”]+|[*\s\"'“”]+$", "", content.splitlines()[0] if content else "")
+    if not title:
+        frappe.throw(_("Could not write a page title. Type one in Page Title and try again."))
+    return title[:140]
 
-    provider = frappe.get_doc("LLM Provider", llm.provider)
-    api_base = (provider.api_base or OPENROUTER_API_BASE).rstrip("/")
+
+def _research(hub):
+    agent = _get_research_agent()
     payload = {
-        "model": llm.name.removeprefix("openrouter/"),
         "messages": _build_messages(agent, _get_brief_values(hub)),
         "plugins": [{"id": "web", "max_results": WEB_RESULTS}],
         "temperature": agent.temperature if agent.temperature is not None else 0.2,
@@ -116,20 +131,38 @@ def _research(hub):
     if agent.max_tokens:
         payload["max_tokens"] = agent.max_tokens
 
-    response = requests.post(
-        f"{api_base}/chat/completions",
-        headers={"Authorization": f"Bearer {provider.get_password('api_key')}"},
-        json=payload,
-        timeout=600,
-    )
-    if response.status_code != 200:
-        frappe.throw(_("Research request failed ({0}): {1}").format(response.status_code, response.text[:300]))
-
-    message = ((response.json().get("choices") or [{}])[0].get("message")) or {}
+    message = _openrouter_chat(agent.llm, payload, timeout=600, full_message=True)
     notes = (message.get("content") or "").strip()
     if not notes:
         frappe.throw(_("The Research Agent returned no research"))
     return notes + _format_sources(message.get("annotations"))
+
+
+def _get_research_agent():
+    agent_name = frappe.db.get_single_value("Content Hub Setting", "research_agent")
+    if not agent_name:
+        frappe.throw(_("Set a Research Agent in Content Hub Setting first"))
+    return frappe.get_doc("AI Agent", agent_name)
+
+
+def _openrouter_chat(llm_name, payload, timeout, full_message=False):
+    llm = frappe.get_doc("LLM", llm_name)
+    if llm.provider != "OpenRouter":
+        frappe.throw(_("The Research Agent must use an OpenRouter model, because web search runs through OpenRouter"))
+
+    provider = frappe.get_doc("LLM Provider", llm.provider)
+    api_base = (provider.api_base or OPENROUTER_API_BASE).rstrip("/")
+    response = requests.post(
+        f"{api_base}/chat/completions",
+        headers={"Authorization": f"Bearer {provider.get_password('api_key')}"},
+        json={"model": llm.name.removeprefix("openrouter/"), **payload},
+        timeout=timeout,
+    )
+    if response.status_code != 200:
+        frappe.throw(_("OpenRouter request failed ({0}): {1}").format(response.status_code, response.text[:300]))
+
+    message = ((response.json().get("choices") or [{}])[0].get("message")) or {}
+    return message if full_message else (message.get("content") or "").strip()
 
 
 def _get_brief_values(hub):

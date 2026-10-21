@@ -18,6 +18,7 @@
   "generation_error",
   "research_section",
   "research_error",
+  "page_title",
   "research",
   "section_break_tbde",
   "ideas_child_table"
@@ -107,6 +108,13 @@
    "read_only": 1
   },
   {
+   "description": "Our own headline for web pages and blog posts. Written by AI on the first Web Page or Blog Post draft, never the YouTube title. Edit it any time.",
+   "fieldname": "page_title",
+   "fieldtype": "Data",
+   "label": "Page Title",
+   "no_copy": 1
+  },
+  {
    "description": "Filled by Do Research with web findings and sources. You can edit it before generating content.",
    "fieldname": "research",
    "fieldtype": "Markdown Editor",
@@ -133,7 +141,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-10-14 12:00:00.000000",
+ "modified": "2026-10-21 12:06:02.791955",
  "modified_by": "Administrator",
  "module": "Social Media",
  "name": "Content Hub",

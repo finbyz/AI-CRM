@@ -251,10 +251,11 @@ def draft_nextjs_page(hub, output_type):
 
     from finbyzweb.nextjs_web.doctype.nextjs_page.nextjs_page import slugify
 
-    route = "/" + slugify(hub.title)
+    title = _get_page_title(hub, output_type)
+    route = "/" + slugify(title)
     return frappe.get_doc({
         "doctype": "NextJS Page",
-        "title": hub.title,
+        "title": title,
         "page_type": NEXTJS_PAGE_TYPES[output_type],
         "content_type": "Markdown",
         "content_md": hub.research.strip(),
@@ -262,3 +263,27 @@ def draft_nextjs_page(hub, output_type):
         "route": route,
         "actual_route": route,
     })
+
+
+def _get_page_title(hub, output_type):
+    """Reuse the hub's page title, or write a fresh one so the page never copies the source's title."""
+    source_title = _get_source_title(hub)
+    if hub.page_title and _normalize_title(hub.page_title) != _normalize_title(source_title):
+        return hub.page_title
+
+    from ai_crm.social_media.doctype.content_hub.research import generate_page_title
+
+    title = generate_page_title(hub, source_title, output_type)
+    if hub.name:
+        hub.db_set("page_title", title)
+    return title
+
+
+def _get_source_title(hub):
+    if hub.source_type == "YouTube Video" and hub.name:
+        return frappe.db.get_value("YouTube Video", {"content_hub": hub.name}, "title") or hub.title
+    return hub.title
+
+
+def _normalize_title(title):
+    return " ".join("".join(ch for ch in (title or "").casefold() if ch.isalnum() or ch.isspace()).split())

@@ -61,7 +61,7 @@ function open_generate_dialog(frm) {
 				fieldtype: "HTML",
 				depends_on: "eval:doc.output_type!='Social Media Post'",
 				options: `<p class="text-muted">${__(
-					"Opens a new NextJS Page with the full research notes as its content. Review and save it, then use Generate SEO, Generate FAQs and Generate Page there."
+					"Opens a new NextJS Page with the full research notes as its content, under a fresh title of our own (saved in Page Title, never the YouTube title). Review and save it, then use Generate SEO, Generate FAQs and Generate Page there."
 				)}</p>`,
 			},
 			{
@@ -121,6 +121,7 @@ async function generate(frm, dialog, values) {
 			method: "draft_web_page",
 			args: { output_type: values.output_type },
 			freeze: true,
+			freeze_message: __("Writing a fresh title..."),
 		});
 		if (!response.message) return;
 		dialog.hide();

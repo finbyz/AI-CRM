@@ -58,10 +58,7 @@ def fetch_videos_from_channels(channel_id=None, force=False, max_results=None):
                 frappe.db.set_value("YouTube Channel", channel.name, "last_fetched_on", now)
 
         except Exception as e:
-            frappe.log_error(
-                f"Fetch error ({getattr(channel, 'channel_name', 'unknown')}): {str(e)}",
-                "YouTube Video Fetcher"
-            )
+            frappe.log_error("YouTube Video Fetcher", f"Fetch error ({getattr(channel, 'channel_name', 'unknown')}): {str(e)}")
             continue
 
     return all_videos
@@ -189,10 +186,7 @@ def _fetch_video_views(video_ids, api_key):
             for item in res.get("items", [])
         }
     except Exception as e:
-        frappe.log_error(
-            f"View fetch failed ({', '.join(video_ids)}): {str(e)}",
-            "YouTube Stats Error"
-        )
+        frappe.log_error("YouTube Stats Error", f"View fetch failed ({', '.join(video_ids)}): {str(e)}")
     
     return {}
 

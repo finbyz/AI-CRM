@@ -28,10 +28,7 @@ def process_video_workflow(tracker_name, video_id):
         video = _get_video_from_tracker(tracker, video_id)
 
         if not video:
-            frappe.log_error(
-                f"Video {video_id} not found in tracker {tracker_name}",
-                "YouTube Video Workflow"
-            )
+            frappe.log_error("YouTube Video Workflow", f"Video {video_id} not found in tracker {tracker_name}")
             return
 
         settings = frappe.get_single("YouTube Settings")
@@ -66,10 +63,7 @@ def process_video_workflow(tracker_name, video_id):
         check_and_update_tracker_completion(tracker_name)
 
     except Exception as e:
-        frappe.log_error(
-            f"Error processing video {video_id}: {str(e)}",
-            "YouTube Video Workflow"
-        )
+        frappe.log_error("YouTube Video Workflow", f"Error processing video {video_id}: {str(e)}")
         check_and_update_tracker_completion(tracker_name)
 
 
@@ -219,10 +213,7 @@ def _analyze_video_step(video, settings):
             relevance_prompt=settings.relevance_prompt,
         )
     except Exception as e:
-        frappe.log_error(
-            f"Analysis step error for {video.video_id}: {str(e)}",
-            "YouTube Analysis Step"
-        )
+        frappe.log_error("YouTube Analysis Step", f"Analysis step error for {video.video_id}: {str(e)}")
         return {
             "success": False,
             "is_related": 0,

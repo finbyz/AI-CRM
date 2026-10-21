@@ -24,9 +24,6 @@ class YouTubeVideos(Document):
             return "✅ YouTube workflow enqueued. Videos will be fetched and processed in the background."
             
         except Exception as e:
-            frappe.log_error(
-                f"Fetch workflow error: {str(e)}",
-                "YouTube Videos Workflow"
-            )
+            frappe.log_error("YouTube Videos Workflow", f"Fetch workflow error: {str(e)}")
             frappe.throw(f"Error in fetch workflow: {str(e)}")
 

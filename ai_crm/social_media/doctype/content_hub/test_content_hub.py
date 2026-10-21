@@ -92,13 +92,26 @@ class TestContentHub(FrappeTestCase):
         """Verify that a web page or blog draft carries the complete research, unpublished."""
         hub = frappe._dict(title="Netflix buys an AI studio", research="## Summary\nNetflix paid $587M.\n\n## Sources\n1. [A](https://a.com)")
 
-        page = generation.draft_nextjs_page(hub, "Blog Post")
+        with patch("ai_crm.social_media.doctype.content_hub.research.generate_page_title", return_value="Why Netflix Paid $587M for AI Studio Tools"):
+            page = generation.draft_nextjs_page(hub, "Blog Post")
 
         self.assertFalse(page.name and frappe.db.exists("NextJS Page", page.name))
         self.assertEqual(page.page_type, "Blog Post")
         self.assertEqual(page.content_type, "Markdown")
         self.assertEqual(page.content_md, hub.research)
         self.assertEqual(page.is_published, 0)
-        self.assertEqual(page.route, "/netflix-buys-an-ai-studio")
+        self.assertEqual(page.title, "Why Netflix Paid $587M for AI Studio Tools")
+        self.assertEqual(page.route, "/why-netflix-paid-587m-for-ai-studio-tools")
         with self.assertRaises(frappe.ValidationError):
             generation.draft_nextjs_page(frappe._dict(title="x", research=""), "Web Page")
+
+    def test_page_title_never_reuses_the_source_title(self):
+        """Verify that a saved page title is reused, but one matching the source title is rewritten."""
+        hub = frappe._dict(title="NEW Claude Obsidian is an ACTUAL GAME CHANGER!", page_title="Our own headline", research="notes")
+        with patch("ai_crm.social_media.doctype.content_hub.research.generate_page_title", return_value="Fresh") as generate:
+            self.assertEqual(generation._get_page_title(hub, "Blog Post"), "Our own headline")
+            generate.assert_not_called()
+
+            hub.page_title = "new claude obsidian is an actual game changer"
+            self.assertEqual(generation._get_page_title(hub, "Blog Post"), "Fresh")
+            self.assertEqual(generate.call_args.args[1], hub.title)
