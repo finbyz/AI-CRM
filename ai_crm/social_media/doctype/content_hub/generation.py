@@ -237,10 +237,12 @@ def _mark_generation_failed(post, reason):
 
 
 NEXTJS_PAGE_TYPES = {"Web Page": "Web page", "Blog Post": "Blog Post"}
+# The main JSON-LD schema per page type; the Schema step fills it. Breadcrumb and FAQ schemas sync on save.
+NEXTJS_PAGE_SCHEMA = {"Web Page": "WebPage", "Blog Post": "BlogPosting"}
 
 
-def draft_nextjs_page(hub, output_type):
-    """Draft an unsaved NextJS Page holding the hub's full research, for the user to review and save."""
+def create_nextjs_page(hub, output_type):
+    """Save an unpublished NextJS Page holding the hub's full research, ready for the SEO, FAQ, link and schema steps."""
     if "finbyzweb" not in frappe.get_installed_apps():
         frappe.throw(_("Web pages need the finbyzweb app"))
     if output_type not in NEXTJS_PAGE_TYPES:
@@ -253,16 +255,89 @@ def draft_nextjs_page(hub, output_type):
 
     title = _get_page_title(hub, output_type)
     route = "/" + slugify(title)
-    return frappe.get_doc({
+    existing = frappe.db.get_value("NextJS Page", {"route": route}, "name")
+    if existing:
+        frappe.throw(_("A page with this title already exists: {0}. Change Page Title to create another.").format(
+            frappe.utils.get_link_to_form("NextJS Page", existing)
+        ))
+
+    research = hub.research.strip()
+    page = frappe.get_doc({
         "doctype": "NextJS Page",
         "title": title,
         "page_type": NEXTJS_PAGE_TYPES[output_type],
         "content_type": "Markdown",
-        "content_md": hub.research.strip(),
+        "content_md": research,
+        # The SEO, FAQ, link and schema agents read the rich-text content, so keep an HTML copy there.
+        "content": frappe.utils.md_to_html(research),
         "is_published": 0,
         "route": route,
         "actual_route": route,
+        "nextjs_page_schema": [{"schema_type": NEXTJS_PAGE_SCHEMA[output_type]}],
     })
+    # Named by slug: finbyzweb's default naming keeps characters like ":" from the title.
+    page.insert(set_name=route.lstrip("/"))
+    return {"name": page.name, "title": page.title}
+
+
+RELATED_PAGES_MAX = 6
+RELATED_PAGES_PROMPT = """You pick internal links for a page on finbyz.tech, an ERP (ERPNext / Frappe) and AI company website.
+From the numbered list of existing pages, choose 3 to 6 that a reader of the current page would most likely want next: same topic first, then the natural next step (a related service, guide or comparison). Skip weak matches; fewer good links beat filler.
+Reply with JSON only, in this shape: {"pages": [4, 17, 52]}"""
+
+
+def find_related_pages(page_name):
+    """Link a NextJS Page to existing pages picked by AI from the real list of published pages."""
+    page = frappe.get_doc("NextJS Page", page_name)
+    page.check_permission("write")
+    candidates = frappe.get_all(
+        "NextJS Page",
+        filters={"is_published": 1, "name": ("!=", page.name), "route": ("not in", ("", "/"))},
+        fields=["name", "title", "route", "image"],
+        order_by="modified desc",
+    )
+    if not candidates:
+        return {"success": False, "message": _("There are no published pages to link to yet.")}
+
+    from ai_crm.social_media.doctype.content_hub.research import _openrouter_chat
+
+    agent = frappe.db.get_single_value("NextJS AI Settings", "related_links_finder_agent")
+    llm = agent and frappe.db.get_value("AI Agent", agent, "llm")
+    if not llm:
+        frappe.throw(_("Set a Related Links Finder Agent in NextJS AI Settings first"))
+
+    listing = "\n".join(f"{i}. {c.title} ({c.route})" for i, c in enumerate(candidates, 1))
+    brief = (
+        f"Current page: {page.title}\nDescription: {page.meta_description or ''}\nKeywords: {page.keywords or ''}\n"
+        f"Content:\n{(page.content_md or frappe.utils.strip_html_tags(page.content or ''))[:3000]}\n\nExisting pages:\n{listing}"
+    )
+    content = _openrouter_chat(llm, {
+        "messages": [{"role": "system", "content": RELATED_PAGES_PROMPT}, {"role": "user", "content": brief}],
+        "temperature": 0.2,
+        "response_format": {"type": "json_object"},
+    }, timeout=120)
+
+    picked = []
+    for number in (frappe.parse_json(_strip_code_fence(content)) or {}).get("pages") or []:
+        index = frappe.utils.cint(number) - 1
+        if 0 <= index < len(candidates) and candidates[index] not in picked:
+            picked.append(candidates[index])
+    picked = picked[:RELATED_PAGES_MAX]
+    if not picked:
+        return {"success": False, "message": _("No related pages were a good match.")}
+
+    page.set("nextjs_related_page", [
+        {"page": c.name, "title": c.title, "route": c.route, "image": c.image} for c in picked
+    ])
+    page.save()
+    return {"success": True, "message": _("Linked {0} related pages").format(len(picked))}
+
+
+def _strip_code_fence(text):
+    text = (text or "").strip()
+    if text.startswith("```"):
+        text = text.split("\n", 1)[-1].rsplit("```", 1)[0]
+    return text
 
 
 def _get_page_title(hub, output_type):

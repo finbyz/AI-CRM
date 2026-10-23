@@ -148,7 +148,7 @@ def _get_research_agent():
 def _openrouter_chat(llm_name, payload, timeout, full_message=False):
     llm = frappe.get_doc("LLM", llm_name)
     if llm.provider != "OpenRouter":
-        frappe.throw(_("The Research Agent must use an OpenRouter model, because web search runs through OpenRouter"))
+        frappe.throw(_("{0} is not an OpenRouter model. Content Hub calls OpenRouter directly.").format(llm_name))
 
     provider = frappe.get_doc("LLM Provider", llm.provider)
     api_base = (provider.api_base or OPENROUTER_API_BASE).rstrip("/")

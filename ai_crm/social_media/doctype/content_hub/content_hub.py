@@ -1,7 +1,8 @@
 import frappe
 from frappe.model.document import Document
 
-from ai_crm.social_media.doctype.content_hub.generation import draft_nextjs_page, queue_posts, queue_posts_for_idea
+from ai_crm.social_media.doctype.content_hub import generation
+from ai_crm.social_media.doctype.content_hub.generation import create_nextjs_page, queue_posts, queue_posts_for_idea
 from ai_crm.social_media.doctype.content_hub.research import queue_research, start_research_for_video
 from ai_crm.social_media.doctype.youtube_settings.youtube_settings import is_own_channel
 
@@ -114,9 +115,14 @@ class ContentHub(Document):
         return queue_posts(self, targets, instruction=instruction)
 
     @frappe.whitelist(methods=["POST"])
-    def draft_web_page(self, output_type: str):
+    def create_web_page(self, output_type: str):
         self.check_permission("read")
-        return draft_nextjs_page(self, output_type)
+        return create_nextjs_page(self, output_type)
+
+
+@frappe.whitelist(methods=["POST"])
+def find_related_pages(page_name: str):
+    return generation.find_related_pages(page_name)
 
 
 @frappe.whitelist(methods=["POST"])

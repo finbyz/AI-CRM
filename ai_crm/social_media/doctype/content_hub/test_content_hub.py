@@ -89,21 +89,27 @@ class TestContentHub(FrappeTestCase):
         self.assertIn("post [1] already made this point", mark_failed.call_args.args[1])
 
     def test_web_page_holds_the_full_research(self):
-        """Verify that a web page or blog draft carries the complete research, unpublished."""
+        """Verify that a web page or blog is saved unpublished with the complete research and its main schema row."""
         hub = frappe._dict(title="Netflix buys an AI studio", research="## Summary\nNetflix paid $587M.\n\n## Sources\n1. [A](https://a.com)")
 
-        with patch("ai_crm.social_media.doctype.content_hub.research.generate_page_title", return_value="Why Netflix Paid $587M for AI Studio Tools"):
-            page = generation.draft_nextjs_page(hub, "Blog Post")
+        with (
+            patch("ai_crm.social_media.doctype.content_hub.research.generate_page_title", return_value="Why Netflix Paid $587M for AI Studio Tools"),
+            patch("frappe.model.document.Document.insert", autospec=True) as insert,
+        ):
+            result = generation.create_nextjs_page(hub, "Blog Post")
 
-        self.assertFalse(page.name and frappe.db.exists("NextJS Page", page.name))
+        page = insert.call_args.args[0]
+        self.assertEqual(result["title"], "Why Netflix Paid $587M for AI Studio Tools")
         self.assertEqual(page.page_type, "Blog Post")
         self.assertEqual(page.content_type, "Markdown")
         self.assertEqual(page.content_md, hub.research)
+        self.assertIn("<h2", page.content)
         self.assertEqual(page.is_published, 0)
-        self.assertEqual(page.title, "Why Netflix Paid $587M for AI Studio Tools")
+        self.assertEqual(insert.call_args.kwargs["set_name"], "why-netflix-paid-587m-for-ai-studio-tools")
         self.assertEqual(page.route, "/why-netflix-paid-587m-for-ai-studio-tools")
+        self.assertEqual([row.schema_type for row in page.nextjs_page_schema], ["BlogPosting"])
         with self.assertRaises(frappe.ValidationError):
-            generation.draft_nextjs_page(frappe._dict(title="x", research=""), "Web Page")
+            generation.create_nextjs_page(frappe._dict(title="x", research=""), "Web Page")
 
     def test_page_title_never_reuses_the_source_title(self):
         """Verify that a saved page title is reused, but one matching the source title is rewritten."""
@@ -115,3 +121,23 @@ class TestContentHub(FrappeTestCase):
             hub.page_title = "new claude obsidian is an actual game changer"
             self.assertEqual(generation._get_page_title(hub, "Blog Post"), "Fresh")
             self.assertEqual(generate.call_args.args[1], hub.title)
+
+    def test_related_pages_only_link_real_pages(self):
+        """Verify that related links come only from the real page list, ignoring invented, repeated or out-of-range picks."""
+        page = frappe._dict(name="new-page", title="New", meta_description="", keywords="", content_md="notes", content="")
+        page.check_permission = lambda *args: None
+        page.set = lambda field, rows: page.update({field: rows})
+        page.save = lambda: None
+        candidates = [frappe._dict(name=f"p{i}", title=f"Page {i}", route=f"/p{i}", image=None) for i in range(1, 4)]
+
+        with (
+            patch.object(generation.frappe, "get_doc", return_value=page),
+            patch.object(generation.frappe, "get_all", return_value=candidates),
+            patch.object(generation.frappe.db, "get_single_value", return_value="Related Links Finder Agent"),
+            patch.object(generation.frappe.db, "get_value", return_value="openrouter/x"),
+            patch("ai_crm.social_media.doctype.content_hub.research._openrouter_chat", return_value='```json\n{"pages": [2, 2, 9, 0, "3"]}\n```'),
+        ):
+            result = generation.find_related_pages("new-page")
+
+        self.assertTrue(result["success"])
+        self.assertEqual([row["page"] for row in page.nextjs_related_page], ["p2", "p3"])

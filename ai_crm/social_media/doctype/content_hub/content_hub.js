@@ -61,7 +61,7 @@ function open_generate_dialog(frm) {
 				fieldtype: "HTML",
 				depends_on: "eval:doc.output_type!='Social Media Post'",
 				options: `<p class="text-muted">${__(
-					"Opens a new NextJS Page with the full research notes as its content, under a fresh title of our own (saved in Page Title, never the YouTube title). Review and save it, then use Generate SEO, Generate FAQs and Generate Page there."
+					"Creates a NextJS Page from the full research under a fresh title of our own (saved in Page Title), then fills its SEO, FAQs, related links and schema. It stays unpublished until you click Generate Page there."
 				)}</p>`,
 			},
 			{
@@ -116,16 +116,9 @@ function open_generate_dialog(frm) {
 
 async function generate(frm, dialog, values) {
 	if (values.output_type !== "Social Media Post") {
-		const response = await frm.call({
-			doc: frm.doc,
-			method: "draft_web_page",
-			args: { output_type: values.output_type },
-			freeze: true,
-			freeze_message: __("Writing a fresh title..."),
-		});
-		if (!response.message) return;
 		dialog.hide();
-		frappe.new_doc("NextJS Page", response.message);
+		if (frm.is_dirty()) await frm.save();
+		build_web_page(frm, values.output_type);
 		return;
 	}
 
@@ -163,6 +156,100 @@ async function generate(frm, dialog, values) {
 	} finally {
 		dialog.enable_primary_action();
 	}
+}
+
+const NEXTJS_API = "finbyzweb.nextjs_web.doctype.nextjs_page.nextjs_page.";
+// Order matters: Related Links reads the SEO fields, and the FAQ schema syncs when FAQs are saved.
+// Related Links is ours: finbyzweb's agent has no list of real pages, so it guesses routes.
+const PAGE_STEPS = [
+	{ label: __("SEO title, description and keywords"), method: "generate_seo" },
+	{ label: __("FAQs"), method: "generate_faqs" },
+	{ label: __("Related links"), method: "ai_crm.social_media.doctype.content_hub.content_hub.find_related_pages", arg: "page_name" },
+	{ label: __("Schema (JSON-LD)"), method: "generate_schema" },
+];
+
+async function build_web_page(frm, output_type) {
+	const steps = [{ label: __("Create page with a fresh title and the research") }, ...PAGE_STEPS];
+	const states = steps.map(() => ({ status: "pending" }));
+	let page = null;
+
+	const dialog = new frappe.ui.Dialog({
+		title: __("Building {0}", [output_type]),
+		fields: [{ fieldname: "progress", fieldtype: "HTML" }],
+		primary_action_label: __("Open Page"),
+		primary_action: () => {
+			dialog.hide();
+			frappe.set_route("Form", "NextJS Page", page.name);
+		},
+	});
+	dialog.get_close_btn().hide();
+	dialog.get_primary_btn().hide();
+	dialog.show();
+
+	const render = () => {
+		dialog.fields_dict.progress.$wrapper.html(`
+			<div class="content-hub-steps">
+				${steps.map((step, i) => render_step(step, states[i])).join("")}
+			</div>
+			${page ? `<p class="text-muted small mt-3">${__(
+				"Review the page, then click Generate Page there to publish it on the website."
+			)}</p>` : ""}`);
+	};
+
+	const run = async (i, call) => {
+		states[i] = { status: "running" };
+		render();
+		try {
+			const response = await call();
+			const failed = response && response.success === false;
+			states[i] = { status: failed ? "skipped" : "done", message: failed ? response.message : "" };
+			return response;
+		} catch (error) {
+			states[i] = { status: "failed", message: __("Failed. You can run it again from the page.") };
+		} finally {
+			render();
+		}
+	};
+
+	page = await run(0, () =>
+		frm.call({ doc: frm.doc, method: "create_web_page", args: { output_type } }).then((r) => r.message)
+	);
+
+	if (!page) {
+		steps.slice(1).forEach((_step, i) => (states[i + 1] = { status: "skipped", message: __("Page was not created") }));
+		render();
+		dialog.get_close_btn().show();
+		return;
+	}
+	states[0].message = page.title;
+
+	for (const [i, step] of PAGE_STEPS.entries()) {
+		const method = step.method.includes(".") ? step.method : NEXTJS_API + step.method;
+		await run(i + 1, () => frappe.xcall(method, { [step.arg || "doc_name"]: page.name }));
+	}
+
+	frm.reload_doc();
+	dialog.set_title(__("{0} ready", [output_type]));
+	dialog.get_close_btn().show();
+	dialog.get_primary_btn().show();
+}
+
+function render_step(step, state) {
+	const icons = {
+		pending: `<span class="text-muted">○</span>`,
+		running: `<span class="spinner-border spinner-border-sm text-primary" role="status"></span>`,
+		done: `<span class="text-success">✓</span>`,
+		skipped: `<span class="text-warning">!</span>`,
+		failed: `<span class="text-danger">✕</span>`,
+	};
+	const message = state.message
+		? `<div class="text-muted small">${frappe.utils.escape_html(state.message)}</div>`
+		: "";
+	return `
+		<div class="d-flex align-items-start mb-3">
+			<div style="width: 24px">${icons[state.status]}</div>
+			<div class="${state.status === "pending" ? "text-muted" : ""}">${step.label}${message}</div>
+		</div>`;
 }
 
 function get_selected_targets(values) {
