@@ -32,6 +32,7 @@ required_apps = ["finbyz/finbyzai"]
 doctype_js = {
     "Job Opening" : "public/doctype_js/job_opening.js",
     "Job Applicant" : "public/doctype_js/job_applicant.js",
+    "NextJS Page" : "public/doctype_js/nextjs_page.js",
 }
 # Desk Notifications
 # ------------------
