@@ -23,9 +23,7 @@
   "creative_skill",
   "resume_ranker_tab",
   "resume_ranker_agent",
-  "job_skills_extractor_agent",
-  "page_development_tab",
-  "default_page_developer"
+  "job_skills_extractor_agent"
  ],
  "fields": [
   {
@@ -149,25 +147,13 @@
    "fieldtype": "Link",
    "label": "Job Skills Extractor Agent",
    "options": "AI Agent"
-  },
-  {
-   "fieldname": "page_development_tab",
-   "fieldtype": "Tab Break",
-   "label": "Page Development"
-  },
-  {
-   "description": "Default employee assigned to NextJS Page development tasks. The Assign to Developer dialog will pre-fill this value.",
-   "fieldname": "default_page_developer",
-   "fieldtype": "Link",
-   "label": "Default Page Developer",
-   "options": "Employee"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-10-23 09:15:00.000000",
+ "modified": "2026-10-24 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Social Media",
  "name": "Content Hub Setting",
