@@ -3,23 +3,12 @@
  *
  * Opens a dialog pre-filled with the task subject, the developer this user last assigned
  * in this browser, today as expected start, and tomorrow as expected end. Creates a Task on Send.
- * The dialog also opens on its own right after a new page is first saved.
  */
 
 // Task.subject is a Data field.
 const SUBJECT_LENGTH = 140;
 
 frappe.ui.form.on("NextJS Page", {
-	before_save(frm) {
-		frm.ai_crm_was_new = frm.is_new();
-	},
-
-	after_save(frm) {
-		if (!frm.ai_crm_was_new) return;
-		frm.ai_crm_was_new = false;
-		if (frappe.model.can_create("Task")) open_assign_dialog(frm);
-	},
-
 	refresh(frm) {
 		if (frm.is_new() || !frappe.model.can_create("Task")) return;
 
