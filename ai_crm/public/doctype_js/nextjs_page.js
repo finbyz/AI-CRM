@@ -94,6 +94,8 @@ async function open_assign_dialog(frm) {
 				label: __("Description"),
 				fieldname: "description",
 				fieldtype: "Small Text",
+				default: __("Source page: Open NextJS Page: {0}", [frm.doc.title || frm.doc.name]) +
+					"\n" + frappe.urllib.get_full_url(frappe.utils.get_form_link("NextJS Page", frm.doc.name)) + "\n\n",
 				description: __(
 					"Add instructions or context for the developer, e.g. design notes, urgency, special requirements."
 				),
