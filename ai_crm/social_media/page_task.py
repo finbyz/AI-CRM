@@ -4,6 +4,7 @@ Called from the *Assign to Developer* dialog on the NextJS Page form.
 """
 
 import frappe
+import frappe.share
 from frappe import _
 from frappe.desk.form.assign_to import add as assign_to
 from frappe.utils import today, add_days
@@ -45,6 +46,8 @@ def create_page_task(page_name, employee, description, exp_start_date=None, exp_
             )
         )
 
+    ensure_developer_page_access(page, emp.user_id)
+
     exp_start_date = exp_start_date or today()
     exp_end_date = exp_end_date or add_days(exp_start_date, 1)
 
@@ -82,3 +85,27 @@ def create_page_task(page_name, employee, description, exp_start_date=None, exp_
         assign_to({"doctype": "Task", "name": task.name, "assign_to": [emp.user_id], "description": subject})
 
     return {"name": task.name, "subject": task.subject}
+
+
+def ensure_developer_page_access(page, user):
+    """Grant source-page read access using the assigning user's share permission."""
+    if frappe.has_permission(doc=page, ptype="read", user=user):
+        return
+
+    if frappe.get_system_settings("disable_document_sharing"):
+        frappe.throw(
+            _("Developer {0} cannot read page {1}, and document sharing is disabled. Grant page access before assigning.").format(
+                user, page.name
+            ),
+            frappe.PermissionError,
+        )
+
+    if not page.has_permission("share"):
+        frappe.throw(
+            _("Developer {0} cannot read page {1}. You need permission to share this page before assigning it.").format(
+                user, page.name
+            ),
+            frappe.PermissionError,
+        )
+
+    frappe.share.add(page.doctype, page.name, user=user, read=1)
