@@ -114,8 +114,16 @@ def generate_page_title(hub, source_title, output_type):
         {"role": "system", "content": PAGE_TITLE_PROMPT.format(output_type=output_type)},
         {"role": "user", "content": f"Source title (do not reuse): {source_title}\n\nResearch notes:\n{(hub.research or '')[:PAGE_TITLE_RESEARCH_LIMIT]}"},
     ]
-    content = _openrouter_chat(agent.llm, {"messages": messages, "temperature": 0.7, "max_tokens": 100}, timeout=60)
-    title = re.sub(r"^[#*\s\"'“”]+|[*\s\"'“”]+$", "", content.splitlines()[0] if content else "")
+    # Reasoning models spend output tokens thinking first; a tight cap left them with no title at all.
+    payload = {
+        "messages": messages,
+        "temperature": 0.7,
+        "max_tokens": 2000,
+        "reasoning": {"effort": "low", "exclude": True},
+    }
+    content = _openrouter_chat(agent.llm, payload, timeout=120)
+    lines = (re.sub(r"^[#*\s\"'“”]+|[*\s\"'“”]+$", "", line) for line in (content or "").splitlines())
+    title = next((line for line in lines if line), "")
     if not title:
         frappe.throw(_("Could not write a page title. Type one in Page Title and try again."))
     return title[:140]
