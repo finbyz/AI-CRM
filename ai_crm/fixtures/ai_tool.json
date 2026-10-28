@@ -1,0 +1,20 @@
+[
+ {
+  "cost_sensitive": 0,
+  "description": "Extracts all text inside the &lt;main&gt; tag from the given website URL.",
+  "docstatus": 0,
+  "doctype": "AI Tool",
+  "enabled": 1,
+  "execution_side": "Application",
+  "from_package": "",
+  "idx": 6,
+  "is_custom": 1,
+  "modified": "2025-10-24 10:52:42.310809",
+  "module": "Ai CRM",
+  "name": "Extract main content from url",
+  "requires_confirmation": 0,
+  "tool_function": null,
+  "tool_key": null,
+  "tool_type": "Function"
+ }
+]
