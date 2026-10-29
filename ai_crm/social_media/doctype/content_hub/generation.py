@@ -1,5 +1,7 @@
 import frappe
 from frappe import _
+from frappe.query_builder.functions import Coalesce
+from pypika import Order
 
 from ai_crm.social_media.platforms import PLATFORM_BY_CREDENTIAL, get_platform, to_platform_text
 from ai_crm.social_media.doctype.youtube_settings.youtube_settings import is_own_channel
@@ -155,19 +157,21 @@ def _get_post_agent(hub, post):
 
 def _build_history_message(post):
     """The account's earlier posts, so the agent changes the angle or skips a topic it already covered."""
-    history = frappe.get_all(
-        "Social Media Post",
-        filters={
-            "credential_type": post.credential_type,
-            "credential": post.credential,
-            "status": ["in", HISTORY_STATUSES],
-            "name": ["!=", post.name],
-            "content": ["is", "set"],
-        },
-        fields=["content", "status", "posted_on", "modified"],
-        order_by="coalesce(posted_on, modified) desc",
-        limit=HISTORY_POSTS,
-    )
+    # Query builder, not get_all: frappe rejects an SQL expression in order_by, and the
+    # newest post is the one posted most recently, falling back to when it was last edited.
+    table = frappe.qb.DocType("Social Media Post")
+    history = (
+        frappe.qb.from_(table)
+        .select(table.content, table.status, table.posted_on, table.modified)
+        .where(table.credential_type == post.credential_type)
+        .where(table.credential == post.credential)
+        .where(table.status.isin(HISTORY_STATUSES))
+        .where(table.name != post.name)
+        .where(table.content.isnotnull())
+        .where(table.content != "")
+        .orderby(Coalesce(table.posted_on, table.modified), order=Order.desc)
+        .limit(HISTORY_POSTS)
+    ).run(as_dict=True)
     if not history:
         return ""
 
