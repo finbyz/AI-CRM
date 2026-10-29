@@ -10,27 +10,50 @@ from frappe.desk.form.assign_to import add as assign_to
 from frappe.utils import today, add_days
 
 SUBJECT_LENGTH = 140
+# Page development work is tracked under this Task Type unless the dialog picks another.
+DEFAULT_TASK_TYPE = "Development"
 
 
 @frappe.whitelist(methods=["POST"])
-def create_page_task(page_name, employee, description, exp_start_date=None, exp_end_date=None, subject=None):
+def create_page_task(
+    page_name,
+    employee,
+    description,
+    project,
+    exp_start_date=None,
+    exp_end_date=None,
+    subject=None,
+    task_type=None,
+):
     """Create a Task and assign it to *employee* for the given NextJS Page.
 
     Args:
         page_name: Name (ID) of the NextJS Page document.
         employee: Employee ID (e.g. ``HR-EMP-00042``).
         description: Free-text task description entered by the user.
+        project: Project the task belongs to.
         exp_start_date: Expected start date (default: today).
         exp_end_date: Expected end date (default: tomorrow).
         subject: Task subject (default: "Develop and deploy page: <title>"), cut to 140 characters.
+        task_type: Task Type (default: "Development").
 
     Returns:
         dict with ``name`` and ``subject`` of the newly created Task.
 
     Raises:
-        frappe.ValidationError: If the employee has no linked User.
+        frappe.ValidationError: If the employee has no linked User, or the project or task type is unknown.
     """
     frappe.has_permission("Task", "create", throw=True)
+
+    project = (project or "").strip()
+    if not project:
+        frappe.throw(_("Select a Project for the development task"))
+    if not frappe.db.exists("Project", project):
+        frappe.throw(_("Project {0} does not exist").format(project))
+
+    task_type = (task_type or "").strip() or DEFAULT_TASK_TYPE
+    if not frappe.db.exists("Task Type", task_type):
+        frappe.throw(_("Task Type {0} does not exist. Create it or pick another type.").format(task_type))
 
     page = frappe.get_doc("NextJS Page", page_name)
     page.check_permission("read")
@@ -67,6 +90,8 @@ def create_page_task(page_name, employee, description, exp_start_date=None, exp_
             "doctype": "Task",
             "subject": subject,
             "description": full_description,
+            "project": project,
+            "type": task_type,
             "exp_start_date": exp_start_date,
             "exp_end_date": exp_end_date,
             "assignee": emp.user_id,

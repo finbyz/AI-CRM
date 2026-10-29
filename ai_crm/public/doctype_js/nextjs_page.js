@@ -1,12 +1,15 @@
 /**
  * Extends the NextJS Page form with an "Assign to Developer" button.
  *
- * Opens a dialog pre-filled with the task subject, the developer this user last assigned
- * in this browser, today as expected start, and tomorrow as expected end. Creates a Task on Send.
+ * Opens a dialog pre-filled with the task subject, the developer, project and task type this user
+ * last assigned in this browser, today as expected start, and tomorrow as expected end.
+ * Creates a Task on Send.
  */
 
 // Task.subject is a Data field.
 const SUBJECT_LENGTH = 140;
+// Page development work is tracked under this Task Type unless the dialog picks another.
+const DEFAULT_TASK_TYPE = "Development";
 
 frappe.ui.form.on("NextJS Page", {
 	refresh(frm) {
@@ -20,17 +23,44 @@ frappe.ui.form.on("NextJS Page", {
 	},
 });
 
-// Per browser, site and user, so it survives restarts without a server-side setting.
-const DEVELOPER_KEY = `ai_crm:last_page_developer:${frappe.boot.sitename}:${frappe.session.user}`;
+// Per browser, site and user, so the choices survive restarts without a server-side setting.
+const STORAGE_KEYS = {
+	employee: `ai_crm:last_page_developer:${frappe.boot.sitename}:${frappe.session.user}`,
+	project: `ai_crm:last_page_project:${frappe.boot.sitename}:${frappe.session.user}`,
+	task_type: `ai_crm:last_page_task_type:${frappe.boot.sitename}:${frappe.session.user}`,
+};
+
+// What a remembered value is checked against before it is pre-filled again.
+const REMEMBERED = {
+	employee: {
+		doctype: "Employee",
+		fields: ["name", "status", "user_id"],
+		is_valid: (doc) => doc.name && doc.status === "Active" && doc.user_id,
+	},
+	project: {
+		doctype: "Project",
+		fields: ["name", "status"],
+		is_valid: (doc) => doc.name && doc.status !== "Cancelled",
+	},
+	task_type: {
+		doctype: "Task Type",
+		fields: ["name"],
+		is_valid: (doc) => doc.name,
+	},
+};
 
 /**
  * Open the Assign-to-Developer dialog.
  *
- * Pre-fills the employee last assigned from this browser, expected start = today,
- * expected end = tomorrow.
+ * Pre-fills the employee, project and task type last used from this browser,
+ * expected start = today, expected end = tomorrow.
  */
 async function open_assign_dialog(frm) {
-	const default_employee = await get_saved_developer();
+	const [default_employee, default_project, saved_task_type] = await Promise.all([
+		get_saved_choice("employee"),
+		get_saved_choice("project"),
+		get_saved_choice("task_type"),
+	]);
 
 	const today = frappe.datetime.get_today();
 	const tomorrow = frappe.datetime.add_days(today, 1);
@@ -62,6 +92,29 @@ async function open_assign_dialog(frm) {
 						},
 					};
 				},
+			},
+			{
+				label: __("Project"),
+				fieldname: "project",
+				fieldtype: "Link",
+				options: "Project",
+				default: default_project,
+				reqd: 1,
+				get_query() {
+					return {
+						filters: {
+							status: ["!=", "Cancelled"],
+						},
+					};
+				},
+			},
+			{
+				label: __("Task Type"),
+				fieldname: "task_type",
+				fieldtype: "Link",
+				options: "Task Type",
+				default: saved_task_type || DEFAULT_TASK_TYPE,
+				reqd: 1,
 			},
 			{ fieldtype: "Column Break" },
 			{
@@ -100,6 +153,8 @@ async function open_assign_dialog(frm) {
 				args: {
 					page_name: frm.doc.name,
 					employee: values.employee,
+					project: values.project,
+					task_type: values.task_type,
 					subject: values.subject,
 					description: values.description || "",
 					exp_start_date: values.exp_start_date,
@@ -110,7 +165,9 @@ async function open_assign_dialog(frm) {
 				callback(r) {
 					dialog.hide();
 					if (r.message) {
-						save_developer(values.employee);
+						save_choice("employee", values.employee);
+						save_choice("project", values.project);
+						save_choice("task_type", values.task_type);
 						const task_link = frappe.utils.get_form_link(
 							"Task",
 							r.message.name,
@@ -135,33 +192,34 @@ async function open_assign_dialog(frm) {
 	dialog.show();
 }
 
-/** Return the saved developer, clearing it if they are no longer active or have no user. */
-async function get_saved_developer() {
-	let employee = "";
+/** Return the saved value for a field, clearing it if the document is gone or no longer usable. */
+async function get_saved_choice(fieldname) {
+	let value = "";
 	try {
-		employee = localStorage.getItem(DEVELOPER_KEY) || "";
+		value = localStorage.getItem(STORAGE_KEYS[fieldname]) || "";
 	} catch (e) {
 		return "";
 	}
-	if (!employee) return "";
+	if (!value) return "";
 
+	const { doctype, fields, is_valid } = REMEMBERED[fieldname];
 	let message;
 	try {
-		({ message } = await frappe.db.get_value("Employee", employee, ["status", "user_id"]));
+		({ message } = await frappe.db.get_value(doctype, value, fields));
 	} catch (e) {
-		// Cannot check right now; leave Assign To empty but keep the saved choice.
+		// Cannot check right now; leave the field empty but keep the saved choice.
 		return "";
 	}
-	if (message?.status === "Active" && message.user_id) return employee;
+	if (message && is_valid(message)) return value;
 
-	save_developer("");
+	save_choice(fieldname, "");
 	return "";
 }
 
-function save_developer(employee) {
+function save_choice(fieldname, value) {
 	try {
-		if (employee) localStorage.setItem(DEVELOPER_KEY, employee);
-		else localStorage.removeItem(DEVELOPER_KEY);
+		if (value) localStorage.setItem(STORAGE_KEYS[fieldname], value);
+		else localStorage.removeItem(STORAGE_KEYS[fieldname]);
 	} catch (e) {
 		// Storage blocked (private window); the user just picks again next time.
 	}
