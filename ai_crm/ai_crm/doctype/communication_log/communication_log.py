@@ -789,6 +789,10 @@ class CommunicationLogManager:
             return doc.name
 def generate_followups_on_party_activity(doc, method):
     try:
+        # finbyzreach defines a "Followup Settings" of its own; where that one is installed
+        # follow-ups run through finbyzreach and this flow has no email schedule to use
+        if not frappe.get_meta("Followup Settings").has_field("email_sending_schedule"):
+            return
         settings = get_followup_settings()
         if not settings.enable_check:
             frappe.logger().info(f"Follow-up automation disabled")
