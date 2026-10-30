@@ -12,11 +12,12 @@ from ai_crm.reddit_api import (
 def fetch_reddit_posts():
     
     try:
-        frappe.log_error("Starting scheduled task: fetch_reddit_posts")
+        frappe.logger("ai_crm").info("Starting scheduled task: fetch_reddit_posts")
         subreddits = frappe.get_all(
             'Subreddit',
             filters={'is_active': 1},
-            fields=['name', 'subreddit_name', 'sort_type', 'fetch_limit', 'reddit_integration']
+            # Subreddit has no fetch_limit field; asking for it failed every run (unknown column)
+            fields=['name', 'subreddit_name', 'sort_type', 'reddit_integration']
         )
         
         if not subreddits:
@@ -51,7 +52,7 @@ def fetch_reddit_posts():
                 posts = reddit_api.fetch_reddit_posts(
                     subreddit.subreddit_name,
                     sort_type=subreddit.sort_type or 'new',
-                    limit=subreddit.fetch_limit or 10
+                    limit=subreddit.get("fetch_limit") or 10
                 )
                 
                 if not posts:
