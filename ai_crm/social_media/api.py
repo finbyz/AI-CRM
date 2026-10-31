@@ -98,7 +98,7 @@ def _hubs_with_counts(limit=12):
     if not hubs:
         return []
     counts = {}
-    for r in frappe.get_all("Content Hub Idea", fields=["parent", "count(name) as c"],
+    for r in frappe.get_all("Content Hub Idea", fields=["parent", {"COUNT": "name", "as": "c"}],
                             group_by="parent"):
         counts[r.get("parent")] = r.get("c")
     for h in hubs:
