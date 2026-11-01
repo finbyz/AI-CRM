@@ -5,6 +5,7 @@ from frappe.model.document import Document, Optional
 from frappe.utils import now_datetime, add_days, get_datetime
 import json
 import re
+from ai_crm.utils.permissions import require_permission
 
 def get_followup_settings():
     return frappe.get_single("Followup Settings")
@@ -833,6 +834,7 @@ def generate_followups_on_party_activity(doc, method):
 
 @frappe.whitelist()
 def regenerate_emails_for_log(log_name):
+    require_permission("Communication Log", "write", log_name)
     try:
         log = frappe.get_doc("Communication Log", log_name)
         log.reload()

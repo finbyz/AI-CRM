@@ -8,6 +8,7 @@ from ai_crm.reddit_api import (
     store_posts_in_db, 
     extract_comment_from_ai_result
 )
+from ai_crm.utils.permissions import require_permission
 
 def fetch_reddit_posts():
     
@@ -279,6 +280,7 @@ def reset_daily_counters():
 @frappe.whitelist()
 def trigger_fetch_manually(subreddit_name, integration_name=None):
     """Manually trigger post fetching for a specific subreddit"""
+    require_permission("Subreddit", "write", subreddit_name)
     try:
         from ai_crm.reddit_api import fetch_posts_manually
         
@@ -336,6 +338,7 @@ def trigger_fetch_manually(subreddit_name, integration_name=None):
 @frappe.whitelist()
 def trigger_ai_comments_manually(subreddit_name=None):
     """Manually trigger AI comment generation for pending posts"""
+    require_permission("Reddit Post", "write")
     try:
         from ai_crm.reddit_api import generate_ai_comment_internal
         

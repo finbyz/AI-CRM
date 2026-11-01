@@ -140,32 +140,3 @@ def _calculate_lead_analytics(leads: list[dict]) -> dict:
         "by_source": dict(sorted(source_counts.items(), key=lambda item: item[1], reverse=True)),
         "by_owner": sorted(owner_list, key=lambda item: item['total'], reverse=True),
     }
-
-@frappe.whitelist()
-def get_filter_options():
-    """
-    Fetches unique values for filter dropdowns to ensure they are based on actual data.
-    """
-    try:
-        # Fetch unique values using SQL for performance
-        statuses = [r[0] for r in frappe.db.sql("SELECT DISTINCT status FROM `tabLead` WHERE status IS NOT NULL AND status != '' ORDER BY status")]
-        sources = [r[0] for r in frappe.db.sql("SELECT DISTINCT source FROM `tabLead` WHERE source IS NOT NULL AND source != '' ORDER BY source")]
-        industries = [r[0] for r in frappe.db.sql("SELECT DISTINCT industry FROM `tabLead` WHERE industry IS NOT NULL AND industry != '' ORDER BY industry")]
-        
-        # Fetch active users for the 'owner' dropdown
-        owners = frappe.get_all(
-            "User",
-            filters={"enabled": 1},
-            fields=["name as value", "full_name as label"],
-            order_by="full_name"
-        )
-
-        return {
-            "status": statuses,
-            "source": sources,
-            "industry": industries,
-            "owner": owners,
-        }
-    except Exception as e:
-        frappe.log_error(f"Filter Options API Error: {str(e)}", "Lead Dashboard Error")
-        frappe.throw(_("An error occurred while fetching filter options."))

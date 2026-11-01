@@ -22,6 +22,7 @@ class TrendingTopicGenerator(frappe.model.document.Document):
     @frappe.whitelist()
     def fetch_trending_content(self):
         """Fetch trending topics via Google Trends → top 3 queries → news via SerpApi"""
+        self.check_permission("write")
         if not self.keywords:
             frappe.throw("Please enter keywords")
 
@@ -29,7 +30,9 @@ class TrendingTopicGenerator(frappe.model.document.Document):
         self.publish_progress("🚀 Starting trending content fetch...", 5)
 
         pytrends = TrendReq(hl='en-US', tz=360)
-        api_key = "36607041a5eebe2bf4fad30ad700a60947f8078bb719e07607ebf5436780f030"
+        api_key = frappe.conf.get("serpapi_api_key")
+        if not api_key:
+            frappe.throw("Set serpapi_api_key in site_config.json to fetch trending news.")
 
         keywords = [kw.strip() for kw in self.keywords.split(",") if kw.strip()]
         all_content = []

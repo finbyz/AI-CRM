@@ -9,6 +9,7 @@ from typing import List, Dict, Any
 import traceback
 from bs4 import BeautifulSoup
 import re
+from ai_crm.utils.permissions import require_permission
 
 class RedditAPI:
     def __init__(self, integration_name=None):
@@ -546,6 +547,7 @@ def store_posts_in_db(subreddit_name: str, posts: List[Dict[str, Any]]) -> int:
 
 @frappe.whitelist()
 def fetch_and_store_comments(post_id, limit=10, sort='top'):
+    require_permission("Reddit Post", "write", post_id)
     try:
         from datetime import datetime
         import time
@@ -759,6 +761,7 @@ def generate_ai_comment_internal(post_name, agent_name=None):
     
 @frappe.whitelist()
 def post_comment_to_reddit(post_name):
+    require_permission("Reddit Post", "write", post_name)
     try:
         post_doc = frappe.get_doc('Reddit Post', post_name)
         
@@ -837,6 +840,7 @@ def post_comment_to_reddit(post_name):
 
 @frappe.whitelist()
 def call_ai_agent_revise(doc_name):
+    require_permission("Reddit Post", "write", doc_name)
     try:
         post_doc = frappe.get_doc('Reddit Post', doc_name)
         
@@ -909,6 +913,7 @@ def call_ai_agent_revise(doc_name):
         
 @frappe.whitelist()
 def generate_ai_comment(post_name, agent_name=None):
+    require_permission("Reddit Post", "write", post_name)
     try:
         frappe.logger().info(
             f"generate_ai_comment called with post_name: {post_name}, agent_name: {agent_name}"
@@ -920,6 +925,7 @@ def generate_ai_comment(post_name, agent_name=None):
 
 @frappe.whitelist()
 def fetch_posts_manually(subreddit_name, sort_type="hot", limit=5, time_filter="week", integration_name=None):
+    require_permission("Subreddit", "write", subreddit_name)
     try:
         
         if not integration_name and frappe.db.exists('Subreddit', subreddit_name):
@@ -958,6 +964,7 @@ def fetch_posts_manually(subreddit_name, sort_type="hot", limit=5, time_filter="
 @frappe.whitelist()
 def get_post_statistics(subreddit_name):
     
+    require_permission("Subreddit", "read", subreddit_name)
     try:
         stats = frappe.db.sql("""
             SELECT 
@@ -976,20 +983,3 @@ def get_post_statistics(subreddit_name):
     except Exception as e:
         frappe.log_error(f"Error in get_post_statistics: {str(e)}\n{traceback.format_exc()}")
         frappe.throw(str(e))
-
-@frappe.whitelist()
-def get_recent_error_logs(limit=10):
-    """Get recent error logs related to Reddit operations"""
-    try:
-        logs = frappe.get_all(
-            'Error Log',
-            filters={
-                'error': ['like', '%reddit%']
-            },
-            fields=['name', 'error', 'creation'],
-            order_by='creation desc',
-            limit=limit
-        )
-        return {'success': True, 'logs': logs}
-    except Exception as e:
-        return {'success': False, 'error': str(e)}

@@ -18,6 +18,7 @@ from ai_crm.social_media.doctype.youtube_videos.youtube_workflow.services.backgr
 from ai_crm.social_media.doctype.youtube_videos.youtube_workflow.services.video_processor import (
     enqueue_video_processing,
 )
+from ai_crm.utils.permissions import require_permission
 
 
 # credential DocType -> Social Media Post / Content Hub platform label
@@ -46,6 +47,7 @@ POST_FIELDS = [
 # --------------------------------------------------------------------------- #
 @frappe.whitelist()
 def get_dashboard_data():
+    require_permission("Social Media Post", "read")
     accounts = list_connected_accounts()
     posts = _recent_posts(limit=200)
     return {
@@ -135,6 +137,7 @@ def _activity(posts, limit=6):
 
 @frappe.whitelist()
 def list_connected_accounts():
+    require_permission("Social Media Post", "read")
     accounts = []
     for doctype, platform in PLATFORM_BY_CREDENTIAL.items():
         if not frappe.db.exists("DocType", doctype):
@@ -170,6 +173,7 @@ def _recent_posts(limit=100):
 @frappe.whitelist()
 def get_all_hub_ideas(limit=30):
     """Aggregate ideas across all Content Hubs for the Ideas Library browser."""
+    require_permission("Content Hub", "read")
     hubs = frappe.get_all(
         "Content Hub",
         fields=["name", "title", "target_audience", "platform",
@@ -191,6 +195,7 @@ def get_all_hub_ideas(limit=30):
 @frappe.whitelist()
 def get_hub_ideas(hub):
     """Load an existing Content Hub's ideas back into the page."""
+    require_permission("Content Hub", "read", hub)
     doc = frappe.get_doc("Content Hub", hub)
     return {
         "hub": doc.name,
@@ -207,6 +212,7 @@ def get_hub_ideas(hub):
 @frappe.whitelist()
 def get_post(post):
     """Return a single post as a plain dict for the composer."""
+    require_permission("Social Media Post", "read", post)
     doc = frappe.get_doc("Social Media Post", post)
     return {f: doc.get(f) for f in POST_FIELDS if hasattr(doc, f)}
 
@@ -216,6 +222,7 @@ def get_post(post):
 # --------------------------------------------------------------------------- #
 @frappe.whitelist()
 def save_post_content(post, content, title=None):
+    require_permission("Social Media Post", "write", post)
     doc = frappe.get_doc("Social Media Post", post)
     doc.content = content
     if title is not None:
@@ -226,18 +233,21 @@ def save_post_content(post, content, title=None):
 
 @frappe.whitelist()
 def revise_post(post, instruction):
+    require_permission("Social Media Post", "write", post)
     doc = frappe.get_doc("Social Media Post", post)
     return doc.revise_post(instruction)
 
 
 @frappe.whitelist()
 def generate_image(post, instruction=""):
+    require_permission("Social Media Post", "write", post)
     doc = frappe.get_doc("Social Media Post", post)
     return doc.generate_image(instruction)
 
 
 @frappe.whitelist()
 def schedule_post(post, post_on):
+    require_permission("Social Media Post", "write", post)
     doc = frappe.get_doc("Social Media Post", post)
     doc.post_on = post_on
     doc.status = "Scheduled"
@@ -248,12 +258,14 @@ def schedule_post(post, post_on):
 @frappe.whitelist()
 def publish_post(post):
     """Publish now via the existing per-platform posting pipeline."""
+    require_permission("Social Media Post", "write", post)
     doc = frappe.get_doc("Social Media Post", post)
     return doc.post()
 
 
 @frappe.whitelist()
 def unschedule_post(post):
+    require_permission("Social Media Post", "write", post)
     doc = frappe.get_doc("Social Media Post", post)
     doc.post_on = None
     doc.status = "Draft"
@@ -263,6 +275,7 @@ def unschedule_post(post):
 
 @frappe.whitelist()
 def delete_post(post):
+    require_permission("Social Media Post", "delete", post)
     frappe.delete_doc("Social Media Post", post, ignore_permissions=True)
     return {"status": "success"}
 
@@ -283,6 +296,7 @@ TOOL_INSTRUCTIONS = {
 @frappe.whitelist()
 def apply_tool(post, tool, language=None):
     """One-click AI tools. Reuse Social Media Post.revise_post with a preset instruction."""
+    require_permission("Social Media Post", "write", post)
     instr = TOOL_INSTRUCTIONS.get(tool)
     if not instr:
         frappe.throw(_("Unknown tool: {0}").format(tool))
@@ -294,17 +308,20 @@ def apply_tool(post, tool, language=None):
 
 @frappe.whitelist()
 def get_brand_voice():
+    require_permission("Content Hub", "read")
     return {"brand_voice": frappe.db.get_single_value("Content Hub Setting", "brand_voice") or ""}
 
 
 @frappe.whitelist()
 def set_brand_voice(brand_voice):
+    require_permission("Content Hub", "write")
     frappe.db.set_single_value("Content Hub Setting", "brand_voice", brand_voice or "")
     return {"status": "success"}
 
 
 @frappe.whitelist()
 def apply_brand_voice(post):
+    require_permission("Social Media Post", "write", post)
     voice = frappe.db.get_single_value("Content Hub Setting", "brand_voice")
     if not voice:
         frappe.throw(_("No brand voice defined yet. Set it first."))
@@ -318,6 +335,7 @@ def apply_brand_voice(post):
 def get_analytics():
     """Aggregate dashboard analytics from existing Social Media Post data.
     (Engagement pull-back from platform APIs is a future enhancement.)"""
+    require_permission("Social Media Post", "read")
     from frappe.utils import add_days, getdate, nowdate, get_first_day
 
     posted_this_month = frappe.db.count("Social Media Post", {
@@ -362,6 +380,7 @@ def get_analytics():
 
 @frappe.whitelist()
 def get_configured_youtube_channels():
+    require_permission("YouTube Videos", "read")
     settings = frappe.get_single("YouTube Settings")
     return [
         {
@@ -377,6 +396,7 @@ def get_configured_youtube_channels():
 @frappe.whitelist()
 def fetch_youtube_channel_videos(channel_ids=None, max_results: int = 3):
     """Fetch the latest videos of the given channels (all when empty) and process them in the background."""
+    require_permission("YouTube Videos", "create")
     configured = [c["channel_id"] for c in get_configured_youtube_channels()]
     channel_ids = frappe.parse_json(channel_ids) if isinstance(channel_ids, str) else channel_ids
     channel_ids = [c for c in channel_ids or configured if c in configured]
@@ -398,6 +418,7 @@ def fetch_youtube_channel_videos(channel_ids=None, max_results: int = 3):
 
 @frappe.whitelist()
 def fetch_youtube_url(url: str):
+    require_permission("YouTube Videos", "create")
     match = re.search(r"(?:v=|\/)([0-9A-Za-z_-]{11}).*", url or "")
     if not match:
         frappe.throw(_("Invalid YouTube URL"))

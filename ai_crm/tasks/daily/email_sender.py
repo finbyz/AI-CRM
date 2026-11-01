@@ -146,17 +146,3 @@ class EmailSender:
             
             frappe.logger().error(f" Email failed: {str(e)}")
             raise e
-
-
-def enqueue_scheduled_emails():
-    """Queue the email sending job (called by scheduler)"""
-    frappe.logger().info(" Enqueueing scheduled email job")
-    try:
-        frappe.enqueue(
-            method="ai_crm.tasks.daily.email_sender.EmailSender.send_scheduled_emails",
-            queue="long",
-            timeout=600,
-            is_async=True
-        )
-    except Exception as e:
-        frappe.logger().error(f"Failed to enqueue email job: {str(e)}")

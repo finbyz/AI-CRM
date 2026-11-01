@@ -134,20 +134,6 @@ class SocialMediaPost(Document):
         return frappe.get_doc(self.credential_type, self.credential)
 
     @frappe.whitelist(methods=["POST"])
-    def update_draft(self, title: str, content: str):
-        self.check_permission("write")
-        if self.status not in {"Draft", "Approved", "Scheduled"}:
-            frappe.throw(_("Only draft or approved posts can be edited"))
-        if self.status != "Draft":
-            self._require_manager()
-        self.title = title
-        self.content = content
-        self.flags.skip_approval_reset = True
-        self._return_to_draft()
-        self.save()
-        return self.as_studio_dict()
-
-    @frappe.whitelist(methods=["POST"])
     def submit_for_approval(self):
         # Anyone who can see the post may send it for approval. Reload so field
         # values sent with the request cannot be saved by a read-only user.

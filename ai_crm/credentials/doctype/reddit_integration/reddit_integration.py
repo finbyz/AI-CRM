@@ -29,6 +29,7 @@ class RedditIntegration(Document):
     
     @frappe.whitelist()
     def test_connection(self):
+        self.check_permission("write")
         try:
             if not self.access_token:
                 return {
@@ -70,6 +71,7 @@ class RedditIntegration(Document):
     @frappe.whitelist()
     def get_authorization_url(self):
         
+        self.check_permission("write")
         try:
            
             params = {

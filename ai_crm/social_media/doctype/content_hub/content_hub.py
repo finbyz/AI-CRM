@@ -5,20 +5,10 @@ from ai_crm.social_media.doctype.content_hub import generation
 from ai_crm.social_media.doctype.content_hub.generation import create_nextjs_page, queue_posts, queue_posts_for_idea
 from ai_crm.social_media.doctype.content_hub.research import queue_research, start_research_for_video
 from ai_crm.social_media.doctype.youtube_settings.youtube_settings import is_own_channel
+from ai_crm.utils.permissions import require_permission
 
 
 class ContentHub(Document):
-
-    @frappe.whitelist(methods=["POST"])
-    def generate_ideas(self):
-        self.check_permission("write")
-        self.db_set({"generation_status": "Generating", "generation_error": None})
-        try:
-            return self._generate_ideas()
-        except Exception as error:
-            frappe.log_error(frappe.get_traceback(), f"Content Hub idea generation failed: {self.name}")
-            self.db_set({"generation_status": "Failed", "generation_error": str(error)[:500]})
-            return {"status": "error", "error": str(error)}
 
     def _generate_ideas(self):
         content_hub_setting = frappe.get_single("Content Hub Setting")
@@ -100,12 +90,8 @@ class ContentHub(Document):
         return {"status": "success", "docname": self.name}
 
     @frappe.whitelist(methods=["POST"])
-    def generate_posts_from_idea(self, idea_name: str, targets: str | list):
-        self.check_permission("write")
-        return queue_posts_for_idea(self, idea_name, targets)
-
-    @frappe.whitelist(methods=["POST"])
     def start_research(self):
+        self.check_permission("write")
         queue_research(self)
         return {"research_status": "Queued"}
 
@@ -122,9 +108,11 @@ class ContentHub(Document):
 
 @frappe.whitelist(methods=["POST"])
 def find_related_pages(page_name: str):
+    require_permission("Content Hub", "read")
     return generation.find_related_pages(page_name)
 
 
 @frappe.whitelist(methods=["POST"])
 def start_video_research(video_row: str):
+    require_permission("Content Hub", "write")
     return start_research_for_video(video_row)

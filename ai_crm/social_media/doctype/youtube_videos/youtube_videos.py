@@ -19,6 +19,7 @@ class YouTubeVideos(Document):
         Returns:
             str: Status message
         """
+        self.check_permission("write")
         try:
             enqueue_youtube_workflow(self.name)
             return "✅ YouTube workflow enqueued. Videos will be fetched and processed in the background."

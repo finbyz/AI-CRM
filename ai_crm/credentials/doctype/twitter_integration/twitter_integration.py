@@ -51,6 +51,7 @@ class TwitterIntegration(Document):
     @frappe.whitelist()
     def get_authorization_url(self):
         """Generate and return the OAuth 2.0 authorization URL for the user to visit."""
+        self.check_permission("write")
         try:
             if not self.client_id:
                 frappe.throw("Client ID is a required field.")
@@ -155,6 +156,7 @@ class TwitterIntegration(Document):
     @frappe.whitelist()
     def _refresh_access_token(self):
         """Refresh access token with better error handling"""
+        self.check_permission("write")
         try:
             if not self.refresh_token:
                 raise Exception("No refresh token available")
@@ -259,6 +261,7 @@ class TwitterIntegration(Document):
         """
         Tests the connection to the Twitter API by fetching the authenticated user's info.
         """
+        self.check_permission("write")
         try:
             headers = self._get_bearer_headers()
             url = "https://api.twitter.com/2/users/me"
@@ -303,6 +306,7 @@ class TwitterIntegration(Document):
     @frappe.whitelist()
     def _refresh_access_token(self):
         """Refresh access token with better error handling"""
+        self.check_permission("write")
         try:
             if not self.refresh_token:
                 frappe.log_error("No refresh token available", "Twitter Token Refresh")
