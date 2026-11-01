@@ -2,7 +2,7 @@
 # For license information, please see license.txt
 
 import frappe
-import requests
+import serpapi
 import time
 from datetime import datetime
 from pytrends.request import TrendReq
@@ -52,10 +52,9 @@ class TrendingTopicGenerator(frappe.model.document.Document):
             for trend_query in top_trends:
                 self.publish_progress(f"📰 Fetching news for '{trend_query}' via SerpApi...", 30 + idx*10)
                 try:
-                    url = f"https://serpapi.com/search.json?q={trend_query}&tbm=nws&num=10&hl=en&api_key={api_key}"
-                    resp = requests.get(url, timeout=10)
-                    resp.raise_for_status()
-                    data = resp.json()
+                    data = serpapi.Client(api_key=api_key, timeout=10).search(
+                        {"engine": "google", "q": trend_query, "tbm": "nws", "num": 10, "hl": "en"}
+                    )
                     news_results = data.get("news_results", [])
 
                     for article in news_results:

@@ -15,6 +15,7 @@ dependencies = [
     "langchain-core~=1.7.3",
     "requests-oauthlib~=2.0.0",
     "pytrends",
+    "serpapi~=1.2.0",
     "youtube-transcript-api~=1.2.4",
     "playwright~=1.63"
 ]

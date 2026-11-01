@@ -1,6 +1,7 @@
 import os
 import re
 import tempfile
+import time
 
 import frappe
 from frappe import _
@@ -225,6 +226,11 @@ def _rank_applicant(applicant_name):
         )
         return
 
+    score = exponential_weighted_score(result.skill_scores, skills)
+    _save_ranking(applicant, result, score)
+
+
+def _apply_ranking(applicant, result, score):
     set_ai_summary(applicant, result)
 
     applicant.skill_score = []
@@ -235,8 +241,27 @@ def _rank_applicant(applicant_name):
             "reason": skill.reason,
         })
 
-    applicant.score = exponential_weighted_score(result.skill_scores, skills)
-    applicant.save(ignore_permissions=True)
+    applicant.score = score
+
+
+def _save_ranking(applicant, result, score, attempts=3):
+    """Save the ranking, reloading and retrying if the applicant changed meanwhile.
+
+    The website attaches the resume to the same Job Applicant while this job runs,
+    so the save can hit "Record has changed since last read" or a modified-timestamp
+    conflict. The AI result is kept and re-applied; the agent is not called again.
+    """
+    for attempt in range(attempts):
+        _apply_ranking(applicant, result, score)
+        try:
+            applicant.save(ignore_permissions=True)
+            return
+        except (frappe.QueryDeadlockError, frappe.TimestampMismatchError):
+            if attempt == attempts - 1:
+                raise
+            frappe.db.rollback()
+            time.sleep(2 * (attempt + 1))
+            applicant = frappe.get_doc("Job Applicant", applicant.name)
 
 
 def process_applicant_background(applicant_name):
