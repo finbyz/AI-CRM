@@ -80,6 +80,11 @@ def _read_resume_text(file_doc):
     """
     try:
         content_bytes = file_doc.get_content()
+        if isinstance(content_bytes, str):
+            # Frappe decodes local files that happen to be valid text (small ASCII-only PDFs);
+            # re-read the raw bytes so the extractor gets the file unchanged
+            with open(file_doc.get_full_path(), "rb") as f:
+                content_bytes = f.read()
     except Exception as exc:
         frappe.log_error(
             "Resume Ranker: could not read resume bytes",
