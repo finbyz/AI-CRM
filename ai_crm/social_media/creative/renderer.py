@@ -5,8 +5,6 @@
 # The AI only ever supplies text: layout, colours, fonts and logos come from the
 # templates here, so every creative matches the FinByz design system.
 
-import os
-import sys
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -15,10 +13,6 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from ai_crm.social_media.creative.brand import A4, BRAND, BRAND_DIR, ICONS, SIZES, TEMPLATE_DIR
 from ai_crm.social_media.creative.schema import validate_document, validate_slides
-
-# Browsers are installed inside the bench virtualenv so every bench user
-# (web, workers, console) finds the same Chromium build.
-os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", os.path.join(sys.prefix, "playwright-browsers"))
 
 _env = Environment(
     loader=FileSystemLoader(str(TEMPLATE_DIR)),
@@ -75,6 +69,7 @@ def _context():
 
 
 def _render(html, selector, width, height):
+    from frappe.utils.print_utils import find_or_download_chromium_executable
     from playwright.sync_api import sync_playwright
 
     result = RenderResult(html=html)
@@ -84,7 +79,9 @@ def _render(html, selector, width, height):
         allowed = (BRAND_DIR.as_uri(), page_file.as_uri())
 
         with sync_playwright() as p:
-            browser = p.chromium.launch()
+            # Frappe's own Chromium (bench/chromium, also used for PDFs): kept outside the
+            # virtualenv and downloaded again by Frappe if missing.
+            browser = p.chromium.launch(executable_path=find_or_download_chromium_executable())
             try:
                 page = browser.new_page(viewport={"width": width, "height": height})
                 # Content is AI-written: only the page itself and brand assets may load.

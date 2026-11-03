@@ -63,7 +63,19 @@ class SocialMediaPost(Document):
             previous.get(field) != self.get(field) for field in self.WORKFLOW_FIELDS
         )
         if workflow_changed and not self.flags.skip_approval_reset:
+            if self._marked_posted_by_hand(previous):
+                self.posted_on = self.posted_on or now_datetime()
+                return
             frappe.throw(_("Use a Content Studio workflow action to change workflow fields"))
+
+    def _marked_posted_by_hand(self, previous):
+        """A post published outside the app can be set to Posted by hand. Only Approved or
+        Scheduled posts are ever published, so it is not posted again."""
+        return (
+            self.status == "Posted"
+            and previous.status not in {"Publishing", "Posted"}
+            and all(previous.get(field) == self.get(field) for field in self.WORKFLOW_FIELDS - {"status"})
+        )
 
     def _prepare_manual_post(self):
         """Posts written by hand (no Content Hub) skip AI generation."""
