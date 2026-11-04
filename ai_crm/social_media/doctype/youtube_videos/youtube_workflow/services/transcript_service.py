@@ -6,8 +6,22 @@ Transcript Service
 Handles fetching transcripts from YouTube videos
 """
 
+import time
+
 import frappe
 import requests
+
+RATE_LIMIT_RETRIES = 2
+RATE_LIMIT_WAIT = 10  # seconds, when Transcript.io sends no usable Retry-After
+RATE_LIMIT_MAX_WAIT = 20
+
+
+def _retry_after_seconds(response):
+    try:
+        wait = float(response.headers.get("Retry-After") or RATE_LIMIT_WAIT)
+    except (TypeError, ValueError):
+        wait = RATE_LIMIT_WAIT
+    return min(max(wait, 1), RATE_LIMIT_MAX_WAIT)
 
 
 def fetch_transcript_single_attempt(video_id, api_token=None):
@@ -31,15 +45,21 @@ def fetch_transcript_single_attempt(video_id, api_token=None):
     # 1. Primary: Try Transcript.io API if token is provided
     if api_token:
         try:
-            response = requests.post(
-                "https://www.youtube-transcript.io/api/transcripts",
-                headers={
-                    "Authorization": f"Basic {api_token}",
-                    "Content-Type": "application/json"
-                },
-                json={"ids": [video_id]},
-                timeout=30
-            )
+            # A 429 is temporary (videos are processed back to back); wait and retry instead of
+            # marking the video as having no transcript for good
+            for attempt in range(RATE_LIMIT_RETRIES + 1):
+                response = requests.post(
+                    "https://www.youtube-transcript.io/api/transcripts",
+                    headers={
+                        "Authorization": f"Basic {api_token}",
+                        "Content-Type": "application/json"
+                    },
+                    json={"ids": [video_id]},
+                    timeout=30
+                )
+                if response.status_code != 429 or attempt == RATE_LIMIT_RETRIES:
+                    break
+                time.sleep(_retry_after_seconds(response))
 
             if response.status_code == 200:
                 result = _process_transcript_response(response)

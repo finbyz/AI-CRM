@@ -10,12 +10,16 @@ from ai_crm.social_media.doctype.youtube_settings.youtube_settings import is_own
 OPENROUTER_API_BASE = "https://openrouter.ai/api/v1"
 WEB_RESULTS = 8
 TRANSCRIPT_LIMIT = 12000
+DESCRIPTION_LIMIT = 5000
 
 # Used when the Research Agent has no human message of its own.
 DEFAULT_BRIEF = """Topic: {title}
 Target audience: {target_audience}
 Source: {source_type}
 Channel: {channel_name}
+
+Video description:
+{description}
 
 Transcript:
 {transcript}"""
@@ -80,6 +84,7 @@ def run_research(hub_name, user=None):
     frappe.db.commit()
     link = frappe.utils.get_link_to_form("Content Hub", hub_name, frappe.utils.escape_html(hub.title))
     try:
+        _ensure_video_transcript(hub)
         # db_set, so a user editing the hub meanwhile does not hit a save conflict.
         hub.db_set({
             "research": _research(hub),
@@ -146,6 +151,37 @@ def _research(hub):
     return notes + _format_sources(message.get("annotations"))
 
 
+def _ensure_video_transcript(hub):
+    """Fetch the transcript of the hub's video, only now that research was asked for.
+
+    Videos are screened on title and description alone. Without a transcript (no captions,
+    no Transcript.io credit) research still runs on the title and description.
+    """
+    if hub.source_type != "YouTube Video":
+        return
+    video = frappe.db.get_value(
+        "YouTube Video", {"content_hub": hub.name}, ["name", "video_id", "transcript"], as_dict=True
+    )
+    if not video or (video.transcript or "").strip():
+        return
+
+    from ai_crm.social_media.doctype.youtube_videos.youtube_workflow.services.transcript_service import (
+        fetch_transcript_single_attempt,
+    )
+
+    token = frappe.get_single("YouTube Settings").get_password("transcript_io_api_token", raise_exception=False)
+    result = fetch_transcript_single_attempt(video.video_id, token)
+    if result.get("success") and result.get("transcript"):
+        frappe.db.set_value("YouTube Video", video.name, "transcript", result["transcript"])
+        frappe.db.commit()
+    else:
+        frappe.log_error(
+            "YouTube Transcript Unavailable",
+            f"Content Hub {hub.name}, video {video.video_id}: {result.get('error') or 'no transcript'}. "
+            "Research used the title and description only.",
+        )
+
+
 def _get_research_agent():
     agent_name = frappe.db.get_single_value("Content Hub Setting", "research_agent")
     if not agent_name:
@@ -180,14 +216,16 @@ def _get_brief_values(hub):
         "source_type": hub.source_type or "Manual Topic",
         "channel_name": hub.channel_name or "None",
         "video_ownership": "None",
+        "description": "None",
         "transcript": "None",
     }
     if hub.source_type == "YouTube Video":
         video = frappe.db.get_value(
-            "YouTube Video", {"content_hub": hub.name}, ["channel_id", "transcript"], as_dict=True
+            "YouTube Video", {"content_hub": hub.name}, ["channel_id", "description", "transcript"], as_dict=True
         ) or frappe._dict()
         transcript = (video.transcript or "").strip()
-        values["transcript"] = transcript[:TRANSCRIPT_LIMIT] or "None"
+        values["description"] = (video.description or "").strip()[:DESCRIPTION_LIMIT] or "None"
+        values["transcript"] = transcript[:TRANSCRIPT_LIMIT] or "None (not available; use the title and description)"
         values["video_ownership"] = "Our own video" if is_own_channel(video.channel_id) else "Third-party video"
     return values
 

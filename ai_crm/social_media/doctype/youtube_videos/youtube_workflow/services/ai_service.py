@@ -13,7 +13,7 @@ import json
 def analyze_video(
     agent_service,
     video_title,
-    video_transcript,
+    video_description,
     relevance_prompt="",
 ):
     """
@@ -22,7 +22,7 @@ def analyze_video(
     Args:
         agent_service: AI Agent Service instance
         video_title: Video title
-        video_transcript: Video transcript text
+        video_description: Video description from YouTube (transcripts are not fetched here)
         
     Returns:
         dict: {
@@ -34,7 +34,7 @@ def analyze_video(
     try:
         input_data = {
             "title": video_title or "",
-            "transcript": video_transcript or "",
+            "description": video_description or "None",
             "relevance_prompt": relevance_prompt or "",
         }
         

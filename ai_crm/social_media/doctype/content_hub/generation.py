@@ -216,7 +216,8 @@ def _build_agent_input(hub, post, idea):
         # Only our own videos are linked; other channels are used as background, never cited.
         "youtube_video_link": (source.get("video_link") or hub.source_url or "None") if own else "None",
         "video_ownership": "Our own video" if own else "Third-party video",
-        "transcript": (source.get("transcript") or "")[:12000],
+        "description": (source.get("description") or "")[:5000] or "None",
+        "transcript": (source.get("transcript") or "")[:12000] or "None (not available; use the description and research notes)",
     }
 
 
@@ -226,7 +227,7 @@ def _get_source_context(hub):
     return frappe.db.get_value(
         "YouTube Video",
         {"content_hub": hub.name},
-        ["channel_id", "channel_name", "views", "video_link", "transcript"],
+        ["channel_id", "channel_name", "views", "video_link", "description", "transcript"],
         as_dict=True,
     ) or frappe._dict()
 

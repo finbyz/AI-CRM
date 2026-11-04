@@ -451,6 +451,7 @@ def fetch_youtube_url(url: str):
         "published_on": snippet.get("publishedAt"),
         "views": int(item.get("statistics", {}).get("viewCount", 0)),
         "video_link": f"https://www.youtube.com/watch?v={video_id}",
+        "description": (snippet.get("description") or "").strip(),
     })
     tracker.insert()
     enqueue_video_processing(tracker.name)

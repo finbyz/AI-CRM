@@ -8,16 +8,15 @@ Main workflow orchestration for processing individual videos
 
 import frappe
 from frappe.utils import now_datetime
-from .transcript_service import fetch_transcript_single_attempt
 from .ai_service import get_analysis_agent, analyze_video
 
 
 def process_video_workflow(tracker_name, video_id):
     """
     Complete workflow for processing a single video:
-    1. Fetch transcript
-    2. Analyze video for relevance
-    3. Update video record with results (users then pick relevant videos to research)
+    1. Analyze the video's title and description for relevance (no transcript: it is
+       fetched only when research starts for a video the user picks)
+    2. Update video record with results (users then pick relevant videos to research)
 
     Args:
         tracker_name: Name of the YouTube Videos document
@@ -32,21 +31,7 @@ def process_video_workflow(tracker_name, video_id):
             return
 
         settings = frappe.get_single("YouTube Settings")
-        transcript_api_token = settings.get_password("transcript_io_api_token", raise_exception=False)
 
-        # Step 1: Fetch transcript (uses primary transcript.io or fallback youtube_transcript_api)
-        transcript_result = fetch_transcript_single_attempt(video_id, transcript_api_token)
-
-        if transcript_result.get("success") and transcript_result.get("transcript"):
-            video.transcript = transcript_result["transcript"]
-            frappe.db.set_value("YouTube Video", video.name, "transcript", video.transcript)
-        else:
-            error = transcript_result.get("error") or "No captions are available"
-            _update_video_status(video, f"Transcript unavailable: {error}", mark_processed=True)
-            check_and_update_tracker_completion(tracker_name)
-            return
-
-        # Step 2: Analyze video
         analysis_result = _analyze_video_step(video, settings)
 
         if not analysis_result.get("success"):
@@ -195,7 +180,6 @@ def _update_video_status(video, reasoning, mark_processed):
 
 def _save_video_result(video):
     frappe.db.set_value("YouTube Video", video.name, {
-        "transcript": video.transcript,
         "is_related": video.is_related,
         "analysis_reasoning": video.analysis_reasoning,
         "last_analyzed_on": video.last_analyzed_on,
@@ -203,13 +187,13 @@ def _save_video_result(video):
 
 
 def _analyze_video_step(video, settings):
-    """Step 2: Analyze video for relevance."""
+    """Analyze video for relevance from its title and description."""
     try:
         analysis_agent = get_analysis_agent()
         return analyze_video(
             agent_service=analysis_agent,
             video_title=video.title,
-            video_transcript=video.transcript,
+            video_description=video.description,
             relevance_prompt=settings.relevance_prompt,
         )
     except Exception as e:

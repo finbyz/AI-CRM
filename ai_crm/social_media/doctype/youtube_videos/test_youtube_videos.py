@@ -62,7 +62,7 @@ class TestYouTubeVideos(FrappeTestCase):
         result = analyze_video(
             agent,
             "Frappe tutorial",
-            "Video transcript",
+            "Video description",
             relevance_prompt="Only include implementation tutorials",
         )
 

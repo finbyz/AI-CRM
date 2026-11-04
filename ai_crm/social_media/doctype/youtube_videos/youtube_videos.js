@@ -115,7 +115,7 @@ function set_dashboard_headline(frm) {
             );
         } else {
             frm.dashboard.set_headline(
-                `⏳ <strong>Video Analysis Queued...</strong> Please wait while AI evaluates the video transcript.`,
+                `⏳ <strong>Video Analysis Queued...</strong> Please wait while AI evaluates the video title and description.`,
                 'blue'
             );
         }

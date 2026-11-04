@@ -29,6 +29,7 @@ class ContentHub(Document):
 
         # Prepare YouTube transcript & context
         transcript_text = ""
+        description_text = ""
         youtube_video_link = "None"
         youtube_views = 0
         own_video = False
@@ -38,12 +39,13 @@ class ContentHub(Document):
             yt_doc = frappe.db.get_value(
                 "YouTube Video",
                 {"content_hub": self.name},
-                ["channel_id", "channel_name", "video_id", "video_link", "views", "transcript"],
+                ["channel_id", "channel_name", "video_id", "video_link", "views", "description", "transcript"],
                 as_dict=True,
             )
             if yt_doc:
                 raw_transcript = (yt_doc.transcript or "").strip()
                 transcript_text = raw_transcript[:12000] + ("..." if len(raw_transcript) > 12000 else "")
+                description_text = (yt_doc.description or "").strip()[:5000]
                 youtube_views = yt_doc.views or 0
                 channel_name = channel_name or yt_doc.channel_name or ""
                 # Only our own videos are linked; other channels are used as background, never cited.
@@ -62,7 +64,8 @@ class ContentHub(Document):
             "channel_name": channel_name,
             "youtube_video_link": youtube_video_link,
             "video_ownership": "Our own video" if own_video else "Third-party video",
-            "transcript": transcript_text
+            "description": description_text or "None",
+            "transcript": transcript_text or "None (not available; use the description)"
         }
 
         result = idea_agent.invoke(**ai_input_data)

@@ -142,7 +142,7 @@ def _fetch_channel_videos(channel, api_key, now, max_results=None):
 def _process_api_response(response, api_key, channel):
     """Process YouTube API response and extract video information."""
     items = [item for item in response.get("items", []) if item.get("id", {}).get("videoId")]
-    views = _fetch_video_views([item["id"]["videoId"] for item in items], api_key)
+    details = _fetch_video_details([item["id"]["videoId"] for item in items], api_key)
     videos = []
     
     for item in items:
@@ -155,9 +155,13 @@ def _process_api_response(response, api_key, channel):
             "video_id": video_id,
             # The search API returns HTML-escaped text (e.g. &#39; for an apostrophe).
             "title": html.unescape(snippet.get("title") or "")[:140],
-            "description": html.unescape(snippet.get("description") or "").strip(),
+            # Search results cut the description short; the videos call returns it in full.
+            "description": (
+                details.get(video_id, {}).get("description")
+                or html.unescape(snippet.get("description") or "").strip()
+            ),
             "published_on": snippet.get("publishedAt"),
-            "views": views.get(video_id, 0),
+            "views": details.get(video_id, {}).get("views", 0),
             "video_link": f"https://www.youtube.com/watch?v={video_id}"
         }
         
@@ -166,8 +170,8 @@ def _process_api_response(response, api_key, channel):
     return videos
 
 
-def _fetch_video_views(video_ids, api_key):
-    """Fetch view counts for up to 50 videos in one call."""
+def _fetch_video_details(video_ids, api_key):
+    """Fetch view counts and full descriptions for up to 50 videos in one call."""
     if not video_ids:
         return {}
     try:
@@ -176,13 +180,16 @@ def _fetch_video_views(video_ids, api_key):
             params={
                 "key": api_key,
                 "id": ",".join(video_ids),
-                "part": "statistics"
+                "part": "snippet,statistics"
             },
             timeout=30
         ).json()
         
         return {
-            item["id"]: int(item.get("statistics", {}).get("viewCount", 0))
+            item["id"]: {
+                "views": int(item.get("statistics", {}).get("viewCount", 0)),
+                "description": (item.get("snippet", {}).get("description") or "").strip(),
+            }
             for item in res.get("items", [])
         }
     except Exception as e:
@@ -223,7 +230,8 @@ def save_videos_to_tracker(tracker_name, videos_list):
             "published_on": video_data["published_on"],
             "views": video_data.get("views", 0),
             "video_link": video_data["video_link"],
-            "transcript": video_data.get("description", ""),
+            # The transcript is fetched only when research starts for a video.
+            "description": video_data.get("description", ""),
             "is_related": 0,
             "analysis_reasoning": "",
             "last_analyzed_on": None
